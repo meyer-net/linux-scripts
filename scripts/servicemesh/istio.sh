@@ -1,0 +1,1 @@
+https://github.com/xiaomi/naftis/blob/master/README-CN.md
