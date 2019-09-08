@@ -467,7 +467,7 @@ function while_wget()
 	TMP_SOFT_WGET_FILE_DEST_NAME=$([ -n "$TMP_SOFT_WGET_FILE_DEST_NAME" ] && echo "$TMP_SOFT_WGET_FILE_DEST_NAME" || echo $TMP_SOFT_WGET_FILE_NAME)
 	
 	echo "----------------------------------------------------------------"
-	echo "Start to get file '${red}$TMP_SOFT_WGET_FILE_NAME${reset}'"
+	echo "Start to get file '${green}$TMP_SOFT_WGET_FILE_NAME${reset}'"
 	echo "----------------------------------------------------------------"
 
 	while [ ! -f "$TMP_SOFT_WGET_FILE_DEST_NAME" ]; do

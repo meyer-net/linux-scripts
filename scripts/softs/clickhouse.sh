@@ -28,18 +28,18 @@ function setup_ck()
     echo "ClickHouse: System start find the newer stable version"
     echo "------------------------------------------------------"
     local TMP_STABLE_VERSION_LIST=`curl -s http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/`
-    local TMP_MAX_STABLE_DATE=`echo $TMP_STABLE_VERSION_LIST | awk -F'</a>' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | sed '/^$/d' | awk '{if (NR>2) {print}}' | awk -F' ' '{print $1}' | awk 'function t_f(t){"date -d \""t"\" +%s" | getline ft; return ft}{print t_f($1)}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} env LC_ALL=en_US.en date -d@{} "+%d-%h-%Y"`
-    local TMP_NEWER_STABLE_VERSION=`echo $TMP_STABLE_VERSION_LIST | grep "$TMP_MAX_STABLE_DATE" | sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | sed 's@\.x86_64.*@@g' | sed 's@\.noarch.*@@g' | sed 's@[a-z]*@@g' | sed 's@^-*@@g' | awk 'NR==1'`
-    echo "ClickHouse: The newer stable version is $TMP_NEWER_STABLE_VERSION"
+    local TMP_MAX_STABLE_DATE=`echo "$TMP_STABLE_VERSION_LIST" | awk -F'</a>' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | sed '/^$/d' | awk '{if (NR>2) {print}}' | awk -F' ' '{print $1}' | awk 'function t_f(t){"date -d \""t"\" +%s" | getline ft; return ft}{print t_f($1)}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} env LC_ALL=en_US.en date -d@{} "+%d-%h-%Y"`
+    local TMP_NEWER_STABLE_VERSION=`echo "$TMP_STABLE_VERSION_LIST" | grep "$TMP_MAX_STABLE_DATE" | sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | sed 's@\.x86_64.*@@g' | sed 's@\.noarch.*@@g' | sed 's@[a-z]*@@g' | sed 's@^-*@@g' | awk 'NR==1'`
+    echo "ClickHouse: The newer stable version is ${TMP_NEWER_STABLE_VERSION}"
     echo "------------------------------------------------------"
 
     #curl -s https://packagecloud.io/install/repositories/Altinity/clickhouse/script.rpm.sh | sudo bash
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-server-common-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-server-common-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm"
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-common-static-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-common-static-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm"
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-server-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-server-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm"
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-client-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-client-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm"
-    # while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-debuginfo-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-debuginfo-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm"
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-test-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-test-$TMP_NEWER_STABLE_VERSION.el7.x86_64.rpm"
+    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-server-common-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-server-common-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
+    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-common-static-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-common-static-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
+    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-server-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-server-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
+    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-client-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-client-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
+    # while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-debuginfo-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-debuginfo-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
+    # while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-test-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-test-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
 
     # 默认配置文件位置
     # /etc/clickhouse-server/config.xml  
