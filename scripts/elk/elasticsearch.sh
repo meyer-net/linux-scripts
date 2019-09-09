@@ -74,7 +74,7 @@ function boot_es()
 function down_es()
 {
 	set_es
-    setup_soft_wget "elasticsearch" "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.3.1.tar.gz" "setup_es"
+    setup_soft_wget "elasticsearch" "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.3.1-linux-x86_64.tar.gz" "setup_es"
 
 	return $?
 }

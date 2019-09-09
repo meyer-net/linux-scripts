@@ -68,7 +68,7 @@ function boot_kibana()
 function down_kibana()
 {
 	set_kibana
-    setup_soft_wget "kibana" "https://artifacts.elastic.co/downloads/kibana/kibana-7.3.1-linux-x86_64.tar.gz" "setup_kibana"
+    setup_soft_wget "kibana" "https://artifacts.elastic.co/downloads/kibana/kibana-7.3.1-linux-x86_64-linux-x86_64.tar.gz" "setup_kibana"
 
 	return $?
 }
