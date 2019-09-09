@@ -7,8 +7,8 @@
 
 function check_env()
 {
-    local SSE42_SUPPORTED=`grep -q sse4_2 /proc/cpuinfo`
-    check_yn_action "SSE42_SUPPORTED"
+    # local SSE42_SUPPORTED=`grep -q sse4_2 /proc/cpuinfo`
+    # check_yn_action "SSE42_SUPPORTED"
     
     soft_rpm_check_action "clickhouse" "setup_ck" "Clickhouse was installed"
 
@@ -33,6 +33,7 @@ function setup_ck()
     echo "ClickHouse: The newer stable version is ${TMP_NEWER_STABLE_VERSION}"
     echo "------------------------------------------------------"
 
+    #19.13.3.26-1
     #curl -s https://packagecloud.io/install/repositories/Altinity/clickhouse/script.rpm.sh | sudo bash
     while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-server-common-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-server-common-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
     while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-common-static-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-common-static-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"

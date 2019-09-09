@@ -1158,7 +1158,7 @@ function exec_while_read()
 	TMP_EXEC_WHILE_READ_SCRIPTS=$4
 	TMP_EXEC_WHILE_READ_DFT=`eval echo '$'$TMP_EXEC_WHILE_READ_VAR_NAME`
 
-	local I=1
+	I=1
 	for I in $(seq 99);
 	do
 		TMP_EXEC_WHILE_READ_CURRENT_NOTICE=`echo "$TMP_EXEC_WHILE_READ_NOTICE"`
