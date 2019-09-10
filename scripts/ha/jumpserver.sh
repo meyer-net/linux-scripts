@@ -60,28 +60,28 @@ function setup_jumpserver()
     exit"
 
     # 修改 Jumpserver 配置文件
-    mv config_example.py config.py
-    sed -i "s@# BOOTSTRAP_TOKEN = .*@BOOTSTRAP_TOKEN = '$TMP_JPS_TOKEN'@g" config.py
-    sed -i "s@DB_ENGINE = 'sqlite3'@#DB_ENGINE = 'sqlite3'@g" config.py
-    sed -i "s@DB_NAME = os@#DB_NAME = os@g" config.py
+    mv config_example.yml config.yml
+    sed -i "s@# BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: '$TMP_JPS_TOKEN'@g" config.yml
+    sed -i "s@DB_ENGINE: 'sqlite3'@#DB_ENGINE: 'sqlite3'@g" config.yml
+    sed -i "s@DB_NAME: os@#DB_NAME: os@g" config.yml
 
-    sed -i "s@# DB_ENGINE = 'mysql'@DB_ENGINE = 'mysql'@g" config.py
-    sed -i "s@# DB_HOST =.*@DB_HOST = '$TMP_SETUP_DBADDRESS'@g" config.py
-    sed -i "s@# DB_USER =.*@DB_USER = '$TMP_SETUP_JPS_DBUNAME'@g" config.py
-    sed -i "s@# DB_PORT@DB_PORT@g" config.py
-    sed -i "s@# DB_PASSWORD =.*@DB_PASSWORD = '$TMP_SETUP_JPS_DBPWD'@g" config.py
-    sed -i "s@# DB_NAME =.*@DB_NAME = '$TMP_SETUP_JPS_DBNAME'@g" config.py
+    sed -i "s@# DB_ENGINE: 'mysql'@DB_ENGINE: 'mysql'@g" config.yml
+    sed -i "s@# DB_HOST:.*@DB_HOST: '$TMP_SETUP_DBADDRESS'@g" config.yml
+    sed -i "s@# DB_USER:.*@DB_USER: '$TMP_SETUP_JPS_DBUNAME'@g" config.yml
+    sed -i "s@# DB_PORT@DB_PORT@g" config.yml
+    sed -i "s@# DB_PASSWORD:.*@DB_PASSWORD: '$TMP_SETUP_JPS_DBPWD'@g" config.yml
+    sed -i "s@# DB_NAME:.*@DB_NAME: '$TMP_SETUP_JPS_DBNAME'@g" config.yml
 
-    local TMP_CMD_LINE = `awk '/cmd = / {print NR}' jms | awk 'NR==1{print}'`
+    local TMP_CMD_LINE=`awk '/cmd = / {print NR}' jms | awk 'NR==1{print}'`
     sed -i "$((TMP_CMD_LINE+1))a '--timeout', '60'," jms
 
     redis-cli config set stop-writes-on-bgsave-error no
     
     cd ..
     mkdir -pv $DATA_DIR/jumpserver
-    mv jumpserver $PY_DIR/
+    mv jumpserver $SETUP_DIR/
     
-    local TMP_JPS_DIR=$PY_DIR/jumpserver
+    local TMP_JPS_DIR=$SETUP_DIR/jumpserver
 
     # 进入 jumpserver 目录时将自动载入 python 虚拟环境
     echo "source $TMP_PYENV3_ENVIRONMENT" > $TMP_JPS_DIR/.env
@@ -116,9 +116,9 @@ function setup_coco()
     mkdir -pv /tmp/uploads
     
     cd ..
-    mv coco $PY_DIR/
+    mv coco $SETUP_DIR/
     
-    local TMP_COCO_DIR=$PY_DIR/coco
+    local TMP_COCO_DIR=$SETUP_DIR/coco
 
     # 进入 jumpserver 目录时将自动载入 python 虚拟环境
     echo "source $TMP_PYENV3_ENVIRONMENT" > $TMP_COCO_DIR/.env
@@ -131,14 +131,14 @@ function setup_coco()
     source $TMP_PYENV3_ENVIRONMENT
     pip install -r requirements/requirements.txt -i https://pypi.python.org/simple
 
-    mv conf_example.py conf.py
+    mv config_example.yml config.yml
     
     sed -i "s@/tmp@/tmp/uploads@g" coco/sftp.py
-    sed -i "s@# NAME = .*@NAME = 'coco'@g" conf.py
-    sed -i "s@# CORE_HOST = .*@CORE_HOST = 'http://127.0.0.1:8080'@g" conf.py
+    sed -i "s@# NAME: .*@NAME: 'coco'@g" config.yml
+    sed -i "s@# CORE_HOST: .*@CORE_HOST: 'http://127.0.0.1:8080'@g" config.yml
 
-    sed -i "s@# BOOTSTRAP_TOKEN = .*@BOOTSTRAP_TOKEN = '$TMP_JPS_TOKEN'@g" conf.py
-    sed -i "s@# LOG_LEVEL = .*@LOG_LEVEL = 'ERROR'@g" conf.py
+    sed -i "s@# BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: '$TMP_JPS_TOKEN'@g" config.yml
+    sed -i "s@# LOG_LEVEL: .*@LOG_LEVEL: 'ERROR'@g" config.yml
     
     ./cocod start -d
 
@@ -258,7 +258,7 @@ function down_jumpserver()
     #http://docs.jumpserver.org/zh/latest/step_by_step.html
     setup_soft_git "JumpServer" "https://github.com/jumpserver/jumpserver" "setup_jumpserver"
     setup_soft_git "Coco" "https://github.com/jumpserver/coco" "setup_coco"
-    setup_soft_wget "Luna" "https://github.com/jumpserver/luna/releases/download/1.5.0/luna.tar.gz" "setup_luna"
+    setup_soft_wget "Luna" "https://github.com/jumpserver/luna/releases/download/1.5.2/luna.tar.gz" "setup_luna"
 
 	return $?
 }

@@ -78,7 +78,7 @@ function boot_logstash()
 function down_logstash()
 {
 	set_logstash
-    setup_soft_wget "logstash" "https://artifacts.elastic.co/downloads/logstash/logstash-7.3.1-linux-x86_64.tar.gz" "setup_logstash"
+    setup_soft_wget "logstash" "https://artifacts.elastic.co/downloads/logstash/logstash-7.3.1.tar.gz" "setup_logstash"
 
 	return $?
 }

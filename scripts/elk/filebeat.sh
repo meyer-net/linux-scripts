@@ -51,7 +51,7 @@ function down_filebeat()
 {
 	set_filebeat
 	
-    setup_soft_wget "filebeat" "https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.3.1-linux-x86_64-linux-x86_64.tar.gz" "setup_filebeat"
+    setup_soft_wget "filebeat" "https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.3.1-linux-x86_64.tar.gz" "setup_filebeat"
 
 	return $?
 }
