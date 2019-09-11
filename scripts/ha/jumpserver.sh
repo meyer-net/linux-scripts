@@ -46,7 +46,9 @@ function setup_jumpserver()
     local TMP_SETUP_DBPWD="123456"
     local TMP_SETUP_JPS_DBNAME="jumpserver"
     local TMP_SETUP_JPS_DBUNAME="jumpserver"
-    local TMP_SETUP_JPS_DBPWD="jps#local&m+"
+
+    # 不能用&，否则会被识别成读取前一个值
+    local TMP_SETUP_JPS_DBPWD="jps@local!m+"
     input_if_empty "TMP_SETUP_DBADDRESS" "JumpServer.Mysql: Please ender ${red}mysql host address${reset}"
 	input_if_empty "TMP_SETUP_DBUNAME" "JumpServer.Mysql: Please ender ${red}mysql user name${reset} of '$TMP_SETUP_DBADDRESS'"
 	input_if_empty "TMP_SETUP_DBPWD" "JumpServer.Mysql: Please ender ${red}mysql password${reset} of $TMP_SETUP_DBUNAME@$TMP_SETUP_DBADDRESS"
@@ -62,9 +64,8 @@ function setup_jumpserver()
     # 修改 Jumpserver 配置文件
     mv config_example.yml config.yml
     
-    rand_str "TMP_JPS_SECRET_KEY" 32
-    sed -i "s@SECRET_KEY: .*@SECRET_KEY: '$TMP_JPS_SECRET_KEY'@g" config.yml
-    sed -i "s@BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: '$TMP_JPS_TOKEN'@g" config.yml
+    sed -i "s@SECRET_KEY:.*@SECRET_KEY: $TMP_JPS_SECRET_KEY@g" config.yml
+    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JPS_TOKEN@g" config.yml
     sed -i "s@DB_HOST:.*@DB_HOST: $TMP_SETUP_DBADDRESS@g" config.yml
     sed -i "s@DB_USER:.*@DB_USER: $TMP_SETUP_JPS_DBUNAME@g" config.yml
     sed -i "s@DB_PASSWORD:.*@DB_PASSWORD: '$TMP_SETUP_JPS_DBPWD'@g" config.yml
@@ -131,11 +132,12 @@ function setup_coco()
 
     mv config_example.yml config.yml
     
-    sed -i "s@NAME: .*@NAME: 'coco-localhost'@g" config.yml
-    sed -i "s@CORE_HOST: .*@CORE_HOST: http://127.0.0.1:8080@g" config.yml
+    sed -i "s@NAME:.*@NAME: 'coco-localhost'@g" config.yml
+    sed -i "s@CORE_HOST:.*@CORE_HOST: http://127.0.0.1:8080@g" config.yml
 
-    sed -i "s@BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: $TMP_JPS_TOKEN@g" config.yml
-    sed -i "s@LOG_LEVEL: .*@LOG_LEVEL: 'ERROR'@g" config.yml
+    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JPS_TOKEN@g" config.yml
+    sed -i "s@# SECRET_KEY:.*@SECRET_KEY: '$TMP_JPS_SECRET_KEY'@g" config.yml
+    sed -i "s@# LOG_LEVEL:.*@LOG_LEVEL: 'ERROR'@g" config.yml
     
     ./cocod start -d
 
@@ -260,5 +262,6 @@ function down_jumpserver()
 	return $?
 }
 
+rand_str "TMP_JPS_SECRET_KEY" 32
 local TMP_JPS_TOKEN=`cat /proc/sys/kernel/random/uuid`
 setup_soft_basic "JumpServer" "down_jumpserver"
