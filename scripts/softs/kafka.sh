@@ -151,7 +151,7 @@ function down_kafka()
 {
     cd $WORK_PATH
 
-    setup_soft_wget "kafka" "https://mirrors.cnnic.cn/apache/kafka/2.1.0/kafka_2.12-2.1.0.tgz" "setup_kafka" 
+    setup_soft_wget "kafka" "https://mirrors.cnnic.cn/apache/kafka/2.3.0/kafka_2.12-2.3.0.tgz" "setup_kafka" 
 
 	return $?
 }

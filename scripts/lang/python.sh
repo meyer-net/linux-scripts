@@ -19,7 +19,9 @@ function setup_python()
 	make -j4 && make -j4 install
 	
 	ln -sf $PYTHON_DIR/bin/python3 /usr/bin/python3
-	ln -sf $PYTHON_DIR/bin/pip3 /usr/bin/pip3
+
+	cd $SETUP_DIR
+	python3 -m venv pyenv3
 
 	#把系统默认python命令改成python3
 	#mv /usr/bin/python /usr/bin/python2.7.x
@@ -27,11 +29,11 @@ function setup_python()
 	#sed -i '1s@^.*$@#!/usr/bin/python2.7@' /usr/libexec/urlgrabber-ext-down
 
 	# 修改 RPM源
-	mkdir -pv ~/.pip
-	cat >> ~/.pip/pip.conf <<EOF
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-EOF
+# 	mkdir -pv ~/.pip
+# 	cat >> ~/.pip/pip.conf <<EOF
+# [global]
+# index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+# EOF
 
 	#easy_install pip
 	pip install --upgrade pip
@@ -67,9 +69,6 @@ EOF
 	#https://www.zhihu.com/question/21639330
 	#pip freeze > requirements.txt
 	#pip install -r requirements.txt
-
-	cd $SETUP_DIR
-	python3 -m venv pyenv3
 
 	return $?
 }
