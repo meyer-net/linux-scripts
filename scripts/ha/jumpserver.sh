@@ -44,32 +44,32 @@ function setup_jumpserver()
     local TMP_SETUP_DBADDRESS="127.0.0.1"
     local TMP_SETUP_DBUNAME="root"
     local TMP_SETUP_DBPWD="123456"
-    local TMP_SETUP_JPS_DBNAME="jumpserver"
-    local TMP_SETUP_JPS_DBUNAME="jumpserver"
+    local TMP_SETUP_JMS_DBNAME="jumpserver"
+    local TMP_SETUP_JMS_DBUNAME="jumpserver"
 
     # 不能用&，否则会被识别成读取前一个值
-    local TMP_SETUP_JPS_DBPWD="jps@local!m+"
+    local TMP_SETUP_JMS_DBPWD="jms@local!m+"
     input_if_empty "TMP_SETUP_DBADDRESS" "JumpServer.Mysql: Please ender ${red}mysql host address${reset}"
 	input_if_empty "TMP_SETUP_DBUNAME" "JumpServer.Mysql: Please ender ${red}mysql user name${reset} of '$TMP_SETUP_DBADDRESS'"
 	input_if_empty "TMP_SETUP_DBPWD" "JumpServer.Mysql: Please ender ${red}mysql password${reset} of $TMP_SETUP_DBUNAME@$TMP_SETUP_DBADDRESS"
-	input_if_empty "TMP_SETUP_JPS_DBNAME" "JumpServer.Mysql: Please ender ${red}mysql database name${reset} of jumpserver($TMP_SETUP_DBADDRESS)"
+	input_if_empty "TMP_SETUP_JMS_DBNAME" "JumpServer.Mysql: Please ender ${red}mysql database name${reset} of jumpserver($TMP_SETUP_DBADDRESS)"
     
     mysql -h $TMP_SETUP_DBADDRESS -u$TMP_SETUP_DBUNAME -p"$TMP_SETUP_DBPWD" -e"
-    CREATE DATABASE $TMP_SETUP_JPS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
-	GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JPS_DBPWD';
-	GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JPS_DBPWD';
+    CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
+	GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JMS_DBPWD';
+	GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JMS_DBPWD';
     FLUSH PRIVILEGES;
     exit"
 
     # 修改 Jumpserver 配置文件
     mv config_example.yml config.yml
     
-    sed -i "s@SECRET_KEY:.*@SECRET_KEY: $TMP_JPS_SECRET_KEY@g" config.yml
-    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JPS_TOKEN@g" config.yml
+    sed -i "s@SECRET_KEY:.*@SECRET_KEY: $TMP_JMS_SECRET_KEY@g" config.yml
+    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JMS_TOKEN@g" config.yml
     sed -i "s@DB_HOST:.*@DB_HOST: $TMP_SETUP_DBADDRESS@g" config.yml
-    sed -i "s@DB_USER:.*@DB_USER: $TMP_SETUP_JPS_DBUNAME@g" config.yml
-    sed -i "s@DB_PASSWORD:.*@DB_PASSWORD: '$TMP_SETUP_JPS_DBPWD'@g" config.yml
-    sed -i "s@DB_NAME:.*@DB_NAME: $TMP_SETUP_JPS_DBNAME@g" config.yml
+    sed -i "s@DB_USER:.*@DB_USER: $TMP_SETUP_JMS_DBUNAME@g" config.yml
+    sed -i "s@DB_PASSWORD:.*@DB_PASSWORD: '$TMP_SETUP_JMS_DBPWD'@g" config.yml
+    sed -i "s@DB_NAME:.*@DB_NAME: $TMP_SETUP_JMS_DBNAME@g" config.yml
 
     local TMP_CMD_LINE=`awk '/cmd = / {print NR}' jms | awk 'NR==1{print}'`
     sed -i "$((TMP_CMD_LINE+1))a '--timeout', '60'," jms
@@ -80,22 +80,21 @@ function setup_jumpserver()
     mkdir -pv $DATA_DIR/jumpserver
     mv jumpserver $SETUP_DIR/
     
-    local TMP_JPS_DIR=$SETUP_DIR/jumpserver
+    local TMP_JMS_DIR=$SETUP_DIR/jumpserver
 
     # 进入 jumpserver 目录时将自动载入 python 虚拟环境
-    echo "source $TMP_PYENV3_ENVIRONMENT" > $TMP_JPS_DIR/.env
+    echo "source $TMP_PYENV3_ENVIRONMENT" > $TMP_JMS_DIR/.env
     
-    cd $TMP_JPS_DIR
+    cd $TMP_JMS_DIR
 
     #安装依赖 RPM 包
     yum -y install $(cat requirements/rpm_requirements.txt) --skip-broken
 
     pip install --upgrade pip setuptools
-    pip install django
     pip install -r requirements/requirements.txt
 
     #生成数据库表结构和初始化数据
-    sed -i "s@pysqlite2@from pysqlite3@g" $SETUP_DIR/pyenv3/lib/python3.6/site-packages/django/db/backends/sqlite3/base.py
+    # sed -i "s@pysqlite2@from pysqlite3@g" $SETUP_DIR/pyenv3/lib/python3.6/site-packages/django/db/backends/sqlite3/base.py
 
     cd utils
     source make_migrations.sh
@@ -103,7 +102,7 @@ function setup_jumpserver()
     
     ./jms start all -d
 
-    echo_startup_config "jumpserver" "$TMP_JPS_DIR" "./jms start all" "" "10" "$TMP_PYENV3_ENVIRONMENT"
+    echo_startup_config "jumpserver" "$TMP_JMS_DIR" "./jms start all" "" "10" "$TMP_PYENV3_ENVIRONMENT"
 
 	return $?
 }
@@ -135,8 +134,8 @@ function setup_coco()
     sed -i "s@NAME:.*@NAME: 'coco-localhost'@g" config.yml
     sed -i "s@CORE_HOST:.*@CORE_HOST: http://127.0.0.1:8080@g" config.yml
 
-    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JPS_TOKEN@g" config.yml
-    sed -i "s@# SECRET_KEY:.*@SECRET_KEY: '$TMP_JPS_SECRET_KEY'@g" config.yml
+    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JMS_TOKEN@g" config.yml
+    sed -i "s@# SECRET_KEY:.*@SECRET_KEY: '$TMP_JMS_SECRET_KEY'@g" config.yml
     sed -i "s@# LOG_LEVEL:.*@LOG_LEVEL: 'ERROR'@g" config.yml
     
     ./cocod start -d
@@ -262,6 +261,6 @@ function down_jumpserver()
 	return $?
 }
 
-rand_str "TMP_JPS_SECRET_KEY" 32
-local TMP_JPS_TOKEN=`cat /proc/sys/kernel/random/uuid`
+rand_str "TMP_JMS_SECRET_KEY" 32
+local TMP_JMS_TOKEN=`cat /proc/sys/kernel/random/uuid`
 setup_soft_basic "JumpServer" "down_jumpserver"

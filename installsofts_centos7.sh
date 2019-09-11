@@ -32,7 +32,7 @@ sudo hostnamectl set-hostname $SYS_NEW_NAME
 function link_logs()
 {
     local TMP_LOGS_IS_LINK=`ls -il /logs | grep "\->"`
-    if [ -n "$TMP_LOGS_IS_LINK" ]; then
+    if [ -z "$TMP_LOGS_IS_LINK" ]; then
         if [ -d "/logs" ]; then
             mv /logs $LOGS_DIR
             ln -sf $LOGS_DIR /logs

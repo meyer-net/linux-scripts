@@ -28,8 +28,10 @@ function setup_redis()
 
     if [ ! -f "$TMP_SETUP_REDIS_CONF_DIR/redis.conf" ]; then
         mkdir -pv $TMP_SETUP_REDIS_CONF_DIR
+
+        sed -i "s@^daemonize no@daemonize yes@g" redis.conf
+        sed -i "s@^127.0.0.1@0.0.0.0@g" redis.conf
         cp redis.conf $TMP_SETUP_REDIS_CONF_DIR
-        sed -i "s@^daemonize no@daemonize yes@g" $TMP_SETUP_REDIS_CONF_DIR/redis.conf
     fi
 
     ln -sf $TMP_SETUP_REDIS_CONF_DIR/redis.conf /etc/redis.conf
