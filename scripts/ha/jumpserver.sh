@@ -61,16 +61,14 @@ function setup_jumpserver()
 
     # 修改 Jumpserver 配置文件
     mv config_example.yml config.yml
-    sed -i "s@# BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: '$TMP_JPS_TOKEN'@g" config.yml
-    sed -i "s@DB_ENGINE: 'sqlite3'@#DB_ENGINE: 'sqlite3'@g" config.yml
-    sed -i "s@DB_NAME: os@#DB_NAME: os@g" config.yml
-
-    sed -i "s@# DB_ENGINE: 'mysql'@DB_ENGINE: 'mysql'@g" config.yml
-    sed -i "s@# DB_HOST:.*@DB_HOST: '$TMP_SETUP_DBADDRESS'@g" config.yml
-    sed -i "s@# DB_USER:.*@DB_USER: '$TMP_SETUP_JPS_DBUNAME'@g" config.yml
-    sed -i "s@# DB_PORT@DB_PORT@g" config.yml
-    sed -i "s@# DB_PASSWORD:.*@DB_PASSWORD: '$TMP_SETUP_JPS_DBPWD'@g" config.yml
-    sed -i "s@# DB_NAME:.*@DB_NAME: '$TMP_SETUP_JPS_DBNAME'@g" config.yml
+    
+    rand_str "TMP_JPS_SECRET_KEY" 32
+    sed -i "s@SECRET_KEY: .*@SECRET_KEY: '$TMP_JPS_SECRET_KEY'@g" config.yml
+    sed -i "s@BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: '$TMP_JPS_TOKEN'@g" config.yml
+    sed -i "s@DB_HOST:.*@DB_HOST: $TMP_SETUP_DBADDRESS@g" config.yml
+    sed -i "s@DB_USER:.*@DB_USER: $TMP_SETUP_JPS_DBUNAME@g" config.yml
+    sed -i "s@DB_PASSWORD:.*@DB_PASSWORD: '$TMP_SETUP_JPS_DBPWD'@g" config.yml
+    sed -i "s@DB_NAME:.*@DB_NAME: $TMP_SETUP_JPS_DBNAME@g" config.yml
 
     local TMP_CMD_LINE=`awk '/cmd = / {print NR}' jms | awk 'NR==1{print}'`
     sed -i "$((TMP_CMD_LINE+1))a '--timeout', '60'," jms
@@ -133,12 +131,11 @@ function setup_coco()
 
     mv config_example.yml config.yml
     
-    sed -i "s@/tmp@/tmp/uploads@g" coco/sftp.py
-    sed -i "s@# NAME: .*@NAME: 'coco'@g" config.yml
-    sed -i "s@# CORE_HOST: .*@CORE_HOST: 'http://127.0.0.1:8080'@g" config.yml
+    sed -i "s@NAME: .*@NAME: 'coco-localhost'@g" config.yml
+    sed -i "s@CORE_HOST: .*@CORE_HOST: http://127.0.0.1:8080@g" config.yml
 
-    sed -i "s@# BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: '$TMP_JPS_TOKEN'@g" config.yml
-    sed -i "s@# LOG_LEVEL: .*@LOG_LEVEL: 'ERROR'@g" config.yml
+    sed -i "s@BOOTSTRAP_TOKEN: .*@BOOTSTRAP_TOKEN: $TMP_JPS_TOKEN@g" config.yml
+    sed -i "s@LOG_LEVEL: .*@LOG_LEVEL: 'ERROR'@g" config.yml
     
     ./cocod start -d
 
