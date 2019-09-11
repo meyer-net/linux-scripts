@@ -5,7 +5,7 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 
-local TMP_PYENV3_ENVIRONMENT=$SETUP_DIR/pyenv3/bin/activate
+local TMP_PY3_JMS_ENV=$SETUP_DIR/pyenv3.jms
 function set_env()
 {
     # 需要提前安装Python
@@ -25,8 +25,12 @@ function set_env()
     echo 'LANG="zh_CN.UTF-8"' > /etc/locale.conf
     echo 'LANG=zh_CN.UTF-8' > /etc/sysconfig/i18n
 
+    if [ ! -f "$TMP_PY3_JMS_ENV" ]; then
+	    python3 -m venv $TMP_PY3_JMS_ENV
+    fi
+
     # 安装 Python 库依赖
-    source $TMP_PYENV3_ENVIRONMENT
+    source $TMP_PY3_JMS_ENV/bin/activate
     echo "----------------------------"
     echo "Current python version is： "
     python --version
@@ -48,19 +52,19 @@ function setup_jumpserver()
     local TMP_SETUP_JMS_DBUNAME="jumpserver"
 
     # 不能用&，否则会被识别成读取前一个值
-    local TMP_SETUP_JMS_DBPWD="jms@local!m+"
+    local TMP_SETUP_JMS_DBPWD="jms%local!m_"
     input_if_empty "TMP_SETUP_DBADDRESS" "JumpServer.Mysql: Please ender ${red}mysql host address${reset}"
 	input_if_empty "TMP_SETUP_DBUNAME" "JumpServer.Mysql: Please ender ${red}mysql user name${reset} of '$TMP_SETUP_DBADDRESS'"
 	input_if_empty "TMP_SETUP_DBPWD" "JumpServer.Mysql: Please ender ${red}mysql password${reset} of $TMP_SETUP_DBUNAME@$TMP_SETUP_DBADDRESS"
 	input_if_empty "TMP_SETUP_JMS_DBNAME" "JumpServer.Mysql: Please ender ${red}mysql database name${reset} of jumpserver($TMP_SETUP_DBADDRESS)"
     
-    local TMP_SETUP_JMS_SCRIPTS="
-        CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
+    local TMP_SETUP_JMS_SCRIPTS="        CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
         GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JMS_DBPWD';
         GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JMS_DBPWD';
-        FLUSH PRIVILEGES;"
+        FLUSH PRIVILEGES;
+    "
 
-    if [ "$TMP_SETUP_JMS_DBPWD" -eq "127.0.0.1" ]; then
+    if [ "$TMP_SETUP_JMS_DBPWD" == "127.0.0.1" ]; then
         mysql -h $TMP_SETUP_DBADDRESS -u$TMP_SETUP_DBUNAME -p"$TMP_SETUP_DBPWD" -e"
         $TMP_SETUP_JMS_SCRIPTS
         exit"
@@ -86,7 +90,7 @@ function setup_jumpserver()
     local TMP_SETUP_REDIS_ADDRESS="127.0.0.1"
     input_if_empty "TMP_SETUP_REDIS_ADDRESS" "JumpServer.Redis: Please ender ${red}redis host address${reset}"
 
-    if [ "$TMP_SETUP_REDIS_ADDRESS" -eq "127.0.0.1" ]; then
+    if [ "$TMP_SETUP_REDIS_ADDRESS" == "127.0.0.1" ]; then
         redis-cli config set stop-writes-on-bgsave-error no
     else
         sed -i "s@REDIS_HOST:.*@REDIS_HOST: $TMP_SETUP_REDIS_ADDRESS@g" config.yml
@@ -99,7 +103,7 @@ function setup_jumpserver()
     local TMP_JMS_DIR=$SETUP_DIR/jumpserver
 
     # 进入 jumpserver 目录时将自动载入 python 虚拟环境
-    echo "source $TMP_PYENV3_ENVIRONMENT" > $TMP_JMS_DIR/.env
+    echo "source $TMP_PY3_JMS_ENV/bin/activate" > $TMP_JMS_DIR/.env
     
     cd $TMP_JMS_DIR
 
@@ -118,7 +122,7 @@ function setup_jumpserver()
     
     ./jms start all -d
 
-    echo_startup_config "jumpserver" "$TMP_JMS_DIR" "./jms start all" "" "10" "$TMP_PYENV3_ENVIRONMENT"
+    echo_startup_config "jumpserver" "$TMP_JMS_DIR" "./jms start all" "" "10" "$TMP_PY3_JMS_ENV"
 
 	return $?
 }
@@ -135,14 +139,14 @@ function setup_coco()
     local TMP_COCO_DIR=$SETUP_DIR/coco
 
     # 进入 jumpserver 目录时将自动载入 python 虚拟环境
-    echo "source $TMP_PYENV3_ENVIRONMENT" > $TMP_COCO_DIR/.env
+    echo "source $TMP_PY3_JMS_ENV/bin/activate" > $TMP_COCO_DIR/.env
 
     cd $TMP_COCO_DIR
 
     local TMP_REQUIREMENTS_LIST=`cat requirements/rpm_requirements.txt`
     yum -y install $TMP_REQUIREMENTS_LIST --skip-broken
     
-    source $TMP_PYENV3_ENVIRONMENT
+    source $TMP_PY3_JMS_ENV/bin/activate
     pip install -r requirements/requirements.txt -i https://pypi.python.org/simple
 
     mv config_example.yml config.yml
@@ -156,7 +160,7 @@ function setup_coco()
     
     ./cocod start -d
 
-    echo_startup_config "coco" "$TMP_COCO_DIR" "./cocod start" "" "100" "$TMP_PYENV3_ENVIRONMENT"
+    echo_startup_config "coco" "$TMP_COCO_DIR" "./cocod start" "" "100" "$TMP_PY3_JMS_ENV"
 
     echo "Please entry 'http://localhost:8080/terminal/terminal/' to accept regist request。"
 
