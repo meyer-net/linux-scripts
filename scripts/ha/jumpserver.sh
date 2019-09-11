@@ -54,12 +54,20 @@ function setup_jumpserver()
 	input_if_empty "TMP_SETUP_DBPWD" "JumpServer.Mysql: Please ender ${red}mysql password${reset} of $TMP_SETUP_DBUNAME@$TMP_SETUP_DBADDRESS"
 	input_if_empty "TMP_SETUP_JMS_DBNAME" "JumpServer.Mysql: Please ender ${red}mysql database name${reset} of jumpserver($TMP_SETUP_DBADDRESS)"
     
-    mysql -h $TMP_SETUP_DBADDRESS -u$TMP_SETUP_DBUNAME -p"$TMP_SETUP_DBPWD" -e"
-    CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
-	GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JMS_DBPWD';
-	GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JMS_DBPWD';
-    FLUSH PRIVILEGES;
-    exit"
+    local TMP_SETUP_JMS_SCRIPTS="
+        CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
+        GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JMS_DBPWD';
+        GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JMS_DBPWD';
+        FLUSH PRIVILEGES;"
+
+    if [ "$TMP_SETUP_JMS_DBPWD" -eq "127.0.0.1" ]; then
+        mysql -h $TMP_SETUP_DBADDRESS -u$TMP_SETUP_DBUNAME -p"$TMP_SETUP_DBPWD" -e"
+        $TMP_SETUP_JMS_SCRIPTS
+        exit"
+    else
+        echo "JumpServer.Mysql: Please execute ${red}mysql scripts${reset} By Follow"
+        echo "$TMP_SETUP_JMS_SCRIPTS"
+    fi
 
     # 修改 Jumpserver 配置文件
     mv config_example.yml config.yml
@@ -74,7 +82,15 @@ function setup_jumpserver()
     local TMP_CMD_LINE=`awk '/cmd = / {print NR}' jms | awk 'NR==1{print}'`
     sed -i "$((TMP_CMD_LINE+1))a '--timeout', '60'," jms
 
-    redis-cli config set stop-writes-on-bgsave-error no
+    # 缓存
+    local TMP_SETUP_REDIS_ADDRESS="127.0.0.1"
+    input_if_empty "TMP_SETUP_REDIS_ADDRESS" "JumpServer.Redis: Please ender ${red}redis host address${reset}"
+
+    if [ "$TMP_SETUP_REDIS_ADDRESS" -eq "127.0.0.1" ]; then
+        redis-cli config set stop-writes-on-bgsave-error no
+    else
+        sed -i "s@REDIS_HOST:.*@REDIS_HOST: $TMP_SETUP_REDIS_ADDRESS@g" config.yml
+    fi
     
     cd ..
     mkdir -pv $DATA_DIR/jumpserver
