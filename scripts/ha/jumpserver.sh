@@ -58,10 +58,10 @@ function setup_jumpserver()
 	input_if_empty "TMP_SETUP_DBPWD" "JumpServer.Mysql: Please ender ${red}mysql password${reset} of $TMP_SETUP_DBUNAME@$TMP_SETUP_DBADDRESS"
 	input_if_empty "TMP_SETUP_JMS_DBNAME" "JumpServer.Mysql: Please ender ${red}mysql database name${reset} of jumpserver($TMP_SETUP_DBADDRESS)"
     
-    local TMP_SETUP_JMS_SCRIPTS="        CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
-        GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JMS_DBPWD';
-        GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JMS_DBPWD';
-        FLUSH PRIVILEGES;
+    local TMP_SETUP_JMS_SCRIPTS="CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
+GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JMS_DBPWD';
+GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JMS_DBPWD';
+FLUSH PRIVILEGES;
     "
 
     if [ "$TMP_SETUP_JMS_DBPWD" == "127.0.0.1" ]; then
@@ -115,10 +115,6 @@ function setup_jumpserver()
 
     #生成数据库表结构和初始化数据
     # sed -i "s@pysqlite2@from pysqlite3@g" $SETUP_DIR/pyenv3/lib/python3.6/site-packages/django/db/backends/sqlite3/base.py
-
-    cd utils
-    source make_migrations.sh
-    cd ..
     
     ./jms start all -d
 
@@ -181,8 +177,8 @@ server {
     #代理端口,以后将通过此端口进行访问,不再通过8080端口
     listen $TMP_NGX_APP_PORT;  
 
-    # 修改成你的域名或者注释掉
-    # server_name demo.jumpserver.org; 
+    #域名可以有多个，用空格隔开
+    server_name 127.0.0.1;
 
     #编码
     charset   utf-8;
@@ -190,11 +186,8 @@ server {
     #默认访问类型
     default_type text/html;
 
-    #域名可以有多个，用空格隔开
-    server_name 127.0.0.1;
-
     #开启目录浏览功能
-    #autoindex on;
+    autoindex on;
 
     #文件大小从KB开始显示
     autoindex_exact_size off;
@@ -207,10 +200,10 @@ server {
 
     #定义本虚拟主机的访问日志
     access_log logs/luna_access.log combined buffer=1k;
-    error_log logs/luna_access.log;
+    error_log logs/luna_error.log;
 
     location /luna/ {
-        try_files $uri $uri/ =404;
+        try_files \$uri / /index.html;
         alias $HTML_DIR/luna/;  # luna 路径,如果修改安装目录,此处需要修改
     }
 
@@ -219,9 +212,9 @@ server {
         root $DATA_DIR/jumpserver/;  # 录像位置,如果修改安装目录,此处需要修改
     }
 
-    #location /static/ {
-    #    root $DATA_DIR/jumpserver/;  # 静态资源,如果修改安装目录,此处需要修改
-    #}
+    location /static/ {
+        root $DATA_DIR/jumpserver/;  # 静态资源,如果修改安装目录,此处需要修改
+    }
 
     location /socket.io/ {
         proxy_pass       http://localhost:5000/socket.io/;  # 如果coco安装在别的服务器,请填写它的ip

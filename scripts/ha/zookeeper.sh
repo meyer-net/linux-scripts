@@ -32,7 +32,6 @@ function setup_zookeeper()
     sed -i "s@dataDir=.*@dataDir=$ZOOKEEPER_DATA_DIR@g" conf/zoo.cfg
     sed -i "s@clientPort=2181@clientPort=2233@g" conf/zoo.cfg
 
-    CLUSTER_ID=1
     input_if_empty "CLUSTER_ID" "ZooKeeper: Please Ender This Server Of Index In Cluster Like '1'"
     echo $CLUSTER_ID > $ZOOKEEPER_DATA_DIR/myid
 
