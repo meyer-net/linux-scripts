@@ -3,6 +3,7 @@
 # Net redir.
 # Clash：
 #       net_redir clash start 7892 `cat ~/.config/clash/config.yaml | grep "server:" | awk '{print $2}' | grep -v "^$" | sed ':a;N;$!ba;s/\n/,/g'`
+#       net_redir "${rule_name}" "start" ${tmp_redir_port} "1.1.1.1,2.2.2.2,3.3.3.3,x.x.x.x"
 # 其它NAT转发规则参考：
 # https://blog.csdn.net/zhouguoqionghai/article/details/81947603
 #-A INPUT -j REJECT --reject-with icmp-host-prohibited         //这两行最好是注释掉。在一般的白名单设置中，如果这两行不注释，也会造成iptables对端口的设置无效
@@ -75,6 +76,9 @@ function start () {
     iptables -t nat -I PREROUTING -p tcp -j ${program_upper_name}
 
     screen tail -f ${log_path}
+
+    # 最后显示设置
+    iptables -t nat -nvL
 }
 
 # 停止
