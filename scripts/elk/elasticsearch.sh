@@ -47,7 +47,11 @@ function setup_es()
 	ulimit -HSn 65536
 	echo "262144" > /proc/sys/vm/max_map_count
 	sysctl -p
+    sed -i "s@#node\.name:.*@node.name: node-default@g" config/elasticsearch.yml
+    sed -i "s@#cluster\.initial_master_nodes:.*@cluster.initial_master_nodes: [\"node-default\"]@g" config/elasticsearch.yml
+	
     sed -i "s@#network\.host:.*@network.host: 0.0.0.0@g" config/elasticsearch.yml
+    sed -i "s@discovery\.seed_hosts:.*@discovery.seed_hosts: [\"[::1]\"]@g" config/elasticsearch.yml
 
 	echo 'http.cors.enabled: true' >> config/elasticsearch.yml
 	echo 'http.cors.allow-origin: "*"' >> config/elasticsearch.yml
@@ -64,7 +68,8 @@ function boot_es()
 	cd $ES_DIR
 
 	#影响设定的启动文件.bash_profile、/etc/profile或/etc/security/limits.conf
-	su - elk -c "cd $ES_DIR && screen bash bin/elasticsearch"
+	su - elk -c "cd $ES_DIR && nohup bash bin/elasticsearch &"
+	tail -f nohup.out
 
     echo_startup_config "elasticsearch" "$ES_DIR" "su elk && bash bin/elasticsearch"
 

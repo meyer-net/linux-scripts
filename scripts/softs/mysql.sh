@@ -233,6 +233,7 @@ function set_db_slave()
 	#read -e DBS
 
 	sed -i "s@^server-id = 1@server-id = $LOCAL_ID@g" /etc/my.cnf
+	sed -i "s@^innodb_thread_concurrency =.*@innodb_thread_concurrency = 0@g" /etc/my.cnf
 
 	sed -i "/\[mysqld\]/a skip-slave-start" /etc/my.cnf
 	sed -i "/\[mysqld\]/a replicate-ignore-db = mysql" /etc/my.cnf
