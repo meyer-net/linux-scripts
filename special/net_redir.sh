@@ -70,10 +70,13 @@ function start () {
     
     # 7892是clash_redir端口
     iptables -t nat -A ${program_upper_name} -p tcp -j REDIRECT --to-ports ${tmp_redir_port}
+    iptables -t nat -A ${program_upper_name} -p udp -j REDIRECT --to-ports ${tmp_redir_port}
     
     # OUTPUT链添加一条规则，重定向至REDIR链
     iptables -t nat -I OUTPUT -p tcp -j ${program_upper_name}
+    iptables -t nat -I OUTPUT -p udp -j ${program_upper_name}
     iptables -t nat -I PREROUTING -p tcp -j ${program_upper_name}
+    iptables -t nat -I PREROUTING -p udp -j ${program_upper_name}
 
     screen tail -f ${log_path}
 
@@ -87,7 +90,9 @@ function stop () {
     {
         iptables -t nat -F ${program_upper_name}
     	iptables -t nat -D PREROUTING -p tcp -j ${program_upper_name}
+    	iptables -t nat -D PREROUTING -p udp -j ${program_upper_name}
     	iptables -t nat -X ${program_upper_name}
+    	iptables -t nat -Z ${program_upper_name}
 
         echo
 

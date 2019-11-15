@@ -66,7 +66,7 @@ RETVAL=0
 
 # Fix exception Running
 if [ -e \$PIDFILE ]; then 
-    SUPERVISORD_RUNNING_DATA=`ps -fe | grep supervisord | grep -v grep`
+    SUPERVISORD_RUNNING_DATA=\`ps -fe | grep supervisord | grep -v grep\`
     if [ -z "\$SUPERVISORD_RUNNING_DATA" ]; then
         echo "Clean pid & lock files"
         rm -rf /tmp/supervisor*
