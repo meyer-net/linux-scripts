@@ -23,6 +23,8 @@ function setup_php56()
 	PHP56_ATT_DIR=$ATT_DIR/php56
 	PHP56_ATT_CONF_DIR=$PHP56_ATT_DIR/etc
 
+	mkdir -pv $PHP56_ATT_CONF_DIR
+
 	#部分系统编译可能会出现错误，解决方案如右：http://www.poluoluo.com/jzxy/201505/364819.html
 	#缺少安装包的情况，下载MCrypt，Libmcrypt：https://sourceforge.net/projects/mcrypt/files/
 	#MHASH：https://sourceforge.net/projects/mhash/files/mhash/0.9.9.9/mhash-0.9.9.9.tar.gzSETUP_DIR
@@ -174,10 +176,9 @@ zend_loader.license_path=
 
 EOF
 
-    	echo "Start Install Composer..."
-    	curl -sS https://getcomposer.org/installer | php -- --install-dir=$PHP56_SETUP_DIR/bin
-		ln -sf $PHP56_SETUP_DIR/bin/composer.phar /usr/bin/composer
-	fi
+	echo "Start Install Composer..."
+	curl -sS https://getcomposer.org/installer | php -- --install-dir=$PHP56_SETUP_DIR/bin
+	ln -sf $PHP56_SETUP_DIR/bin/composer.phar /usr/bin/composer
 
 	return $?
 }
