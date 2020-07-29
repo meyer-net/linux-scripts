@@ -19,7 +19,7 @@ source common/common.sh
 
 #---------- BASE ---------- {
 # 迁移packages
-mv packages/* $DOWN_DIR
+yes | cp packages/* $DOWN_DIR
 #}
 
 #---------- CHANGE ---------- {

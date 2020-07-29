@@ -39,11 +39,9 @@ function setup_libs()
 	sudo yum -y install gcc*
 	sudo yum -y install autoconf
 	sudo yum -y install freetype*
-	sudo yum -y install libxml2*
-	sudo yum -y install libxml2-*
+	sudo yum -y install libxml2* install libxml2-*
 	sudo yum -y install zlib*
-	sudo yum -y install glibc*
-	sudo yum -y install glib2*
+	sudo yum -y install glibc* glib2*
 	sudo yum -y install bzip2*
 	sudo yum -y install ncurses*
 	sudo yum -y install curl*
@@ -53,8 +51,7 @@ function setup_libs()
 	sudo yum -y install openssl*
 	sudo yum -y install openldap*
 	sudo yum -y install nss_ldap
-	sudo yum -y install openldap-clients
-	sudo yum -y install openldap-servers
+	sudo yum -y install openldap-clients openldap-servers
 	sudo yum -y install patch
 	sudo yum -y install make
 	sudo yum -y install jpackage-utils
@@ -64,7 +61,6 @@ function setup_libs()
 	sudo yum -y install pkgconfig
 	sudo yum -y install glib-devel
 	sudo yum -y install httpd-devel
-	sudo yum -y install libX11-devel
 	sudo yum -y install fontconfig
 	sudo yum -y install pango-devel
 	sudo yum -y install ruby
@@ -74,6 +70,7 @@ function setup_libs()
 	sudo yum -y install gcc-g77
 	sudo yum -y install automake
 	sudo yum -y install fiex*
+	sudo yum -y install libX11-devel libx11* libiconv
 	sudo yum -y install libmcrypt*
 	sudo yum -y install libtool-ltdl-devel*
 	sudo yum -y install pcre*
@@ -82,11 +79,7 @@ function setup_libs()
 	sudo yum -y install libevent
 	sudo yum -y install libevent-devel
 	sudo yum -y install gif*
-	sudo yum -y install libtiff*
-	sudo yum -y install libjpeg*
-	sudo yum -y install libpng*
-	sudo yum -y install libx11*
-	sudo yum -y install libiconv
+	sudo yum -y install libtiff* libjpeg* libpng* 
 	sudo yum -y install mcrypt
 	sudo yum -y install libuuid*
 	sudo yum -y install iptables-services

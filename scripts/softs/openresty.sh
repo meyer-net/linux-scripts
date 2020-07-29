@@ -52,7 +52,7 @@ function setup_openresty()
 
     #若是升级操作，则在此之前停止，完成以下操作
     #cp $MOUNT_DIR/bin/openresty/nginx/sbin/nginx $MOUNT_DIR/bin/openresty/nginx/sbin/nginx.bak
-    #cp $MOUNT_DIR/tmp/openresty-1.15.8.2/build/nginx-1.11.2/objs/nginx  $MOUNT_DIR/bin/openresty/nginx/sbin/
+    #cp $MOUNT_DIR/tmp/openresty-1.17.8.2/build/nginx-1.11.2/objs/nginx  $MOUNT_DIR/bin/openresty/nginx/sbin/
 
     #创建软连接
     ln -sf $TMP_SETUP_OPENRESTY_NGX_DIR/nginx /usr/bin/nginx
@@ -171,7 +171,7 @@ function setup_lor()
 function setup_libs()
 {
     wget_unpack_dist "https://github.com/doujiang24/lua-resty-kafka/archive/master.zip" "lib/resty" "$TMP_SETUP_OPENRESTY_DIR/lualib"
-    wget_unpack_dist "http://www.inf.puc-rio.br/~roberto/lpeg/lpeg-1.0.1.tar.gz" "lpeg.so" "$TMP_SETUP_OPENRESTY_DIR/lualib" "
+    wget_unpack_dist "http://www.inf.puc-rio.br/~roberto/lpeg/lpeg-1.0.2.tar.gz" "lpeg.so" "$TMP_SETUP_OPENRESTY_DIR/lualib" "
         sed -i \"s@LUADIR =.*@LUADIR = $TMP_SETUP_OPENRESTY_DIR/luajit/include/luajit-2.1@g\" makefile
         sudo make -j4
     "
@@ -312,14 +312,14 @@ EOF
 
 function down_openresty()
 {
-    setup_soft_wget "openresty" "https://openresty.org/download/openresty-1.15.8.2.tar.gz" "setup_openresty"
+    setup_soft_wget "openresty" "https://openresty.org/download/openresty-1.17.8.2.tar.gz" "setup_openresty"
 
 	return $?
 }
 
 function down_luarocks()
 {
-    setup_soft_wget "luarocks" "http://luarocks.github.io/luarocks/releases/luarocks-3.2.1.tar.gz" "setup_luarocks"
+    setup_soft_wget "luarocks" "http://luarocks.github.io/luarocks/releases/luarocks-3.3.1.tar.gz" "setup_luarocks"
 
 	return $?
 }
