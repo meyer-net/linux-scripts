@@ -27,6 +27,8 @@ function setup_$soft_name()
 	# make -j4 && make -j4 install
 
 	## 通用
+	conf_environment
+
 	ln -sf $$setup_upper_name_SETUP_DIR/bin/$setup_name /usr/bin/$setup_name
 
 	return $?
@@ -63,7 +65,6 @@ function down_$soft_name()
 	set_environment
 	check_newer
     setup_soft_wget "$setup_name" "$down_url" "setup_$soft_name"
-	conf_environment
 
 	return $?
 }
