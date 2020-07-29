@@ -12,6 +12,8 @@ function set_environment()
 
 function setup_$soft_name()
 {
+	set_environment
+
 	local $setup_upper_name_CURRENT_DIR=`pwd`
 	local $setup_upper_name_SETUP_DIR=$SETUP_DIR/$setup_name
 
@@ -62,7 +64,6 @@ function boot_$soft_name()
 
 function down_$soft_name()
 {
-	set_environment
 	check_newer
     setup_soft_wget "$setup_name" "$down_url" "setup_$soft_name"
 

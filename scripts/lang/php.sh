@@ -17,6 +17,8 @@ function set_environment()
 
 function setup_php56()
 {
+	set_environment
+	
 	PHP56_CURRENT_DIR=`pwd`
 
 	PHP56_SETUP_DIR=$SETUP_DIR/php56
@@ -32,7 +34,7 @@ function setup_php56()
 	#或安装第三方yum源 wget http://www.atomicorp.com/installers/atomic && sh ./atomic
 	sudo ./configure --prefix=$PHP56_SETUP_DIR --with-config-file-path=$PHP56_ATT_CONF_DIR --with-libdir=lib64 --enable-fpm --with-fpm-user=php --with-fpm-group=lnmp --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-iconv-dir --with-freetype-dir=$SETUP_DIR/freetype --with-jpeg-dir --with-png-dir --with-zlib --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --enable-mbregex --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --with-gettext --disable-fileinfo --enable-opcache --enable-intl
 	sudo make -j4 && sudo make -j4 install
-	
+
 	conf_environment
 
 	return $?
@@ -78,7 +80,6 @@ function conf_environment()
 
 function down_php()
 {
-	set_environment
     setup_soft_wget "php56" "http://cn2.php.net/distributions/php-5.6.24.tar.gz" "setup_php56"
 
 	return $?
