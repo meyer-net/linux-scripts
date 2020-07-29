@@ -18,7 +18,7 @@ CURRENT_USER=`whoami`
 DOWN_DIR=/tmp
 
 # 默认找最大的磁盘
-MOUNT_DIR=$(df -k | awk '{print $2}' | awk '{if (NR>2) {print}}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} sh -c 'df -k | grep "$1" | awk "{print \$NF}"' -- {})
+MOUNT_DIR=$(df -k | awk '{print $2}' | awk '{if (NR>2) {print}}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} sh -c 'df -k | grep "$1" | awk "{print \$NF}" | cut -c2' -- {})
 MOUNT_DIR=${MOUNT_DIR:-"/clouddisk"}/work
 SETUP_DIR=/opt
 DEFAULT_DIR=/home/$CURRENT_USER/default
