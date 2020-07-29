@@ -18,7 +18,7 @@ function set_environment()
 function setup_php56()
 {
 	set_environment
-	
+
 	PHP56_CURRENT_DIR=`pwd`
 
 	PHP56_SETUP_DIR=$SETUP_DIR/php56
@@ -43,6 +43,12 @@ function setup_php56()
 function conf_environment()
 {
     echo "Link to php-bin..."
+	
+	rm -rf /usr/bin/php
+	rm -rf /usr/bin/phpize
+	rm -rf /usr/bin/pear
+	rm -rf /usr/bin/pecl
+
 	ln -sf $PHP56_SETUP_DIR/bin/php /usr/bin/php
 	ln -sf $PHP56_SETUP_DIR/bin/phpize /usr/bin/phpize
 	ln -sf $PHP56_SETUP_DIR/bin/pear /usr/bin/pear
@@ -66,7 +72,6 @@ function conf_environment()
 	pecl config-set php_ini $PHP56_ATT_CONF_DIR/php.ini
 
 	echo "Copy init.d.php-fpm into startup and start..."
-	sed -i "s@php_fpm_conf=.*@php_fpm_conf=$PHP56_ATT_CONF_DIR/php-fpm.conf@g" sapi/fpm/init.d.php-fpm
 	chmod +x sapi/fpm/init.d.php-fpm
 	cp sapi/fpm/init.d.php-fpm $PHP56_ATT_DIR/php-fpm
 	ln -sf $PHP56_ATT_DIR/php-fpm /usr/bin/php-fpm 
@@ -95,13 +100,8 @@ function setup_phpredis()
 
 	PHPREDIS_SETUP_DIR=$SETUP_DIR/phpredis
 
-	#部分系统编译可能会出现错误，解决方案如右：http://www.poluoluo.com/jzxy/201505/364819.html
-	#缺少安装包的情况，下载MCrypt，Libmcrypt：https://sourceforge.net/projects/mcrypt/files/
-	#MHASH：https://sourceforge.net/projects/mhash/files/mhash/0.9.9.9/mhash-0.9.9.9.tar.gzSETUP_DIR
-	#参考：http://www.cnblogs.com/huangzhen/archive/2012/09/12/2681861.html
-	#或安装第三方yum源 wget http://www.atomicorp.com/installers/atomic && sh ./atomic
 	phpize
-	./configure --prefix=$PHPREDIS_SETUP_DIR --with-php-config=$PHP56_SETUP_DIR/bin/php-config --with-openssl # 
+	./configure --prefix=$PHPREDIS_SETUP_DIR --with-php-config=$PHP56_SETUP_DIR/bin/php-config # 
 	make -j4 && sudo make -j4 install
 	echo "extension=\"redis.so\"" >> $PHP56_ATT_CONF_DIR/php.ini
 
@@ -134,6 +134,8 @@ request_slowlog_timeout = 1
 slowlog = var/log/slow.log
 EOF
 
+	ln -sf $PHP56_ATT_CONF_DIR/php-fpm.conf $PHP56_SETUP_DIR/etc/php-fpm.conf
+
 	return $?
 }
 
@@ -147,24 +149,21 @@ function boot_php()
 
 function down_phpredis()
 {
-    setup_soft_git "PhpRedis" "https://github.com/phpredis/phpredis" "setup_phpredis"
+    setup_soft_wget "PhpRedis" "http://pecl.php.net/get/redis-4.3.0.tgz" "setup_phpredis"
 
 	return $?
 }
 
 setup_soft_basic "PHP-Redis" "down_phpredis"
 
-function setup_phpredis()
+function setup_phpzend56()
 {
 	sudo mkdir -pv $PHP56_SETUP_DIR/zend
 	cp ZendGuardLoader.so $PHP56_SETUP_DIR/zend
 	echo "Write ZendGuardLoader to php.ini..."
 	cat >>$PHP56_ATT_CONF_DIR/php.ini<<EOF
-
 ;eaccelerator
-
 ;ionCube
-
 ;opcache
 
 [Zend ZendGuard Loader]
@@ -175,7 +174,6 @@ zend_loader.obfuscation_level_support=3
 zend_loader.license_path=
 
 ;xcache
-
 EOF
 
 	echo "Start Install Composer..."
