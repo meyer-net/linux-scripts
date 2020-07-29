@@ -62,10 +62,12 @@ function setup_openresty()
     echo_soft_port 80
 
     #创建所需目录
-    sudo mkdir -pv $TMP_SETUP_OPENRESTY_ATT_DIR/logs/application
-    sudo mkdir -pv $TMP_SETUP_OPENRESTY_ATT_DIR/logs/error
-    sudo mkdir -pv $TMP_SETUP_OPENRESTY_ATT_DIR/logs/access
-    sudo mkdir -pv $TMP_SETUP_OPENRESTY_ATT_DIR/logs/proxy
+    local TMP_SETUP_OPENRESTY_LOGS_DIR=$LOGS_DIR/openresty
+    sudo mkdir -pv $TMP_SETUP_OPENRESTY_LOGS_DIR/application
+    sudo mkdir -pv $TMP_SETUP_OPENRESTY_LOGS_DIR/error
+    sudo mkdir -pv $TMP_SETUP_OPENRESTY_LOGS_DIR/access
+    sudo mkdir -pv $TMP_SETUP_OPENRESTY_LOGS_DIR/proxy
+    sudo mkdir -pv $TMP_SETUP_OPENRESTY_LOGS_DIR $TMP_SETUP_OPENRESTY_ATT_DIR/logs
     sudo mkdir -pv $TMP_SETUP_OPENRESTY_ATT_DIR/conf/vhosts
 
     #创建软连接，启动NGINX服务
@@ -218,6 +220,7 @@ function setup_orange()
     sudo make -j4 install
 
     cd $ORANGE_DIR
+    
     sed -i "s@/usr/local/orange@$ORANGE_DIR/orange@g" $ORANGE_DIR/orange/bin/cmds/reload.lua
     sed -i "s@/usr/local/orange@$ORANGE_DIR/orange@g" $ORANGE_DIR/orange/bin/cmds/restart.lua
     sed -i "s@/usr/local/orange@$ORANGE_DIR/orange@g" $ORANGE_DIR/orange/bin/cmds/start.lua

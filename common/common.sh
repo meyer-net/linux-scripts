@@ -5,6 +5,7 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 # http://blog.csdn.net/u010861514/article/details/51028220
+# 命令参考：https://www.jianshu.com/p/1bbdbf1aa1bd
 
 # ret, err, code = run_cmd(check_java_cmd)
 # def run_cmd(cmd):
