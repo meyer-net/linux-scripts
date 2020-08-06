@@ -231,13 +231,13 @@ function gen_nginx_starter()
     local TMP_DATE=`date +%Y%m%d%H%M%S`
 
     local TMP_NGX_APP_NAME="tmp"
-    local TMP_NGX_APP_PATH="$HTML_DIR/tmp"
     local TMP_NGX_APP_PORT=""
 	rand_val "TMP_NGX_APP_PORT" 1024 2048
     
     input_if_empty "TMP_NGX_APP_NAME" "NGX_CONF: Please Ender Application Name Like 'nginx' Or Else"
 	set_if_empty "TMP_NGX_APP_NAME" "prj_$TMP_DATE"
     
+    local TMP_NGX_APP_PATH="$HTML_DIR/$TMP_NGX_APP_NAME"
     input_if_empty "TMP_NGX_APP_PATH" "NGX_CONF: Please Ender Application Path Like '/usr/bin' Or Else"
 	set_if_empty "TMP_NGX_APP_PATH" "$NGINX_DIR"
     
@@ -294,19 +294,19 @@ function path_not_exits_action()
 		return $?
 	fi
 
-	local _tmp_not_exits_path="$1"
-	local _tmp_not_exits_path_func="$2"
-	local _tmp_not_exits_path_echo="$3"
+	local _TMP_NOT_EXITS_PATH="$1"
+	local _TMP_NOT_EXITS_PATH_FUNC="$2"
+	local _TMP_NOT_EXITS_PATH_ECHO="$3"
 
-	if [ "$_tmp_not_exits_path" == "~" ]; then
-		_tmp_not_exits_path="/$USER"
+	if [ "$_TMP_NOT_EXITS_PATH" == "~" ]; then
+		_TMP_NOT_EXITS_PATH="/$USER"
 	fi
 
-	if [ ! -f "$_tmp_not_exits_path" ]; then
-		$_tmp_not_exits_path_func
+	if [ ! -f "$_TMP_NOT_EXITS_PATH" ]; then
+		$_TMP_NOT_EXITS_PATH_FUNC
 	else
-		if [ ${#_tmp_not_exits_path_echo} -gt 0 ]; then
-			echo $_tmp_not_exits_path_echo
+		if [ ${#_TMP_NOT_EXITS_PATH_ECHO} -gt 0 ]; then
+			echo $_TMP_NOT_EXITS_PATH_ECHO
 		fi
 
 		return 0;
@@ -613,9 +613,9 @@ function setup_soft_wget()
 				unzip -o $TMP_SOFT_WGET_FILE_NAME
 			fi
 		else
-			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`tar -tf $TMP_SOFT_WGET_FILE_NAME | awk 'NR==1{print}' | sed s@/.*@""@g`
+			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`tar -tf $TMP_SOFT_WGET_FILE_NAME | grep '/' | awk 'NR==1{print}' | sed s@/.*@""@g`
 			if [ ! -d "$TMP_SOFT_WGET_FILE_NAME_NO_EXTS" ]; then
-				tar -xvf $TMP_SOFT_WGET_FILE_NAME
+				tar -zxvf $TMP_SOFT_WGET_FILE_NAME
 			fi
 		fi
 		
@@ -623,6 +623,8 @@ function setup_soft_wget()
 
 		#安装函数调用
 		$TMP_SOFT_WGET_SETUP_FUNC "$TMP_SOFT_SETUP_PATH"
+	
+		echo "Complete."
 	fi
 
 	return $?
@@ -660,6 +662,8 @@ function setup_soft_git()
 
 		#安装函数调用
 		$TMP_SOFT_GIT_SETUP_FUNC "$TMP_SOFT_SETUP_PATH"
+	
+		echo "Complete."
 	fi
 
 	return $?
@@ -696,6 +700,8 @@ function setup_soft_pip()
 
 		#安装后配置函数
 		$TMP_SOFT_PIP_SETUP_FUNC
+	
+		echo "Complete."
 	fi
 
 	return $?
@@ -1357,6 +1363,7 @@ EOF
 #新增一个授权端口
 #参数1：需放开端口
 #参数2：授权IP
+#参数3：ALL/TCP/UDP
 function echo_soft_port()
 {
 	if [ $? -ne 0 ]; then
