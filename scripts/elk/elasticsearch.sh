@@ -6,47 +6,54 @@
 #------------------------------------------------
 #https://www.jianshu.com/p/ea15478f51e3
 
-function set_es()
-{	
-    groupadd elk
-    useradd -g elk elk
-	passwd elk
-
-    # 安装插件需要提前安装nodejs
-    # cd $WORK_PATH
-    # source scripts/lang/nodejs.sh
-
-	return $?
-}
-
-function setup_es()
+# 1-配置环境
+function set_environment()
 {
-	ES_CURRENT_DIR=`pwd`
-
-	cd ..
-	local ES_DIR=$SETUP_DIR/elasticsearch
-	mv $ES_CURRENT_DIR $ES_DIR
-	chown -R elk:elk $ES_DIR
-
-	cd $ES_DIR
-    # sed -i "s@#path.data:.*@path.data: $ES_DATA_DIR@g" config/elasticsearch.yml
-    # sed -i "s@#path.logs:.*@path.logs: $ES_LOGS_DIR@g" config/elasticsearch.yml
-
-	local ES_LOGS_DIR=$ES_DIR/logs
-	local ES_DATA_DIR=$ES_DIR/data
-
-	mkdir -pv $LOGS_DIR/elasticsearch
-	mkdir -pv $DATA_DIR/elasticsearch
-
-	ln -sf $LOGS_DIR/elasticsearch $ES_LOGS_DIR
-	ln -sf $DATA_DIR/elasticsearch $ES_DATA_DIR
-
-	chown -R elk:elk $ES_DATA_DIR
-	chown -R elk:elk $ES_LOGS_DIR
+	create_user_if_not_exists elk elk
 
 	ulimit -HSn 65536
 	echo "262144" > /proc/sys/vm/max_map_count
 	sysctl -p
+
+	return $?
+}
+
+# 2-安装软件
+function setup_elasticsearch()
+{
+	local TMP_ELK_ES_SETUP_DIR=${1}
+	local TMP_ELK_ES_CURRENT_DIR=`pwd`
+	
+	cd ..
+	mv ${TMP_ELK_ES_CURRENT_DIR:-} ${TMP_ELK_ES_SETUP_DIR}
+
+	local TMP_ELK_ES_LNK_LOGS_DIR=${LOGS_DIR}/elasticsearch
+	local TMP_ELK_ES_LNK_DATA_DIR=${DATA_DIR}/elasticsearch
+	local TMP_ELK_ES_LOGS_DIR=${TMP_ELK_ES_SETUP_DIR}/logs
+	local TMP_ELK_ES_DATA_DIR=${TMP_ELK_ES_SETUP_DIR}/data
+
+	# 先清理文件，再创建文件
+	rm -rf ${TMP_ELK_ES_LOGS_DIR}
+	rm -rf ${TMP_ELK_ES_DATA_DIR}
+	mkdir -pv ${TMP_ELK_ES_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_ELK_ES_LNK_DATA_DIR}
+
+	ln -sf ${TMP_ELK_ES_LNK_LOGS_DIR} ${TMP_ELK_ES_LOGS_DIR}
+	ln -sf ${TMP_ELK_ES_LNK_DATA_DIR} ${TMP_ELK_ES_DATA_DIR}
+
+	# 授权权限，否则无法写入
+	chown -R elk:elk ${TMP_ELK_ES_SETUP_DIR}
+	chown -R elk:elk ${TMP_ELK_ES_LNK_LOGS_DIR}
+	chown -R elk:elk ${TMP_ELK_ES_LNK_DATA_DIR}
+
+	return $?
+}
+
+# 3-设置软件
+function set_elasticsearch()
+{
+	cd ${1}
+
     sed -i "s@#node\.name:.*@node.name: node-default@g" config/elasticsearch.yml
     sed -i "s@#cluster\.initial_master_nodes:.*@cluster.initial_master_nodes: [\"node-default\"]@g" config/elasticsearch.yml
 	
@@ -56,32 +63,47 @@ function setup_es()
 	echo 'http.cors.enabled: true' >> config/elasticsearch.yml
 	echo 'http.cors.allow-origin: "*"' >> config/elasticsearch.yml
 
-	boot_es $ES_DIR
-
 	return $?
 }
 
-function boot_es()
+# 4-启动软件
+function boot_elasticsearch()
 {
-	ES_DIR=$1
-
-	cd $ES_DIR
+	local TMP_ELK_ES_SETUP_DIR=${1}
 
 	#影响设定的启动文件.bash_profile、/etc/profile或/etc/security/limits.conf
-	su - elk -c "cd $ES_DIR && nohup bash bin/elasticsearch &"
-	tail -f nohup.out
-
-    echo_startup_config "elasticsearch" "$ES_DIR" "su elk && bash bin/elasticsearch"
+	# su - elk -c "nohup bash bin/elasticsearch >/dev/null 2>&1 &"
+	su - elk -c "cd ${TMP_ELK_ES_SETUP_DIR} && nohup bash bin/elasticsearch &"
+	
+    echo_startup_config "elasticsearch" "${TMP_ELK_ES_SETUP_DIR}" "bash bin/elasticsearch" "" "1" "" "elk"
 
 	return $?
 }
 
-function down_es()
+# x-执行步骤
+function exec_step_elasticsearch()
 {
-	set_es
-    setup_soft_wget "elasticsearch" "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.3.1-linux-x86_64.tar.gz" "setup_es"
+	local TMP_ELK_ES_SETUP_DIR=${1}
+
+	set_environment "${TMP_ELK_ES_SETUP_DIR}"
+
+	setup_elasticsearch "${TMP_ELK_ES_SETUP_DIR}"
+
+	set_elasticsearch "${TMP_ELK_ES_SETUP_DIR}"
+
+	boot_elasticsearch "${TMP_ELK_ES_SETUP_DIR}"
 
 	return $?
 }
 
-setup_soft_basic "ElasticSearch" "down_es"
+function down_elasticsearch()
+{
+	ELK_ELASTICSEARCH_SETUP_NEWER="7.8.0"
+	set_github_soft_releases_newer_version "ELK_ELASTICSEARCH_SETUP_NEWER" "elastic/elasticsearch"
+	exec_text_format "ELK_ELASTICSEARCH_SETUP_NEWER" "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-%-linux-x86_64.tar.gz"
+    setup_soft_wget "elasticsearch" "$ELK_ELASTICSEARCH_SETUP_NEWER" "exec_step_elasticsearch"
+
+	return $?
+}
+
+setup_soft_basic "ElasticSearch" "down_elasticsearch"

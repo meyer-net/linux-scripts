@@ -24,7 +24,7 @@ function set_phpini()
 
 	local TMP_PHP_CURRENT_MEMORY_SIZE_M=`expr $MEMORY_GB_FREE / 2 \* 1024 + 1024`
 	
-	sed -i "s@memory_limit =.*@memory_limit = $TMP_PHP_CURRENT_MEMORY_SIZE_M\M@g" $TMP_PHP_INI_PATH
+	sed -i "s@memory_limit =.*@memory_limit = ${TMP_PHP_CURRENT_MEMORY_SIZE_M}M@g" $TMP_PHP_INI_PATH
 	sed -i 's@[;]*post_max_size =.*@post_max_size = 50M@g' $TMP_PHP_INI_PATH
 	sed -i 's@[;]*upload_max_filesize =.*@upload_max_filesize = 50M@g' $TMP_PHP_INI_PATH
 	sed -i 's@[;]*date.timezone =.*@date.timezone = PRC@g' $TMP_PHP_INI_PATH

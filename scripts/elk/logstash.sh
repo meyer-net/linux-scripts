@@ -5,54 +5,66 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 
-function set_logstash()
-{	
-    groupadd elk
-    useradd -g elk elk
-	echo
+function set_environment()
+{
+	create_user_if_not_exists elk elk
+	
+    source scripts/lang/java.sh
 
 	return $?
 }
 
 function setup_logstash()
 {
-	LOGSTASH_CURRENT_DIR=`pwd`
-
+	local TMP_ELK_LS_SETUP_DIR=${1}
+	local TMP_ELK_LS_CURRENT_DIR=`pwd`
+	
 	cd ..
-	local LOGSTASH_DIR=$SETUP_DIR/logstash
-	mv $LOGSTASH_CURRENT_DIR $LOGSTASH_DIR
-	chown -R elk:elk $LOGSTASH_DIR
+	mv ${TMP_ELK_LS_CURRENT_DIR:-} ${TMP_ELK_LS_SETUP_DIR}
 
-	cd $LOGSTASH_DIR
+	local TMP_ELK_LS_LNK_LOGS_DIR=${LOGS_DIR}/logstash
+	local TMP_ELK_LS_LNK_DATA_DIR=${DATA_DIR}/logstash
+	local TMP_ELK_LS_LOGS_DIR=${TMP_ELK_LS_SETUP_DIR}/logs
+	local TMP_ELK_LS_DATA_DIR=${TMP_ELK_LS_SETUP_DIR}/data
 
-	local LOGSTASH_LOGS_DIR=$LOGSTASH_DIR/logs
-	local LOGSTASH_DATA_DIR=$LOGSTASH_DIR/data
+	# 先清理文件，再创建文件
+	rm -rf ${TMP_ELK_LS_LOGS_DIR}
+	rm -rf ${TMP_ELK_LS_DATA_DIR}
+	mkdir -pv ${TMP_ELK_LS_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_ELK_LS_LNK_DATA_DIR}
 
-	mkdir -pv $LOGS_DIR/logstash
-	mkdir -pv $DATA_DIR/logstash
+	ln -sf ${TMP_ELK_LS_LNK_LOGS_DIR} ${TMP_ELK_LS_LOGS_DIR}
+	ln -sf ${TMP_ELK_LS_LNK_DATA_DIR} ${TMP_ELK_LS_DATA_DIR}
 
-	ln -sf $LOGSTASH_LOGS_DIR $LOGS_DIR/logstash
-	ln -sf $LOGSTASH_DATA_DIR $DATA_DIR/logstash
+	# 授权权限，否则无法写入
+	chown -R elk:elk ${TMP_ELK_LS_SETUP_DIR}
+	chown -R elk:elk ${TMP_ELK_LS_LNK_LOGS_DIR}
+	chown -R elk:elk ${TMP_ELK_LS_LNK_DATA_DIR}
 
-	chown -R elk:elk $LOGSTASH_DATA_DIR
-	chown -R elk:elk $LOGSTASH_LOGS_DIR
+	return $?
+}
+
+# 3-设置软件
+function set_logstash()
+{
+	cd ${1}
 
 	cp config/logstash-sample.conf config/logstash.conf
 
-	local ELASTICSEARCH_HOST=$LOCAL_HOST
-    input_if_empty "ELASTICSEARCH_HOST" "Logstash: Please ender your ${red}elasticsearch host address${reset} like '$LOCAL_HOST'"
-    sed -i "s@localhost@$ELASTICSEARCH_HOST@g" config/logstash.conf
+	local TMP_ELK_ES_HOST=${LOCAL_HOST}
+    input_if_empty "TMP_ELK_ES_HOST" "Logstash: Please ender your ${red}elasticsearch host address${reset} like '${LOCAL_HOST}'"
+	set_if_equals "TMP_ELK_ES_HOST" "LOCAL_HOST" "127.0.0.1"
 
-	boot_logstash $LOGSTASH_DIR
+    sed -i "s@localhost@${TMP_ELK_ES_HOST}@g" config/logstash.conf
 
 	return $?
 }
 
 function boot_logstash()
 {
-	LOGSTASH_DIR=$1
+	local TMP_LS_SETUP_DIR=${1}
 
-	cd $LOGSTASH_DIR
+	cd $TMP_LS_SETUP_DIR
 	
 	# （1）测试启动，看配置文件是否正确：
 	bin/logstash -f first-pipeline.conf --config.test_and_exit
@@ -68,17 +80,34 @@ function boot_logstash()
 	bin/logstash -f config/logstash.conf --config.test_and_exit
 
 	# 启动logstash，如果有修改conf会自动加载
-	su - elk -c "cd $LOGSTASH_DIR && nohup bin/logstash -f config/logstash.conf --config.reload.automatic &" 
+	su - elk -c "cd $TMP_LS_SETUP_DIR && nohup bin/logstash -f config/logstash.conf --config.reload.automatic &" 
 	
-    echo_startup_config "logstash" "$LOGSTASH_DIR" "screen bash bin/logstash -f config/logstash.conf --config.reload.automatic"
+    echo_startup_config "logstash" "$TMP_LS_SETUP_DIR" "bash bin/logstash -f config/logstash.conf --config.reload.automatic" "" "2" "" "elk"
+
+	return $?
+}
+
+function exec_step_logstash()
+{
+	local TMP_LS_SETUP_DIR=${1}
+
+	set_environment "${TMP_LS_SETUP_DIR}"
+
+	setup_logstash "${TMP_LS_SETUP_DIR}"
+
+	set_logstash "${TMP_LS_SETUP_DIR}"
+
+	boot_logstash "${TMP_LS_SETUP_DIR}"
 
 	return $?
 }
 
 function down_logstash()
 {
-	set_logstash
-    setup_soft_wget "logstash" "https://artifacts.elastic.co/downloads/logstash/logstash-7.3.1.tar.gz" "setup_logstash"
+	ELK_LOGSTASH_SETUP_NEWER="7.8.0"
+	set_github_soft_releases_newer_version "ELK_LOGSTASH_SETUP_NEWER" "elastic/logstash"
+	exec_text_format "ELK_LOGSTASH_SETUP_NEWER" "https://artifacts.elastic.co/downloads/logstash/logstash-%.tar.gz"
+    setup_soft_wget "logstash" "$ELK_LOGSTASH_SETUP_NEWER" "exec_step_logstash"
 
 	return $?
 }

@@ -10,12 +10,13 @@ function setupEpel()
 	#?? 安装失败
 	sudo rpm -ivh https://mirrors.ustc.edu.cn/epel/epel-release-latest-7.noarch.rpm
 	sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
-	sudo yum -y install epel-release
+	sudo yum -y install "epel-release"
 	sudo yum repolist
 	sudo yum -y install yum-priorities
 	sudo yum -y install yum-plugin-fastestmirror
-	sudo yum -y install wget
-	sudo yum -y install git
+	
+	soft_yum_check_install "wget"
+	soft_yum_check_install "git"
 
 	#更改镜像为国内镜像
 	#http://centos.ustc.edu.cn/

@@ -39,6 +39,81 @@ readonly __DIR __FILE __CONF
 # 依赖引用
 source ${__DIR}/common_vars.sh
 
+#创建用户及组，如果不存在
+#参数1：组
+#参数2：用户
+function create_user_if_not_exists() 
+{
+	local TMP_CURRENT_TO_CREATE_GROUP=${1}
+	local TMP_CURRENT_TO_CREATE_USER=${2}
+
+	#create group if not exists
+	egrep "^${TMP_CURRENT_TO_CREATE_GROUP}" /etc/group >& /dev/null
+	if [ $? -ne 0 ]; then
+		groupadd ${TMP_CURRENT_TO_CREATE_GROUP}
+	fi
+
+	#create user if not exists
+	egrep "^${TMP_CURRENT_TO_CREATE_USER}" /etc/passwd >& /dev/null
+	if [ $? -ne 0 ]; then
+		useradd -g ${TMP_CURRENT_TO_CREATE_GROUP} ${TMP_CURRENT_TO_CREATE_USER}
+	fi
+
+	return $?
+}
+
+#获取IP
+#参数1：需要设置的变量名
+function get_iplocal () {
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	local TMP_LOCAL_IP=`ip a | grep inet | grep -v inet6 | grep -v 127 | grep -v docker | awk '{print $2}' | awk -F'/' '{print $1}' | awk 'END {print}'`
+    [ -z ${TMP_LOCAL_IP} ] && TMP_LOCAL_IP=`ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1`
+
+	if [ -n "$TMP_LOCAL_IP" ]; then
+		eval ${1}=`echo '$TMP_LOCAL_IP'`
+	fi
+
+	return $?
+}
+
+#获取IPv4
+#参数1：需要设置的变量名
+function get_ipv4 () {
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	#wget -qO- -t1 -T2 ipv4.icanhazip.com
+    local TMP_LOCAL_IPV4=`curl -s ipv4.icanhazip.com | awk 'NR==1'`
+    [ -z ${TMP_LOCAL_IPV4} ] && TMP_LOCAL_IPV4=`curl -s ipinfo.io/ip | awk 'NR==1'`
+    [ -z ${TMP_LOCAL_IPV4} ] && TMP_LOCAL_IPV4=`curl -s ip.sb | awk 'NR==1'`
+
+	if [ -n "$TMP_LOCAL_IPV4" ]; then
+		eval ${1}=`echo '$TMP_LOCAL_IPV4'`
+	fi
+
+	return $?
+}
+
+#获取IPv6
+#参数1：需要设置的变量名
+function get_ipv6 () {
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+    local TMP_LOCAL_IPV6=`curl -s ipv6.icanhazip.com | awk 'NR==1'`
+
+	if [ -n "$TMP_LOCAL_IPV6" ]; then
+		eval ${1}=`echo '$TMP_LOCAL_IPV6'`
+	fi
+
+	return $?
+}
+
 #关闭删除文件占用进程
 function kill_deleted()
 {
@@ -88,36 +163,6 @@ function rand_str() {
     local TMP_RAND_CURR_VAL=$(cat /dev/urandom | head -n $TMP_LEN_VAL | md5sum | head -c $TMP_LEN_VAL)
 
     eval ${1}=`echo '$TMP_RAND_CURR_VAL'`
-
-	return $?
-}
-
-#获取IP
-#参数1：需要设置的变量名
-function get_ip () {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
-	sudo yum -y install wget
-    local TMP_LOCAL_IP=`ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1`
-    [ -z ${TMP_LOCAL_IP} ] && TMP_LOCAL_IP=`wget -qO- -t1 -T2 ipv4.icanhazip.com`
-    [ -z ${TMP_LOCAL_IP} ] && TMP_LOCAL_IP=`wget -qO- -t1 -T2 ipinfo.io/ip`
-
-	eval ${1}=`echo '$TMP_LOCAL_IP'`
-
-	return $?
-}
-
-#获取IP
-#参数1：需要设置的变量名
-function get_ipv6 () {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
-    local TMP_LOCAL_IPV6=`wget -qO- -t1 -T2 ipv6.icanhazip.com`
-	eval ${1}=`echo '$TMP_LOCAL_IPV6'`
 
 	return $?
 }
@@ -286,7 +331,7 @@ function setup_soft_basic()
 
 #路径不存在执行
 #参数1：检测路径
-#参数2：执行函数名称
+#参数2：执行函数或脚本
 #参数3：路径存在时输出信息
 function path_not_exits_action() 
 {
@@ -295,15 +340,19 @@ function path_not_exits_action()
 	fi
 
 	local _TMP_NOT_EXITS_PATH="$1"
-	local _TMP_NOT_EXITS_PATH_FUNC="$2"
+	local _TMP_NOT_EXITS_PATH_SCRIPT="$2"
 	local _TMP_NOT_EXITS_PATH_ECHO="$3"
 
 	if [ "$_TMP_NOT_EXITS_PATH" == "~" ]; then
 		_TMP_NOT_EXITS_PATH="/$USER"
 	fi
 
-	if [ ! -f "$_TMP_NOT_EXITS_PATH" ]; then
-		$_TMP_NOT_EXITS_PATH_FUNC
+	if [ ! -f "$_TMP_NOT_EXITS_PATH" ]; then		
+		if [ "$(type -t $_TMP_NOT_EXITS_PATH_SCRIPT)" = "function" ] ; then
+			$_TMP_NOT_EXITS_PATH_SCRIPT $_TMP_NOT_EXITS_PATH
+		else
+			eval "$_TMP_NOT_EXITS_PATH_SCRIPT"
+		fi
 	else
 		if [ ${#_TMP_NOT_EXITS_PATH_ECHO} -gt 0 ]; then
 			echo $_TMP_NOT_EXITS_PATH_ECHO
@@ -340,7 +389,7 @@ function soft_rpm_check_action()
 	return $?
 }
 
-#Yum不存在执行
+#Yum不存在时执行
 #参数1：包名称
 #参数2：执行函数名称
 #参数3：包存在时输出信息
@@ -356,6 +405,34 @@ function soft_yum_check_action()
     local TMP_YUM_FIND_RESULTS=`yum list installed | grep $TMP_YUM_CHECK_SOFT`
 	if [ -z "$TMP_YUM_FIND_RESULTS" ]; then
 		$TMP_YUM_CHECK_SOFT_FUNC
+	else
+		echo $3
+
+		return 0;
+	fi
+
+	return $?
+}
+
+#Yum不存在时安装
+#参数1：包名称
+#参数2：执行函数名称
+#参数3：包存在时输出信息
+function soft_yum_check_install() 
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	local TMP_YUM_CHECK_SOFT=$1
+	local TMP_YUM_CHECK_SOFT_FUNC=$2
+
+    echo $TMP_SPLITER
+    echo "Checking the yum installed repos of '${red}${TMP_YUM_CHECK_SOFT}${reset}'"
+    echo $TMP_SPLITER
+    local TMP_YUM_FIND_RESULTS=`yum list installed | grep $TMP_YUM_CHECK_SOFT`
+	if [ -z "$TMP_YUM_FIND_RESULTS" ]; then
+		soft_yum_check_action "sudo yum -y install $TMP_YUM_CHECK_SOFT"
 	else
 		echo $3
 
@@ -672,7 +749,6 @@ function setup_soft_git()
 #安装软件下载模式
 #参数1：软件安装名称
 #参数2：软件下载后执行函数名称
-#参数3：软件配置函数
 function setup_soft_pip() 
 {
 	if [ $? -ne 0 ]; then
@@ -682,26 +758,26 @@ function setup_soft_pip()
 	TMP_SOFT_PIP_NAME=`echo "$1" | awk -F',' '{print $1}'`
 	TMP_SOFT_PIP_PATH=`echo "$1" | awk -F',' '{print $NF}'`
 	TMP_SOFT_PIP_SETUP_FUNC=$2
-	TMP_SOFT_PIP_SET_FUNC=$3
+	
+	typeset -l TMP_SOFT_LOWER_NAME
+	local TMP_SOFT_LOWER_NAME=${TMP_SOFT_PIP_NAME}
+	local TMP_SOFT_SETUP_PATH=`pip show $TMP_SOFT_LOWER_NAME | grep "Location" | awk -F' ' '{print $2}' | xargs -I {} echo "{}/supervisor"`
 
-	TMP_SOFT_SETUP_PATH=/usr/lib/python2.7/site-packages/$TMP_SOFT_PIP_NAME* #$SETUP_DIR/python/lib/python2.7/site-packages/$TMP_SOFT_PIP_NAME*
-
-    sudo ls -d $TMP_SOFT_SETUP_PATH   #ps -fe | grep $TMP_SOFT_PIP_NAME | grep -v grep
-	if [ $? -ne 0 ]; then
-		if [ -n "$TMP_SOFT_PIP_SET_FUNC" ]; then
-			$TMP_SOFT_PIP_SET_FUNC
-		fi
-
+	# pip show supervisor
+	# pip freeze | grep "supervisor=="
+	if [ -z "${TMP_SOFT_SETUP_PATH}" ]; then
 		easy_install pip
 
 		echo "Pip start to install $TMP_SOFT_PIP_NAME"
-		pip install $TMP_SOFT_PIP_PATH
+		pip install ${TMP_SOFT_LOWER_NAME}
 		echo "Pip installed $TMP_SOFT_PIP_NAME"
 
 		#安装后配置函数
-		$TMP_SOFT_PIP_SETUP_FUNC
-	
-		echo "Complete."
+		$TMP_SOFT_PIP_SETUP_FUNC "$TMP_SOFT_SETUP_PATH"
+	else
+    	sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep $TMP_SOFT_PIP_NAME | grep -v grep
+
+		return 0
 	fi
 
 	return $?
@@ -735,6 +811,34 @@ function set_if_empty()
 
 	if [ -n "$TMP_VAR_VAL" ]; then
 		eval ${1}=`echo '$TMP_DFT'`
+	fi
+
+	return $?
+}
+
+#设置变量值函数如果相同
+#参数1：需要设置的变量名
+#参数1：需要对比的变量名/值
+#参数2：需要对比的变量值
+function set_if_equals()
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	local TMP_SOURCE_VAR_NAME=$1
+	local TMP_COMPARE_VAR_NAME=$2
+	local TMP_SET_VAR_VAL=$3
+
+	local TMP_SOURCE_VAR_VAL=`eval echo '$'$TMP_SOURCE_VAR_NAME`
+	local TMP_COMPARE_VAR_VAL=`eval echo '$'$TMP_COMPARE_VAR_NAME`
+
+	if [ -z "$TMP_COMPARE_VAR_VAL" ]; then
+		TMP_COMPARE_VAR_VAL="$TMP_COMPARE_VAR_NAME"
+	fi
+
+	if [ "$TMP_SOURCE_VAR_VAL" = "$TMP_COMPARE_VAR_VAL" ]; then
+		eval ${1}=`echo '$TMP_SET_VAR_VAL'`
 	fi
 
 	return $?
@@ -811,6 +915,42 @@ function find_content_list_first_line()
 		eval ${1}='$TMP_MATCH_CONTENT_FIRST_LINE'
 	fi
 
+	return $?
+}
+
+#检测github最新版本
+#参数1：需要设置的变量名
+#参数2：Github仓储/项目，例如meyer-net/linux_scripts
+#示例：
+#	TMP_ELASTICSEARCH_NEWER_VERSION="0.0.1"
+#	set_github_soft_releases_newer_version "TMP_ELASTICSEARCH_NEWER_VERSION" "elastic/elasticsearch"
+#	echo "The github soft of 'elastic/elasticsearch' releases newer version is $TMP_ELASTICSEARCH_NEWER_VERSION"
+function set_github_soft_releases_newer_version() 
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	TMP_GITHUB_SOFT_NEWER_VERSION_VAR_NAME=$1
+	local TMP_GITHUB_SOFT_PATH=$2
+
+	local TMP_GITHUB_SOFT_HTTPS_PATH="https://github.com/$TMP_GITHUB_SOFT_PATH/releases"
+	local TMP_GITHUB_SOFT_TAG_PATH="$TMP_GITHUB_SOFT_PATH/releases/tag/"
+
+	# 提取href中值，如需提取标签内值，则使用： sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | awk '{sub("^ *","");sub(" *$","");print}' | awk NR==1
+	
+	local TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL=`eval echo '$'$TMP_GITHUB_SOFT_NEWER_VERSION_VAR_NAME`
+
+    echo $TMP_SPLITER
+    echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}', default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL}${reset}'"
+	local TMP_GITHUB_SOFT_NEWER_VERSION=`curl -s $TMP_GITHUB_SOFT_HTTPS_PATH | grep "$TMP_GITHUB_SOFT_TAG_PATH" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("\">.+", "");print}' | awk NR==1`
+
+	if [ -n "$TMP_GITHUB_SOFT_NEWER_VERSION" ]; then
+		echo "Seted the soft in github repos of '${red}$TMP_GITHUB_SOFT_PATH${reset}' releases newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERSION}${reset}'"
+		eval ${1}=`echo '$TMP_GITHUB_SOFT_NEWER_VERSION'`
+	fi
+    echo $TMP_SPLITER
+	
 	return $?
 }
 
@@ -1128,23 +1268,27 @@ function exec_funcs_repeat_until_output()
 #执行文本格式化
 #参数1：需要格式化的变量名
 #参数2：格式化字符串规格
+#示例：
+#	TMP_TEST_FORMATED_TEXT="World"
+#	exec_text_format "TMP_TEST_FORMATED_TEXT" "Hello %"
+#	echo "The formated text is ‘$TMP_TEST_FORMATED_TEXT’"
 function exec_text_format()
 {
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
 
-	TMP_EXEC_TEXT_FORMAT_VAR_NAME=$1
-	TMP_EXEC_TEXT_FORMAT_VAR_VAL=`eval echo '$'$TMP_EXEC_TEXT_FORMAT_VAR_NAME`
-	if [ -n "$TMP_EXEC_TEXT_FORMAT_VAR_VAL" ]; then
+	local TMP_EXEC_TEXT_FORMAT_VAR_NAME=${1}
+	local TMP_EXEC_TEXT_FORMAT_VAR_FORMAT=${2}
+	local TMP_EXEC_TEXT_FORMAT_VAR_VAL=`eval echo '$'$TMP_EXEC_TEXT_FORMAT_VAR_NAME`
+	
+	# 判断格式化模板是否为空，为空不继续执行
+	if [ -z "$TMP_EXEC_TEXT_FORMAT_VAR_FORMAT" ]; then
 		return $?
 	fi
 
-	TMP_EXEC_TEXT_FORMAT_VAR_FORMAT=$2
-
-	if [ -n "$TMP_EXEC_TEXT_FORMAT_VAR_FORMAT" ]; then
-		eval ${1}=`echo "$TMP_EXEC_TEXT_FORMAT_VAR_FORMAT" | sed s@%@"$TMP_EXEC_TEXT_FORMAT_VAR_VAL"@g`
-	fi
+	local TMP_EXEC_TEXT_FORMAT_FORMATED_VAL=`echo "${TMP_EXEC_TEXT_FORMAT_VAR_FORMAT}" | sed s@%@"$TMP_EXEC_TEXT_FORMAT_VAR_VAL"@g`
+	eval ${1}='${TMP_EXEC_TEXT_FORMAT_FORMATED_VAL:-$TMP_EXEC_TEXT_FORMAT_VAR_VAL}'
 
 	return $?
 }
@@ -1285,13 +1429,14 @@ function exec_while_read_json()
 #参数4：程序启动的环境
 #参数5：优先级序号
 #参数6：运行环境，默认/etc/profile
+#参数7：运行所需的用户，默认root
 function echo_startup_config()
 {
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
 	
-	set_if_empty "SUPERVISOR_CONF_ROOT" "$ATT_DIR/supervisor"
+	set_if_empty "SUPERVISOR_ATT_DIR" "$ATT_DIR/supervisor"
 
 	local STARTUP_NAME="$1"
 	local STARTUP_FILENAME="$STARTUP_NAME.conf"
@@ -1300,6 +1445,7 @@ function echo_startup_config()
 	local STARTUP_ENV="$4"
 	local STARTUP_PRIORITY="$5"
 	local STARTUP_SOURCE="$6"
+	local STARTUP_USER="${7:-user}"
 
 	if [ "${#STARTUP_SOURCE}" -eq 0 ]; then
 		STARTUP_SOURCE="/etc/profile"
@@ -1310,9 +1456,9 @@ function echo_startup_config()
 		fi
 	fi
 
-	SUPERVISOR_LOGS_DIR="$SUPERVISOR_CONF_ROOT/logs"
-	SUPERVISOR_SCRIPTS_DIR="$SUPERVISOR_CONF_ROOT/scripts"
-	SUPERVISOR_FILE_DIR="$SUPERVISOR_CONF_ROOT/conf"
+	SUPERVISOR_LOGS_DIR="$SUPERVISOR_ATT_DIR/logs"
+	SUPERVISOR_SCRIPTS_DIR="$SUPERVISOR_ATT_DIR/scripts"
+	SUPERVISOR_FILE_DIR="$SUPERVISOR_ATT_DIR/conf"
 
 	mkdir -pv $SUPERVISOR_LOGS_DIR
 	mkdir -pv $SUPERVISOR_SCRIPTS_DIR
@@ -1339,22 +1485,22 @@ function echo_startup_config()
 	cat >$SUPERVISOR_FILE_OUTPUT_PATH<<EOF
 [program:$STARTUP_NAME]
 command = /bin/bash -c 'source "\$0" && exec "\$@"' $STARTUP_SOURCE $STARTUP_COMMAND ; 启动命令，可以看出与手动在命令行启动的命令是一样的
-autostart = true     ; 在 supervisord 启动的时候也自动启动
-startsecs = 240       ; 启动 60 秒后没有异常退出，就当作已经正常启动了
-autorestart = true   ; 程序异常退出后自动重启
-startretries = 10     ; 启动失败自动重试次数，默认是 3
-user = root          ; 用哪个用户启动
-redirect_stderr = true  ; 把 stderr 重定向到 stdout，默认 false
-stdout_logfile_maxbytes = 20MB  ; stdout 日志文件大小，默认 50MB
-stdout_logfile_backups = 20     ; stdout 日志文件备份数
+autostart = true                                                                     ; 在 supervisord 启动的时候也自动启动
+startsecs = 240                                                                      ; 启动 60 秒后没有异常退出，就当作已经正常启动了
+autorestart = true                                                                   ; 程序异常退出后自动重启
+startretries = 10                                                                    ; 启动失败自动重试次数，默认是 3
+user = $STARTUP_USER                                                                 ; 用哪个用户启动
+redirect_stderr = true                                                               ; 把 stderr 重定向到 stdout，默认 false
+stdout_logfile_maxbytes = 20MB                                                       ; stdout 日志文件大小，默认 50MB
+stdout_logfile_backups = 20                                                          ; stdout 日志文件备份数
 
 $STARTUP_PRIORITY
 $STARTUP_DIR
 
 $STARTUP_ENV
 
-stdout_logfile = ${SUPERVISOR_LOGS_DIR}/${STARTUP_NAME}_stdout.log  ; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）
-numprocs=1           ;
+stdout_logfile = ${SUPERVISOR_LOGS_DIR}/${STARTUP_NAME}_stdout.log                   ; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）
+numprocs=1                                                                           ;
 EOF
 
 	return $?
@@ -1384,7 +1530,7 @@ function echo_soft_port()
 	
 	TMP_QUERY_IPTABLES_EXISTS=`$TMP_QUERY_IPTABLES_EXISTS`
 	if [ -n "$TMP_QUERY_IPTABLES_EXISTS" ]; then
-		echo "Port $TMP_ECHO_SOFT_PORT for '$TMP_ECHO_SOFT_PORT_IP' exists"
+		echo "Port $TMP_ECHO_SOFT_PORT for '$TMP_ECHO_SOFT_PORT_IP' exists, get data '$TMP_QUERY_IPTABLES_EXISTS'"
 		return $?
 	fi
 
@@ -1441,5 +1587,43 @@ function proxy_by_ss()
 	return $?
 }
 
-get_ip "LOCAL_IPV4"
-get_ip "LOCAL_IPV6"
+#---------- SYSTEM ---------- {
+MAJOR_VERSION=`grep -oE '[0-9]+\.[0-9]+' /etc/redhat-release | cut -d "." -f1`
+LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
+#---------- SYSTEM ---------- }
+
+#---------- HARDWARE ---------- {
+#主机名称
+SYS_NAME=`hostname`
+
+# 系统位数
+CPU_ARCHITECTURE=`lscpu | awk NR==1 | awk -F' ' '{print $NF}'`
+
+# 系统版本
+OS_VERSION=`cat /etc/redhat-release | awk -F'release' '{print $2}' | awk -F'.' '{print $1}' | awk -F' ' '{print $1}'`
+
+# 处理器核心数
+PROCESSOR_COUNT=`cat /proc/cpuinfo | grep "processor"| wc -l`
+
+# 空闲内存数
+MEMORY_FREE=`awk '($1 == "MemFree:"){print $2/1048576}' /proc/meminfo`
+
+# GB -> BYTES
+MEMORY_GB_FREE=${MEMORY_FREE%.*}
+
+# 本机IP
+# NET_HOST=`ping -c 1 -t 1 enginx.net | grep 'PING' | awk '{print $3}' | sed 's/[(,)]//g'`
+
+# NR==1 第一行
+LOCAL_IPV4="0.0.0.0"
+get_ipv4 "LOCAL_IPV4"
+
+LOCAL_IPV6="0:0:0:0:0:0:0:0"
+get_ipv6 "LOCAL_IPV6"
+
+#ip addr | grep "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*/[0-9]*.*brd" | awk '{print $2}' | awk -F'/' '{print $1}' | awk 'END {print}'
+LOCAL_HOST="0.0.0.0"
+get_iplocal "LOCAL_HOST"
+
+LOCAL_ID=`echo \${LOCAL_HOST##*.}`
+#---------- HARDWARE ---------- }

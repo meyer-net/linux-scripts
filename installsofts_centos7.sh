@@ -47,13 +47,14 @@ function link_logs()
 function mkdirs()
 {
     #path_not_exits_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
-    path_not_exits_action "$SETUP_DIR" "mkdir -pv $SETUP_DIR"
-    path_not_exits_action "$WWW_DIR" "mkdir -pv $WWW_DIR"
-    path_not_exits_action "$APP_DIR" "mkdir -pv $APP_DIR"
-    path_not_exits_action "$BOOT_DIR" "mkdir -pv $BOOT_DIR"
-    path_not_exits_action "$HTML_DIR" "mkdir -pv $HTML_DIR"
+    path_not_exits_action "${SETUP_DIR}" "mkdir -pv ${SETUP_DIR}"
+    path_not_exits_action "${WWW_DIR}" "mkdir -pv ${WWW_DIR}"
+    path_not_exits_action "${APP_DIR}" "mkdir -pv ${APP_DIR}"
+    path_not_exits_action "${BOOT_DIR}" "mkdir -pv ${BOOT_DIR}"
+    path_not_exits_action "${HTML_DIR}" "mkdir -pv ${HTML_DIR}"
+    path_not_exits_action "${PIP_PACKAGES_DIR}" "mkdir -pv ${PIP_PACKAGES_DIR}"
     
-    path_not_exits_action "$LOGS_DIR" "link_logs"
+    path_not_exits_action "${LOGS_DIR}" "link_logs"
 
     return $?
 }
@@ -98,7 +99,7 @@ function lang()
 
 function elk()
 {
-    setup_if_choice "CHOICE_ELK" "Please choice which elk compoment you want to setup" "...,ElasticSearch,Flume,FileBeat,LogStash,Kibana,Exit" "$TMP_SPLITER" "scripts/elk"
+    setup_if_choice "CHOICE_ELK" "Please choice which elk compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,Flume,FileBeat,Exit" "$TMP_SPLITER" "scripts/elk"
 	return $?
 }
 

@@ -5,33 +5,50 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 
-function setup_libs()
+# 1-配置环境
+function set_environment()
 {
     # 需要提前安装Python
-    cd $WORK_PATH
-    source scripts/lang/python.sh
+    source $WORK_PATH/scripts/lang/python.sh
 
 	return $?
 }
 
-function setup_supervisor()
+# 2-安装软件
+function set_supervisor_conf()
 {
-    mkdir -pv $SUPERVISOR_CONF_ROOT/conf
-    mkdir -pv $SUPERVISOR_CONF_ROOT/scripts
+    # 规范特殊安装的目录
+	local TMP_SFT_SUPERVISOR_CONF_PATH=${1}
+	local TMP_SFT_SUPERVISOR_VTL_SETUP_CONF_PATH=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/supervisor.conf
 
-    SUPERVISOR_LOGS_DIR=$LOGS_DIR/supervisor
-    mkdir -pv $SUPERVISOR_LOGS_DIR
-    ln -sf $SUPERVISOR_LOGS_DIR $SUPERVISOR_CONF_ROOT/logs
+    rm -rf /etc/supervisor.conf
+    rm -rf ${TMP_SFT_SUPERVISOR_VTL_SETUP_CONF_PATH}
+    sudo echo_supervisord_conf > ${TMP_SFT_SUPERVISOR_CONF_PATH}
 
-	SUPERVISOR_CONF_PATH=$SUPERVISOR_CONF_ROOT/supervisor.conf
+    ln -sf ${TMP_SFT_SUPERVISOR_CONF_PATH} /etc/supervisor.conf
+    ln -sf ${TMP_SFT_SUPERVISOR_CONF_PATH} ${TMP_SFT_SUPERVISOR_VTL_SETUP_CONF_PATH}
 
-    cd $SUPERVISOR_CONF_ROOT
-    if [ ! -f "supervisor.conf" ]; then
-        echo_supervisord_conf > $SUPERVISOR_CONF_PATH
-    fi
 
-    if [ ! -f "supervisor" ]; then
-        cat >$SUPERVISOR_CONF_ROOT/supervisor<<EOF
+    # 规范日志的目录
+    local TMP_SFT_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
+	local TMP_SFT_SUPERVISOR_VTL_SETUP_LOGS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/logs
+
+    path_not_exits_action "${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}" "mkdir -pv ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}"
+	rm -rf ${TMP_SFT_SUPERVISOR_VTL_SETUP_LOGS_DIR}
+    ln -sf ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR} ${TMP_SFT_SUPERVISOR_VTL_SETUP_LOGS_DIR}
+
+    sed -i "s@^[;]*logfile=.*@logfile=${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
+    sed -i "s@^[;]*\[include\]@\[include\]@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
+    sed -i "s@^[;]*files = .*@files = ${SUPERVISOR_ATT_DIR}/conf/*.conf@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
+
+	return $?
+}
+
+function set_supervisor_bin()
+{
+    local TMP_SFT_SUPERVISOR_VTL_BIN_PATH=${1}
+
+    cat >${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}<<EOF
 #!/bin/bash
 #
 # supervisord   This scripts turns supervisord on
@@ -70,7 +87,7 @@ if [ -e \$PIDFILE ]; then
     if [ -z "\$SUPERVISORD_RUNNING_DATA" ]; then
         echo "Clean pid & lock files"
         rm -rf /tmp/supervisor*
-        rm -rf $SUPERVISOR_CONF_ROOT/logs/*
+        rm -rf $SUPERVISOR_ATT_DIR/logs/*
     fi
 fi
 
@@ -93,7 +110,7 @@ running()
     # No pidfile, probably no daemon present
     [ ! -f "\$PIDFILE" ] && return 1
     # Obtain the pid and check it against the binary name
-    pid=[pid]
+    pid=\`cat \$PIDFILE\`
     running_pid \$pid \$SUPERVISORD || return 1
     return 0
 }
@@ -175,11 +192,8 @@ condrestart)
     ;;
 status)
     \$SUPERVISORCTL \$OPTIONS status
-    if running ; then
-        RETVAL=0
-    else
-        RETVAL=1
-    fi
+    running
+    RETVAL=$?
     ;;
 *)
     echo $"Usage: \$0 {start|stop|status|restart|reload|force-reload|condrestart}"
@@ -189,18 +203,39 @@ esac
 exit \$RETVAL
 EOF
 
-        sed -i "s@^[[:space:]]*pid=[pid]@    pid=\`cat $PIDFILE\`@g" $SUPERVISOR_CONF_ROOT/supervisor
-    fi
-
-    chmod +x supervisor
     #添加软链接与服务启动
-    rm -rf /etc/supervisor.conf
-    ln -sf $SUPERVISOR_CONF_PATH /etc/supervisor.conf
-    ln -sf $SUPERVISOR_CONF_ROOT/supervisor /usr/bin/supervisor #/etc/init.d/supervisord
+    rm -rf /usr/bin/supervisor
+    ln -sf ${TMP_SFT_SUPERVISOR_VTL_BIN_PATH} /usr/bin/supervisor #/etc/init.d/supervisord
+    
+    chmod +x ${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}
 
-    sed -i "s@^;\[include\]@\[include\]@g" $SUPERVISOR_CONF_PATH
-    sed -i "s@^;files = .*@files = $SUPERVISOR_CONF_ROOT/conf/*.conf@g" $SUPERVISOR_CONF_PATH
+	return $?
+}
 
+function setup_supervisor()
+{
+    path_not_exits_action "${SUPERVISOR_ATT_DIR}" "mkdir -pv ${SUPERVISOR_ATT_DIR}"
+    path_not_exits_action "${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}" "mkdir -pv ${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}"
+    
+	return $?
+}
+
+# 3-设置软件
+function set_supervisor()
+{
+	local TMP_SFT_SUPERVISOR_CONF_PATH=${SUPERVISOR_ATT_DIR}/supervisor.conf
+    path_not_exits_action "${TMP_SFT_SUPERVISOR_CONF_PATH}" "set_supervisor_conf"
+
+    local TMP_SFT_SUPERVISOR_VTL_BIN_PATH=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/supervisor
+    path_not_exits_action "${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}" "set_supervisor_bin"
+
+	return $?
+}
+
+# 4-启动软件
+function boot_supervisor()
+{
+    # 创建启动服务
     cat >/lib/systemd/system/supervisord.service<<EOF
 # supervisord service for systemd (CentOS 7.0+)
 # https://github.com/Supervisor/initscripts
@@ -219,19 +254,39 @@ SysVStartPriority=99
 WantedBy=multi-user.target
 EOF
 
+    rm -rf /tmp/supervisor*
+
     chkconfig supervisord on
     chkconfig --list | grep supervisord
     systemctl enable supervisord.service
+    systemctl start supervisord.service
 
-    rm -rf /tmp/supervisor*
-    supervisor start
-    
+	return $?
+}
+
+# x-执行步骤
+function exec_step_supervisor()
+{
+    # 全局变量，因supervisor本身非编译安装方式，所以创建虚拟路径
+    TMP_SFT_SUPERVISOR_VTL_SETUP_DIR=${SETUP_DIR}/supervisor
+
+    # 局部变量
+	# local TMP_SFT_SPV_SETUP_DIR=${1}
+
+	set_environment "${TMP_SFT_SPV_SETUP_DIR}"
+
+    setup_supervisor "${TMP_SFT_SPV_SETUP_DIR}"
+
+    set_supervisor "${TMP_SFT_SPV_SETUP_DIR}"
+
+	boot_supervisor "${TMP_SFT_SPV_SETUP_DIR}"
+
 	return $?
 }
 
 function down_supervisor()
 {
-    setup_soft_pip "supervisor" "setup_supervisor" "setup_libs"
+    setup_soft_pip "supervisor" "exec_step_supervisor"
 
 	return $?
 }

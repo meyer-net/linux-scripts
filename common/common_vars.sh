@@ -21,64 +21,26 @@ DOWN_DIR=/tmp
 MOUNT_DIR=$(df -k | awk '{print $2}' | awk '{if (NR>2) {print}}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} sh -c 'df -k | grep "$1" | awk "{print \$NF}" | cut -c2' -- {})
 MOUNT_DIR=${MOUNT_DIR:-"/clouddisk"}/work
 SETUP_DIR=/opt
-DEFAULT_DIR=/home/$CURRENT_USER/default
-ATT_DIR=$MOUNT_DIR/attach
-DATA_DIR=$MOUNT_DIR/data
-LOGS_DIR=$MOUNT_DIR/logs
+DEFAULT_DIR=/home/${CURRENT_USER}/default
+ATT_DIR=${MOUNT_DIR}/attach
+DATA_DIR=${MOUNT_DIR}/data
+LOGS_DIR=${MOUNT_DIR}/logs
 
-MYCAT_DIR=$SETUP_DIR/mycat
+SYNC_DIR=${MOUNT_DIR}/svr_sync
+WWW_DIR=${SYNC_DIR}/wwwroot
+APP_DIR=${SYNC_DIR}/applications
+BOOT_DIR=${SYNC_DIR}/boots
+PRJ_DIR=${WWW_DIR}/prj/www
+OR_DIR=${PRJ_DIR}/or
+PY_DIR=${PRJ_DIR}/py
+HTML_DIR=${PRJ_DIR}/html
+NGINX_DIR=${PRJ_DIR}/nginx
+DOCKER_DIR=${DATA_DIR}/docker
 
-SUPERVISOR_CONF_ROOT=$ATT_DIR/supervisor
-
-SYNC_DIR=$MOUNT_DIR/svr_sync
-WWW_DIR=$SYNC_DIR/wwwroot
-APP_DIR=$SYNC_DIR/applications
-BOOT_DIR=$SYNC_DIR/boots
-PRJ_DIR=$WWW_DIR/prj/www
-OR_DIR=$PRJ_DIR/or
-PY_DIR=$PRJ_DIR/py
-HTML_DIR=$PRJ_DIR/html
-NGINX_DIR=$PRJ_DIR/nginx
-DOCKER_DIR=$DATA_DIR/docker
-
-JAVA_HOME=$SETUP_DIR/java
+JAVA_HOME=${SETUP_DIR}/java
+MYCAT_DIR=${SETUP_DIR}/mycat
+SUPERVISOR_ATT_DIR=${ATT_DIR}/supervisor
 #---------- DIR ---------- }
-
-#---------- SYSTEM ---------- {
-MAJOR_VERSION=`grep -oE '[0-9]+\.[0-9]+' /etc/redhat-release | cut -d "." -f1`
-LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
-#---------- SYSTEM ---------- }
-
-#---------- HARDWARE ---------- {
-#主机名称
-SYS_NAME=`hostname`
-
-# 系统位数
-CPU_ARCHITECTURE=`lscpu | awk NR==1 | awk -F' ' '{print $NF}'`
-
-# 系统版本
-OS_VERSION=`cat /etc/redhat-release | awk -F'release' '{print $2}' | awk -F'.' '{print $1}' | awk -F' ' '{print $1}'`
-
-# 处理器核心数
-PROCESSOR_COUNT=`cat /proc/cpuinfo | grep "processor"| wc -l`
-
-# 空闲内存数
-MEMORY_FREE=`awk '($1 == "MemFree:"){print $2/1048576}' /proc/meminfo`
-
-# GB -> BYTES
-MEMORY_GB_FREE=${MEMORY_FREE%.*}
-
-# 本机IP
-# NET_HOST=`ping -c 1 -t 1 enginx.net | grep 'PING' | awk '{print $3}' | sed 's/[(,)]//g'`
-NET_HOST=`curl -s icanhazip.com | awk 'NR==1'`
-
-# NR==1 第一行
-LOCAL_IPV4="$NET_HOST"
-LOCAL_IPV6="$NET_HOST"
-#ip addr | grep "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*/[0-9]*.*brd" | awk '{print $2}' | awk -F'/' '{print $1}' | awk 'END {print}'
-LOCAL_HOST=`ip a | grep inet | grep -v inet6 | grep -v 127 | grep -v docker | awk '{print $2}' | awk -F'/' '{print $1}' | awk 'END {print}'`
-LOCAL_ID=`echo \${LOCAL_HOST##*.}`
-#---------- HARDWARE ---------- }
 
 CHOICE_CTX="x"
 TMP_SPLITER="------------------------------------------------------"

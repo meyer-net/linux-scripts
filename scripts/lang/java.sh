@@ -49,7 +49,7 @@ function setup_gradle()
 
 function setup_maven()
 {
-	yum -y install maven
+	soft_yum_check_install "maven"
 	mvn -version
 
 	return $?
