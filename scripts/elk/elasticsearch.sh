@@ -46,6 +46,8 @@ function setup_elasticsearch()
 	chown -R elk:elk ${TMP_ELK_ES_LNK_LOGS_DIR}
 	chown -R elk:elk ${TMP_ELK_ES_LNK_DATA_DIR}
 
+    echo_soft_port 9200
+
 	return $?
 }
 
@@ -96,6 +98,7 @@ function exec_step_elasticsearch()
 	return $?
 }
 
+# x-下载软件
 function down_elasticsearch()
 {
 	ELK_ELASTICSEARCH_SETUP_NEWER="7.8.0"

@@ -5,6 +5,7 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 
+# 1-配置环境
 function set_environment()
 {
 	create_user_if_not_exists elk elk
@@ -14,6 +15,7 @@ function set_environment()
 	return $?
 }
 
+# 2-安装软件
 function setup_logstash()
 {
 	local TMP_ELK_LS_SETUP_DIR=${1}
@@ -32,6 +34,8 @@ function setup_logstash()
 	rm -rf ${TMP_ELK_LS_DATA_DIR}
 	mkdir -pv ${TMP_ELK_LS_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_ELK_LS_LNK_DATA_DIR}
+	mkdir -pv ${TMP_ELK_LS_DATA_DIR}/dead_letter_queue
+	mkdir -pv ${TMP_ELK_LS_DATA_DIR}/queue
 
 	ln -sf ${TMP_ELK_LS_LNK_LOGS_DIR} ${TMP_ELK_LS_LOGS_DIR}
 	ln -sf ${TMP_ELK_LS_LNK_DATA_DIR} ${TMP_ELK_LS_DATA_DIR}
@@ -51,15 +55,16 @@ function set_logstash()
 
 	cp config/logstash-sample.conf config/logstash.conf
 
-	local TMP_ELK_ES_HOST=${LOCAL_HOST}
-    input_if_empty "TMP_ELK_ES_HOST" "Logstash: Please ender your ${red}elasticsearch host address${reset} like '${LOCAL_HOST}'"
-	set_if_equals "TMP_ELK_ES_HOST" "LOCAL_HOST" "127.0.0.1"
+	local TMP_ELK_LS_ES_HOST=${LOCAL_HOST}
+    input_if_empty "TMP_ELK_LS_ES_HOST" "Logstash: Please ender your ${red}elasticsearch host address${reset} like '${LOCAL_HOST}'"
+	set_if_equals "TMP_ELK_LS_ES_HOST" "LOCAL_HOST" "127.0.0.1"
 
-    sed -i "s@localhost@${TMP_ELK_ES_HOST}@g" config/logstash.conf
+    sed -i "s@localhost@${TMP_ELK_LS_ES_HOST}@g" config/logstash.conf
 
 	return $?
 }
 
+# 4-启动软件
 function boot_logstash()
 {
 	local TMP_LS_SETUP_DIR=${1}
@@ -87,6 +92,7 @@ function boot_logstash()
 	return $?
 }
 
+# x-执行步骤
 function exec_step_logstash()
 {
 	local TMP_LS_SETUP_DIR=${1}
@@ -102,6 +108,7 @@ function exec_step_logstash()
 	return $?
 }
 
+# x-下载软件
 function down_logstash()
 {
 	ELK_LOGSTASH_SETUP_NEWER="7.8.0"

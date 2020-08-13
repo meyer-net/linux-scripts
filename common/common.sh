@@ -7,28 +7,15 @@
 # http://blog.csdn.net/u010861514/article/details/51028220
 # 命令参考：https://www.jianshu.com/p/1bbdbf1aa1bd
 
-# ret, err, code = run_cmd(check_java_cmd)
-# def run_cmd(cmd):
-#     result_str = ""
-#     errors = ""
-#     process = sub.Popen(cmd, stdout=sub.PIPE, shell=True)
-#     # result_str, err = process.communicate()
-#     p_result = process.stdout
-#     p_error = process.stderr
-    
-#     code = process.returncode
-#     process.wait()
-#     if p_error:
-#         errors = p_error.read().strip()
-#         p_error.close()
-#         if errors:
-#             return "", errors, code
-
-#     if p_result:
-#         result_str = p_result.read().strip()
-#         p_result.close()
-
-#     return result_str, errors, code
+# $? :上一个命令的执行状态返回值
+# $#：:参数的个数
+# $*：参数列表，所有的变量作为一个字符串
+# $@：参数列表，每个变量作为单个字符串
+# $1-9,${10}：位置参数
+# $$：脚本的进程号
+# $_：之前命令的最后一个参数
+# $0：脚本的名称
+# $！：运行在后台的最后一个进程ID
 
 # 独有公共变量
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -364,6 +351,23 @@ function path_not_exits_action()
 	return $?
 }
 
+#路径不存在则创建
+#参数1：检测路径
+#参数2：路径存在时输出信息
+function path_not_exits_create() 
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	local _TMP_NOT_EXITS_PATH="$1"
+	local _TMP_NOT_EXITS_PATH_ECHO="$2"
+
+    path_not_exits_action "${_TMP_NOT_EXITS_PATH}" "mkdir -pv ${_TMP_NOT_EXITS_PATH}" "${_TMP_NOT_EXITS_PATH_ECHO}"
+
+	return $?
+}
+
 #Rpm不存在执行
 #参数1：包名称
 #参数2：执行函数名称
@@ -393,51 +397,62 @@ function soft_rpm_check_action()
 #参数1：包名称
 #参数2：执行函数名称
 #参数3：包存在时输出信息
+#示例：
+#	 soft_yum_check_action "vvv" "yum -y install %s" "%s was installed"
+#	 soft_yum_check_action "sss" "test" "%s was installed"
+#	 soft_yum_check_action "wget,vim" "echo '%s setup'" "%s was installed"
 function soft_yum_check_action() 
 {
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
+    
+	local TMP_YUM_CHECK_SOFTS=${1}
+	local TMP_YUM_CHECK_ACTION_SCRIPT=${2}
+    local TMP_YUM_CHECK_SOFT_STD=${3}
 
-	local TMP_YUM_CHECK_SOFT=$1
-	local TMP_YUM_CHECK_SOFT_FUNC=$2
-
-    local TMP_YUM_FIND_RESULTS=`yum list installed | grep $TMP_YUM_CHECK_SOFT`
-	if [ -z "$TMP_YUM_FIND_RESULTS" ]; then
-		$TMP_YUM_CHECK_SOFT_FUNC
-	else
-		echo $3
-
-		return 0;
+    # 如果是函数的情况下，附加参数传递
+	if [ "$(type -t ${TMP_YUM_CHECK_ACTION_SCRIPT})" = "function" ] ; then
+		TMP_YUM_CHECK_ACTION_SCRIPT="${TMP_YUM_CHECK_ACTION_SCRIPT} \"%s\""
 	fi
+
+    local TMP_YUM_CHECK_EXEC_SCRIPT="
+        echo \${TMP_SPLITER}
+        echo \"Checking the yum installed repos of '${red}%s${reset}'\"
+        echo \${TMP_SPLITER}
+
+        local TMP_YUM_FIND_RESULTS=\`yum list installed | grep %s\`
+        if [ -z \"\${TMP_YUM_FIND_RESULTS}\" ]; then
+            ${TMP_YUM_CHECK_ACTION_SCRIPT}
+        else
+            # 此处如果是取用变量而不是实际值，则split_action中的printf不会进行格式化
+            # print \"${TMP_YUM_CHECK_SOFT_STD}\" \"\${TMP_YUM_CHECK_SOFT}\"
+            echo \"${TMP_YUM_CHECK_SOFT_STD}\"
+        fi
+
+        echo"
+
+    exec_split_action "${TMP_YUM_CHECK_SOFTS}" "${TMP_YUM_CHECK_EXEC_SCRIPT}"
 
 	return $?
 }
 
 #Yum不存在时安装
 #参数1：包名称
-#参数2：执行函数名称
-#参数3：包存在时输出信息
-function soft_yum_check_install() 
+#参数2：包存在时输出信息
+#示例：
+#    soft_yum_check_setup "vvv" "%s was installed"
+#    soft_yum_check_setup "wget,vim" "%s was installed"
+function soft_yum_check_setup() 
 {
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
-
-	local TMP_YUM_CHECK_SOFT=$1
-	local TMP_YUM_CHECK_SOFT_FUNC=$2
-
-    echo $TMP_SPLITER
-    echo "Checking the yum installed repos of '${red}${TMP_YUM_CHECK_SOFT}${reset}'"
-    echo $TMP_SPLITER
-    local TMP_YUM_FIND_RESULTS=`yum list installed | grep $TMP_YUM_CHECK_SOFT`
-	if [ -z "$TMP_YUM_FIND_RESULTS" ]; then
-		soft_yum_check_action "sudo yum -y install $TMP_YUM_CHECK_SOFT"
-	else
-		echo $3
-
-		return 0;
-	fi
+    
+	local TMP_YUM_CHECK_SOFTS=${1}
+	local TMP_YUM_CHECK_SOFT_STD=${2:-"%s was installed"}
+        
+    soft_yum_check_action "${1}" "yum -y install %s" "${TMP_YUM_CHECK_SOFT_STD}"
 
 	return $?
 }
@@ -777,7 +792,7 @@ function setup_soft_pip()
 	else
     	sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep $TMP_SOFT_PIP_NAME | grep -v grep
 
-		return 0
+		return 1
 	fi
 
 	return $?
@@ -1140,11 +1155,44 @@ function setup_if_choice()
 #检测并执行指令
 #要执行的函数/脚本名称
 function exec_check_action() {
-	if [ "$(type -t $1)" = "function" ] ; then
-		$1
+	if [ "$(type -t ${1})" = "function" ] ; then
+		${1}
 	else
-		eval "$1"
+		eval "${1}"
 	fi
+
+	return $?
+}
+
+#分割并执行动作
+#参数1：用于分割的字符串
+#参数2：对分割字符串执行脚本
+#例子：TMP=1 && while_exec "TMP=\$((TMP+1))" "[ \$TMP -eq 10 ] && echo 1" "echo \$TMP"
+function exec_split_action()
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+    
+	local TMP_WHILE_SPLIT_ARR=(${1//,/ })
+	local TMP_WHILE_EXEC_SCRIPT=${2}
+	local TMP_WHILE_EXEC_SCRIPT_FORMAT_COUNT=$(echo "${2}" | grep -o "%s" | wc -l)
+	
+	for TMP_WHILE_SPLIT_ITEM in ${TMP_WHILE_SPLIT_ARR[@]}; do
+		# 附加动态参数
+		local TMP_WHILE_EXEC_SCRIPT_FORMAT_PARAMS="${TMP_WHILE_SPLIT_ITEM}"
+		for ((TMP_WHILE_EXEC_SCRIPT_FORMAT_PATAMS_COUNT_INDEX=1;TMP_WHILE_EXEC_SCRIPT_FORMAT_PATAMS_COUNT_INDEX<${TMP_WHILE_EXEC_SCRIPT_FORMAT_COUNT};TMP_WHILE_EXEC_SCRIPT_FORMAT_PATAMS_COUNT_INDEX++)); do
+			TMP_WHILE_EXEC_SCRIPT_FORMAT_PARAMS=$(printf "${TMP_WHILE_EXEC_SCRIPT_FORMAT_PARAMS} %s" "${TMP_WHILE_SPLIT_ITEM}")
+		done
+		
+		# 格式化运行动态脚本
+        local TMP_WHILE_EXEC_SCRIPT_CURRENT=`printf "${TMP_WHILE_EXEC_SCRIPT}" ${TMP_WHILE_EXEC_SCRIPT_FORMAT_PARAMS}`
+        if [ "$(type -t ${TMP_WHILE_EXEC_SCRIPT_CURRENT})" = "function" ] ; then
+            ${TMP_WHILE_EXEC_SCRIPT_CURRENT} "${TMP_WHILE_SPLIT_ITEM}"
+        else
+            eval "${TMP_WHILE_EXEC_SCRIPT_CURRENT}"
+        fi
+    done
 
 	return $?
 }
@@ -1436,70 +1484,65 @@ function echo_startup_config()
 		return $?
 	fi
 	
-	set_if_empty "SUPERVISOR_ATT_DIR" "$ATT_DIR/supervisor"
+	set_if_empty "SUPERVISOR_ATT_DIR" "${ATT_DIR}/supervisor"
 
-	local STARTUP_NAME="$1"
-	local STARTUP_FILENAME="$STARTUP_NAME.conf"
-	local STARTUP_DIR="$2"
-	local STARTUP_COMMAND="$3"
-	local STARTUP_ENV="$4"
-	local STARTUP_PRIORITY="$5"
-	local STARTUP_SOURCE="$6"
-	local STARTUP_USER="${7:-user}"
+	local TMP_STARTUP_SUPERVISOR_NAME=${1}
+	local TMP_STARTUP_SUPERVISOR_FILENAME=${TMP_STARTUP_SUPERVISOR_NAME}.conf
+	local TMP_STARTUP_SUPERVISOR_DIR=${2}
+	local TMP_STARTUP_SUPERVISOR_COMMAND=${3}
+	local TMP_STARTUP_SUPERVISOR_ENV=${4}
+	local TMP_STARTUP_SUPERVISOR_PRIORITY=${5}
+	local TMP_STARTUP_SUPERVISOR_SOURCE=${6}
+	local TMP_STARTUP_SUPERVISOR_USER=${7:-root}
 
-	if [ "${#STARTUP_SOURCE}" -eq 0 ]; then
-		STARTUP_SOURCE="/etc/profile"
+    # 设置默认的源环境，并检测是否为NPM启动方式
+	if [ -z "${TMP_STARTUP_SUPERVISOR_SOURCE}" ]; then
+		TMP_STARTUP_SUPERVISOR_SOURCE="/etc/profile"
 
-		local STARTUP_BY_NPM_CHECK=`echo "$STARTUP_COMMAND" | sed "s@^sudo@@g" | awk '{sub("^ *","");sub(" *$","");print}' | grep -o "^npm"`
-		if [ "${STARTUP_BY_NPM_CHECK}" == "npm" ]; then
-			STARTUP_SOURCE="$NVM_PATH"
+		local TMP_STARTUP_BY_NPM_CHECK=`echo "${TMP_STARTUP_SUPERVISOR_COMMAND}" | sed "s@^sudo@@g" | awk '{sub("^ *","");sub(" *$","");print}' | grep -o "^npm"`
+		if [ "${TMP_STARTUP_BY_NPM_CHECK}" == "npm" ]; then
+			TMP_STARTUP_SUPERVISOR_SOURCE="${NVM_PATH}"
 		fi
 	fi
 
-	SUPERVISOR_LOGS_DIR="$SUPERVISOR_ATT_DIR/logs"
-	SUPERVISOR_SCRIPTS_DIR="$SUPERVISOR_ATT_DIR/scripts"
-	SUPERVISOR_FILE_DIR="$SUPERVISOR_ATT_DIR/conf"
-
-	mkdir -pv $SUPERVISOR_LOGS_DIR
-	mkdir -pv $SUPERVISOR_SCRIPTS_DIR
-	mkdir -pv $SUPERVISOR_FILE_DIR
-
-	SUPERVISOR_FILE_OUTPUT_PATH=${SUPERVISOR_FILE_DIR}/${STARTUP_FILENAME}
-	mkdir -pv $SUPERVISOR_FILE_DIR
-
-	if [ -n "$STARTUP_DIR" ]; then
-		STARTUP_DIR="directory = $STARTUP_DIR ; 程序的启动目录"
+	if [ -n "${TMP_STARTUP_SUPERVISOR_DIR}" ]; then
+		TMP_STARTUP_SUPERVISOR_DIR="directory = ${TMP_STARTUP_SUPERVISOR_DIR}"
 	fi
 
-	if [ ${#STARTUP_ENV} -gt 0 ]; then
-		STARTUP_ENV="${STARTUP_ENV}:"
+	if [ -n "${TMP_STARTUP_SUPERVISOR_ENV}" ]; then
+		TMP_STARTUP_SUPERVISOR_ENV="${TMP_STARTUP_SUPERVISOR_ENV}:"
 	fi
 
 	# 类似的：environment = ANDROID_HOME="/opt/android-sdk-linux",PATH="/usr/bin:/usr/local/bin:%(ENV_ANDROID_HOME)s/tools:%(ENV_ANDROID_HOME)s/tools/bin:%(ENV_ANDROID_HOME)s/platform-tools:%(ENV_PATH)s"
-	STARTUP_ENV="environment = PATH=\"/usr/bin:/usr/local/bin:$STARTUP_ENV%(ENV_PATH)s\" ; 程序启动的环境变量信息"
+	TMP_STARTUP_SUPERVISOR_ENV="environment = PATH=\"/usr/bin:/usr/local/bin:${TMP_STARTUP_SUPERVISOR_ENV}%(ENV_PATH)s\""
 
-	if [ -n "$STARTUP_PRIORITY" ]; then
-		STARTUP_PRIORITY="priority = $STARTUP_PRIORITY ; 启动优先级，默认999"
+	if [ -n "${TMP_STARTUP_SUPERVISOR_PRIORITY}" ]; then
+		TMP_STARTUP_SUPERVISOR_PRIORITY="priority = ${TMP_STARTUP_SUPERVISOR_PRIORITY}"
 	fi
 	
-	cat >$SUPERVISOR_FILE_OUTPUT_PATH<<EOF
-[program:$STARTUP_NAME]
-command = /bin/bash -c 'source "\$0" && exec "\$@"' $STARTUP_SOURCE $STARTUP_COMMAND ; 启动命令，可以看出与手动在命令行启动的命令是一样的
+	local TMP_SFT_SUPERVISOR_CONF_DIR="${SUPERVISOR_ATT_DIR}/conf"
+	local TMP_SFT_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH=${TMP_SFT_SUPERVISOR_CONF_DIR}/${TMP_STARTUP_SUPERVISOR_FILENAME}
+    local TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
+	path_not_exits_create "${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}"
+
+	cat >$TMP_SFT_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH<<EOF
+[program:${TMP_STARTUP_SUPERVISOR_NAME}]
+command = /bin/bash -c 'source "\$0" && exec "\$@"' $TMP_STARTUP_SUPERVISOR_SOURCE $TMP_STARTUP_SUPERVISOR_COMMAND ; 启动命令，可以看出与手动在命令行启动的命令是一样的
 autostart = true                                                                     ; 在 supervisord 启动的时候也自动启动
 startsecs = 240                                                                      ; 启动 60 秒后没有异常退出，就当作已经正常启动了
 autorestart = true                                                                   ; 程序异常退出后自动重启
 startretries = 10                                                                    ; 启动失败自动重试次数，默认是 3
-user = $STARTUP_USER                                                                 ; 用哪个用户启动
+user = ${TMP_STARTUP_SUPERVISOR_USER}                                                ; 用哪个用户启动
 redirect_stderr = true                                                               ; 把 stderr 重定向到 stdout，默认 false
 stdout_logfile_maxbytes = 20MB                                                       ; stdout 日志文件大小，默认 50MB
 stdout_logfile_backups = 20                                                          ; stdout 日志文件备份数
 
-$STARTUP_PRIORITY
-$STARTUP_DIR
+$TMP_STARTUP_SUPERVISOR_PRIORITY                                                     ; 启动优先级，默认999
+$TMP_STARTUP_SUPERVISOR_DIR                                                          ; 程序的启动目录
 
-$STARTUP_ENV
+$TMP_STARTUP_SUPERVISOR_ENV                                                          ; 程序启动的环境变量信息
 
-stdout_logfile = ${SUPERVISOR_LOGS_DIR}/${STARTUP_NAME}_stdout.log                   ; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）
+stdout_logfile = ${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}/${TMP_STARTUP_SUPERVISOR_NAME}_stdout.log                   ; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）
 numprocs=1                                                                           ;
 EOF
 
@@ -1516,24 +1559,27 @@ function echo_soft_port()
 		return $?
 	fi
 
-	local TMP_ECHO_SOFT_PORT=$1
-	local TMP_ECHO_SOFT_PORT_IP=$2
+	local TMP_ECHO_SOFT_PORT=${1}
+	local TMP_ECHO_SOFT_PORT_IP=${2}
+	local TMP_ECHO_SOFT_PORT_TYPE=${3}
+
+	# 判断是否加端口类型
+	local TMP_ECHO_SOFT_PORT_GREP_TYPE="-p ${TMP_ECHO_SOFT_PORT_TYPE}"
 
 	#cat /etc/sysconfig/iptables | grep "\-A INPUT -p" | awk -F' ' '{print $(NF-2)}' | awk '{for (i=1;i<=NF;i++) {if ($i=="801") {print i}}}'
-	local TMP_IPTABLES=`cat /etc/sysconfig/iptables | grep "\-A INPUT -p"`
-	local TMP_QUERY_IPTABLES_EXISTS="echo $TMP_IPTABLES | grep '\-\-dport $TMP_ECHO_SOFT_PORT'"
+	local TMP_QUERY_IPTABLES_EXISTS="cat /etc/sysconfig/iptables | grep \"\-A INPUT ${TMP_ECHO_SOFT_PORT_GREP_TYPE}\" | grep \"\-\-dport ${TMP_ECHO_SOFT_PORT}\""
 
 	if [ -n "$TMP_ECHO_SOFT_PORT_IP" ]; then
 		TMP_ECHO_SOFT_PORT_IP="-s $TMP_ECHO_SOFT_PORT_IP "
 		TMP_QUERY_IPTABLES_EXISTS="${TMP_QUERY_IPTABLES_EXISTS} | grep '\\${TMP_ECHO_SOFT_PORT_IP}'"
 	fi
-	
-	TMP_QUERY_IPTABLES_EXISTS=`$TMP_QUERY_IPTABLES_EXISTS`
-	if [ -n "$TMP_QUERY_IPTABLES_EXISTS" ]; then
-		echo "Port $TMP_ECHO_SOFT_PORT for '$TMP_ECHO_SOFT_PORT_IP' exists, get data '$TMP_QUERY_IPTABLES_EXISTS'"
+
+	local TMP_QUERY_IPTABLES_EXISTS_RESULT=$(eval ${TMP_QUERY_IPTABLES_EXISTS})
+	if [ -n "${TMP_QUERY_IPTABLES_EXISTS_RESULT}" ]; then
+		echo -e "Port ${TMP_ECHO_SOFT_PORT} for '${TMP_ECHO_SOFT_PORT_IP:-"all"}' exists。\nGet data ${red}${TMP_QUERY_IPTABLES_EXISTS_RESULT}${reset}"
 		return $?
 	fi
-
+	
 	# firewall-cmd --zone=public --add-port=80/tcp --permanent  # nginx 端口
 	# firewall-cmd --zone=public --add-port=2222/tcp --permanent  # 用户SSH登录端口 coco
 	sed -i "11a-A INPUT $TMP_ECHO_SOFT_PORT_IP-p tcp -m state --state NEW -m tcp --dport $TMP_ECHO_SOFT_PORT -j ACCEPT" /etc/sysconfig/iptables
@@ -1541,9 +1587,11 @@ function echo_soft_port()
 	# firewall-cmd --reload  # 重新载入规则
 	service iptables restart
 
-    firewall-cmd --permanent --add-port=$TMP_ECHO_SOFT_PORT/tcp
-    firewall-cmd --permanent --add-port=$TMP_ECHO_SOFT_PORT/udp
-    firewall-cmd --reload
+	local TMP_FIREWALL_STATE=`firewall-cmd --state`
+	
+	firewall-cmd --permanent --add-port=${TMP_ECHO_SOFT_PORT}/tcp
+	firewall-cmd --permanent --add-port=${TMP_ECHO_SOFT_PORT}/udp
+	firewall-cmd --reload
 
 	sleep 2
 

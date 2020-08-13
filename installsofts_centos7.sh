@@ -47,12 +47,12 @@ function link_logs()
 function mkdirs()
 {
     #path_not_exits_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
-    path_not_exits_action "${SETUP_DIR}" "mkdir -pv ${SETUP_DIR}"
-    path_not_exits_action "${WWW_DIR}" "mkdir -pv ${WWW_DIR}"
-    path_not_exits_action "${APP_DIR}" "mkdir -pv ${APP_DIR}"
-    path_not_exits_action "${BOOT_DIR}" "mkdir -pv ${BOOT_DIR}"
-    path_not_exits_action "${HTML_DIR}" "mkdir -pv ${HTML_DIR}"
-    path_not_exits_action "${PIP_PACKAGES_DIR}" "mkdir -pv ${PIP_PACKAGES_DIR}"
+    path_not_exits_create "${SETUP_DIR}"
+    path_not_exits_create "${WWW_DIR}"
+    path_not_exits_create "${APP_DIR}"
+    path_not_exits_create "${BOOT_DIR}"
+    path_not_exits_create "${HTML_DIR}"
+    path_not_exits_create "${PIP_PACKAGES_DIR}"
     
     path_not_exits_action "${LOGS_DIR}" "link_logs"
 

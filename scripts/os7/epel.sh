@@ -15,8 +15,8 @@ function setupEpel()
 	sudo yum -y install yum-priorities
 	sudo yum -y install yum-plugin-fastestmirror
 	
-	soft_yum_check_install "wget"
-	soft_yum_check_install "git"
+	soft_yum_check_setup "wget"
+	soft_yum_check_setup "git"
 
 	#更改镜像为国内镜像
 	#http://centos.ustc.edu.cn/

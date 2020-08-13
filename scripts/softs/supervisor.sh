@@ -15,6 +15,26 @@ function set_environment()
 }
 
 # 2-安装软件
+function setup_supervisor()
+{
+    path_not_exits_create "${SUPERVISOR_ATT_DIR}"
+    path_not_exits_create "${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}"
+    
+	return $?
+}
+
+# 3-设置软件
+function set_supervisor()
+{
+	local TMP_SFT_SUPERVISOR_CONF_PATH=${SUPERVISOR_ATT_DIR}/supervisor.conf
+    path_not_exits_action "${TMP_SFT_SUPERVISOR_CONF_PATH}" "set_supervisor_conf"
+
+    local TMP_SFT_SUPERVISOR_VTL_BIN_PATH=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/supervisor
+    path_not_exits_action "${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}" "set_supervisor_bin"
+
+	return $?
+}
+
 function set_supervisor_conf()
 {
     # 规范特殊安装的目录
@@ -27,19 +47,33 @@ function set_supervisor_conf()
 
     ln -sf ${TMP_SFT_SUPERVISOR_CONF_PATH} /etc/supervisor.conf
     ln -sf ${TMP_SFT_SUPERVISOR_CONF_PATH} ${TMP_SFT_SUPERVISOR_VTL_SETUP_CONF_PATH}
-
-
+    
     # 规范日志的目录
     local TMP_SFT_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
-	local TMP_SFT_SUPERVISOR_VTL_SETUP_LOGS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/logs
+	local TMP_SFT_SUPERVISOR_VTL_LOGS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/logs
 
-    path_not_exits_action "${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}" "mkdir -pv ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}"
-	rm -rf ${TMP_SFT_SUPERVISOR_VTL_SETUP_LOGS_DIR}
-    ln -sf ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR} ${TMP_SFT_SUPERVISOR_VTL_SETUP_LOGS_DIR}
+    path_not_exits_create "${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}"
+
+	rm -rf ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
+    ln -sf ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR} ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
 
     sed -i "s@^[;]*logfile=.*@logfile=${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
     sed -i "s@^[;]*\[include\]@\[include\]@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
     sed -i "s@^[;]*files = .*@files = ${SUPERVISOR_ATT_DIR}/conf/*.conf@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
+
+    # 规范后期配置文件及脚本存放路径
+	local TMP_SFT_SUPERVISOR_CONF_DIR="${SUPERVISOR_ATT_DIR}/conf"
+	local TMP_SFT_SUPERVISOR_SCRIPTS_DIR="${SUPERVISOR_ATT_DIR}/scripts"
+    local TMP_SFT_SUPERVISOR_VTL_CONF_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/conf
+    local TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/scripts
+    
+	path_not_exits_create "${TMP_SFT_SUPERVISOR_CONF_DIR}"
+	path_not_exits_create "${TMP_SFT_SUPERVISOR_SCRIPTS_DIR}"
+
+    rm -rf ${TMP_SFT_SUPERVISOR_VTL_CONF_DIR}
+    rm -rf ${TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR}
+    ln -sf ${TMP_SFT_SUPERVISOR_CONF_DIR} ${TMP_SFT_SUPERVISOR_VTL_CONF_DIR}
+    ln -sf ${TMP_SFT_SUPERVISOR_SCRIPTS_DIR} ${TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR}
 
 	return $?
 }
@@ -208,26 +242,6 @@ EOF
     ln -sf ${TMP_SFT_SUPERVISOR_VTL_BIN_PATH} /usr/bin/supervisor #/etc/init.d/supervisord
     
     chmod +x ${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}
-
-	return $?
-}
-
-function setup_supervisor()
-{
-    path_not_exits_action "${SUPERVISOR_ATT_DIR}" "mkdir -pv ${SUPERVISOR_ATT_DIR}"
-    path_not_exits_action "${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}" "mkdir -pv ${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}"
-    
-	return $?
-}
-
-# 3-设置软件
-function set_supervisor()
-{
-	local TMP_SFT_SUPERVISOR_CONF_PATH=${SUPERVISOR_ATT_DIR}/supervisor.conf
-    path_not_exits_action "${TMP_SFT_SUPERVISOR_CONF_PATH}" "set_supervisor_conf"
-
-    local TMP_SFT_SUPERVISOR_VTL_BIN_PATH=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/supervisor
-    path_not_exits_action "${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}" "set_supervisor_bin"
 
 	return $?
 }
