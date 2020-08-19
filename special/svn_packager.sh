@@ -12,8 +12,8 @@ function check_config()
 {
     convert_path "SVN_PACKAGE_CONFIG_PATH"
     local SVN_PACKAGE_CONFIG_DIR=`dirname $SVN_PACKAGE_CONFIG_PATH`
-    path_not_exits_action "$SVN_PACKAGE_CONFIG_DIR" "mkdir -pv $SVN_PACKAGE_CONFIG_DIR"
-    path_not_exits_action "$SVN_PACKAGE_CONFIG_PATH" "fill_config"
+    path_not_exits_action "${SVN_PACKAGE_CONFIG_DIR}"
+    path_not_exits_action "${SVN_PACKAGE_CONFIG_PATH}" "fill_config"
     
     #路径转换
     cat special/svn_packager_exec.sh > /usr/bin/svn_packager && chmod +x /usr/bin/svn_packager

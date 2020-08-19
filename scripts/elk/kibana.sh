@@ -6,7 +6,7 @@
 #------------------------------------------------
 
 # 1-配置环境
-function set_kibana()
+function set_environment()
 {
 	create_user_if_not_exists elk elk
 
@@ -104,10 +104,10 @@ function exec_step_kibana()
 # x-下载软件
 function down_kibana()
 {	
-	ELK_KIBANA_SETUP_NEWER="7.8.0"
-	set_github_soft_releases_newer_version "ELK_KIBANA_SETUP_NEWER" "elastic/kibana"
-	exec_text_format "ELK_KIBANA_SETUP_NEWER" "https://artifacts.elastic.co/downloads/kibana/kibana-%-linux-x86_64.tar.gz"
-    setup_soft_wget "kibana" "$ELK_KIBANA_SETUP_NEWER" "exec_step_kibana"
+	ELK_KBN_SETUP_NEWER="7.8.0"
+	set_github_soft_releases_newer_version "ELK_KBN_SETUP_NEWER" "elastic/kibana"
+	exec_text_format "ELK_KBN_SETUP_NEWER" "https://artifacts.elastic.co/downloads/kibana/kibana-%-linux-x86_64.tar.gz"
+    setup_soft_wget "kibana" "$ELK_KBN_SETUP_NEWER" "exec_step_kibana"
 
 	return $?
 }

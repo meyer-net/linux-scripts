@@ -290,6 +290,7 @@ function setup_soft_basic()
 		return $?
 	fi
 
+	local TMP_SOFT_SETUP_CURRENT=`pwd`
 	local TMP_SOFT_SETUP_NAME=$1
 	local TMP_SOFT_SETUP_FUNC=$2
 
@@ -311,7 +312,7 @@ function setup_soft_basic()
 	echo "Install ${green}$TMP_SOFT_SETUP_NAME${reset} Completed"
 	echo $TMP_VAR_SPLITER
 
-	cd $WORK_PATH
+	cd ${TMP_SOFT_SETUP_CURRENT}
 
 	return $?
 }
@@ -726,6 +727,7 @@ function setup_soft_wget()
 #参数1：软件安装名称
 #参数2：软件下载地址
 #参数3：软件下载后执行函数名称
+#参数4：软件下载附加参数
 function setup_soft_git() 
 {	
 	if [ $? -ne 0 ]; then
@@ -735,6 +737,7 @@ function setup_soft_git()
 	local TMP_SOFT_GIT_NAME=$1
 	local TMP_SOFT_GIT_URL=$2
 	local TMP_SOFT_GIT_SETUP_FUNC=$3
+	local TMP_SOFT_GIT_URL_PARAMS=$4
 	
 	typeset -l TMP_SOFT_LOWER_NAME
 	local TMP_SOFT_LOWER_NAME=$TMP_SOFT_GIT_NAME
@@ -747,7 +750,7 @@ function setup_soft_git()
 
 		cd $DOWN_DIR
 		if [ ! -f "$TMP_SOFT_GIT_FOLDER_NAME" ]; then
-			git clone $TMP_SOFT_GIT_URL
+			git clone $TMP_SOFT_GIT_URL ${TMP_SOFT_GIT_URL_PARAMS}
 		fi
 		
 		cd $TMP_SOFT_GIT_FOLDER_NAME
@@ -940,6 +943,7 @@ function find_content_list_first_line()
 #	TMP_ELASTICSEARCH_NEWER_VERSION="0.0.1"
 #	set_github_soft_releases_newer_version "TMP_ELASTICSEARCH_NEWER_VERSION" "elastic/elasticsearch"
 #	echo "The github soft of 'elastic/elasticsearch' releases newer version is $TMP_ELASTICSEARCH_NEWER_VERSION"
+# ??? 兼容没有tag标签的情况，类似filebeat
 function set_github_soft_releases_newer_version() 
 {
 	if [ $? -ne 0 ]; then
@@ -949,12 +953,12 @@ function set_github_soft_releases_newer_version()
 	TMP_GITHUB_SOFT_NEWER_VERSION_VAR_NAME=$1
 	local TMP_GITHUB_SOFT_PATH=$2
 
-	local TMP_GITHUB_SOFT_HTTPS_PATH="https://github.com/$TMP_GITHUB_SOFT_PATH/releases"
-	local TMP_GITHUB_SOFT_TAG_PATH="$TMP_GITHUB_SOFT_PATH/releases/tag/"
+	local TMP_GITHUB_SOFT_HTTPS_PATH="https://github.com/${TMP_GITHUB_SOFT_PATH}/releases"
+	local TMP_GITHUB_SOFT_TAG_PATH="${TMP_GITHUB_SOFT_PATH}/releases/tag/"
 
 	# 提取href中值，如需提取标签内值，则使用： sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | awk '{sub("^ *","");sub(" *$","");print}' | awk NR==1
 	
-	local TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL=`eval echo '$'$TMP_GITHUB_SOFT_NEWER_VERSION_VAR_NAME`
+	local TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL=`eval echo '$'${TMP_GITHUB_SOFT_NEWER_VERSION_VAR_NAME}`
 
     echo $TMP_SPLITER
     echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}', default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL}${reset}'"
@@ -1491,7 +1495,7 @@ function echo_startup_config()
 	local TMP_STARTUP_SUPERVISOR_DIR=${2}
 	local TMP_STARTUP_SUPERVISOR_COMMAND=${3}
 	local TMP_STARTUP_SUPERVISOR_ENV=${4}
-	local TMP_STARTUP_SUPERVISOR_PRIORITY=${5}
+	local TMP_STARTUP_SUPERVISOR_PRIORITY=${5:-99}
 	local TMP_STARTUP_SUPERVISOR_SOURCE=${6}
 	local TMP_STARTUP_SUPERVISOR_USER=${7:-root}
 
@@ -1506,7 +1510,7 @@ function echo_startup_config()
 	fi
 
 	if [ -n "${TMP_STARTUP_SUPERVISOR_DIR}" ]; then
-		TMP_STARTUP_SUPERVISOR_DIR="directory = ${TMP_STARTUP_SUPERVISOR_DIR}"
+		TMP_STARTUP_SUPERVISOR_DIR="directory = ${TMP_STARTUP_SUPERVISOR_DIR}  ; 程序的启动目录"
 	fi
 
 	if [ -n "${TMP_STARTUP_SUPERVISOR_ENV}" ]; then
@@ -1514,11 +1518,9 @@ function echo_startup_config()
 	fi
 
 	# 类似的：environment = ANDROID_HOME="/opt/android-sdk-linux",PATH="/usr/bin:/usr/local/bin:%(ENV_ANDROID_HOME)s/tools:%(ENV_ANDROID_HOME)s/tools/bin:%(ENV_ANDROID_HOME)s/platform-tools:%(ENV_PATH)s"
-	TMP_STARTUP_SUPERVISOR_ENV="environment = PATH=\"/usr/bin:/usr/local/bin:${TMP_STARTUP_SUPERVISOR_ENV}%(ENV_PATH)s\""
+	TMP_STARTUP_SUPERVISOR_ENV="environment = PATH=\"/usr/bin:/usr/local/bin:${TMP_STARTUP_SUPERVISOR_ENV}%(ENV_PATH)s\"  ; 程序启动的环境变量信息"
 
-	if [ -n "${TMP_STARTUP_SUPERVISOR_PRIORITY}" ]; then
-		TMP_STARTUP_SUPERVISOR_PRIORITY="priority = ${TMP_STARTUP_SUPERVISOR_PRIORITY}"
-	fi
+	TMP_STARTUP_SUPERVISOR_PRIORITY="priority = ${TMP_STARTUP_SUPERVISOR_PRIORITY}"
 	
 	local TMP_SFT_SUPERVISOR_CONF_DIR="${SUPERVISOR_ATT_DIR}/conf"
 	local TMP_SFT_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH=${TMP_SFT_SUPERVISOR_CONF_DIR}/${TMP_STARTUP_SUPERVISOR_FILENAME}
@@ -1538,12 +1540,12 @@ stdout_logfile_maxbytes = 20MB                                                  
 stdout_logfile_backups = 20                                                          ; stdout 日志文件备份数
 
 $TMP_STARTUP_SUPERVISOR_PRIORITY                                                     ; 启动优先级，默认999
-$TMP_STARTUP_SUPERVISOR_DIR                                                          ; 程序的启动目录
+$TMP_STARTUP_SUPERVISOR_DIR                                                        
 
-$TMP_STARTUP_SUPERVISOR_ENV                                                          ; 程序启动的环境变量信息
+$TMP_STARTUP_SUPERVISOR_ENV                                                        
 
-stdout_logfile = ${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}/${TMP_STARTUP_SUPERVISOR_NAME}_stdout.log                   ; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）
-numprocs=1                                                                           ;
+stdout_logfile = ${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}/${TMP_STARTUP_SUPERVISOR_NAME}_stdout.log  ; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）
+numprocs = 1                                                                           ;
 EOF
 
 	return $?

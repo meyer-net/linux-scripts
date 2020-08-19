@@ -52,7 +52,6 @@ function mkdirs()
     path_not_exits_create "${APP_DIR}"
     path_not_exits_create "${BOOT_DIR}"
     path_not_exits_create "${HTML_DIR}"
-    path_not_exits_create "${PIP_PACKAGES_DIR}"
     
     path_not_exits_action "${LOGS_DIR}" "link_logs"
 
@@ -99,7 +98,7 @@ function lang()
 
 function elk()
 {
-    setup_if_choice "CHOICE_ELK" "Please choice which elk compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,Flume,FileBeat,Exit" "$TMP_SPLITER" "scripts/elk"
+    setup_if_choice "CHOICE_ELK" "Please choice which elk compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Exit" "$TMP_SPLITER" "scripts/elk"
 	return $?
 }
 

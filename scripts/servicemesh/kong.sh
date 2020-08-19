@@ -200,7 +200,7 @@ function rouse_openresty()
 
 function check_setup_kong()
 {
-    path_not_exits_action "$TMP_SETUP_KONG_DIR" "setup_kong" "Kong was installed"
+    path_not_exits_action "${TMP_SETUP_KONG_DIR}" "setup_kong" "Kong was installed"
 
 	return $?
 }

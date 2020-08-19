@@ -10,7 +10,7 @@ function set_environment()
 {
 	create_user_if_not_exists elk elk
 	
-    source scripts/lang/java.sh
+    source ${WORK_PATH}/scripts/lang/java.sh
 
 	return $?
 }
@@ -69,7 +69,7 @@ function boot_logstash()
 {
 	local TMP_LS_SETUP_DIR=${1}
 
-	cd $TMP_LS_SETUP_DIR
+	cd ${TMP_LS_SETUP_DIR}
 	
 	# （1）测试启动，看配置文件是否正确：
 	bin/logstash -f first-pipeline.conf --config.test_and_exit
@@ -85,9 +85,9 @@ function boot_logstash()
 	bin/logstash -f config/logstash.conf --config.test_and_exit
 
 	# 启动logstash，如果有修改conf会自动加载
-	su - elk -c "cd $TMP_LS_SETUP_DIR && nohup bin/logstash -f config/logstash.conf --config.reload.automatic &" 
+	su - elk -c "cd ${TMP_LS_SETUP_DIR} && nohup bin/logstash -f config/logstash.conf --config.reload.automatic &" 
 	
-    echo_startup_config "logstash" "$TMP_LS_SETUP_DIR" "bash bin/logstash -f config/logstash.conf --config.reload.automatic" "" "2" "" "elk"
+    echo_startup_config "logstash" "${TMP_LS_SETUP_DIR}" "bash bin/logstash -f config/logstash.conf --config.reload.automatic" "" "2" "" "elk"
 
 	return $?
 }

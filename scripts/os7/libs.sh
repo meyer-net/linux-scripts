@@ -17,7 +17,7 @@ function disable_selinux() {
 
 function check_libs()
 {
-	path_not_exits_action "$SETUP_DIR/lib_installed" "setup_libs"
+	path_not_exits_action "${SETUP_DIR}/lib_installed" "setup_libs"
 
 	return $?
 }
