@@ -19,13 +19,13 @@ source common/common.sh
 
 #---------- BASE ---------- {
 # 迁移packages
-yes | cp packages/* $DOWN_DIR
+yes | cp packages/* ${DOWN_DIR}
 #}
 
 #---------- CHANGE ---------- {
-SYS_IP_CONNECT=`echo $LOCAL_HOST | sed 's@\.@-@g' | xargs -I {} echo "{}"`
-SYS_NEW_NAME="ip-$SYS_IP_CONNECT"
-sudo hostnamectl set-hostname $SYS_NEW_NAME
+SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
+SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"
+sudo hostnamectl set-hostname ${SYS_NEW_NAME}
 #---------- CHANGE ---------- }
 
 #---------- BASE ---------- {
@@ -34,10 +34,10 @@ function link_logs()
     mkdir -pv /logs
 
     local TMP_LOGS_IS_LINK=`ls -il /logs | grep "\->"`
-    if [ -z "$TMP_LOGS_IS_LINK" ]; then
+    if [ -z "${TMP_LOGS_IS_LINK}" ]; then
         if [ -d "/logs" ]; then
-            mv /logs $LOGS_DIR
-            ln -sf $LOGS_DIR /logs
+            mv /logs ${LOGS_DIR}
+            ln -sf ${LOGS_DIR} /logs
         fi
     fi
     
@@ -65,16 +65,16 @@ function choice_type()
 {    
 	echo_title
 
-	setup_if_choice "CHOICE_CTX" "Please choice your setup type" "Update_libs,From_clean,From_bak,Gen_ngx_conf,Gen_sup_conf,Proxy_by_ss,Exit" "$TMP_SPLITER"
+	setup_if_choice "CHOICE_CTX" "Please choice your setup type" "Update_libs,From_clean,From_bak,Gen_ngx_conf,Gen_sup_conf,Proxy_by_ss,Exit" "${TMP_SPLITER}"
 
 	return $?
 }
 
 function update_libs()
 {
-    source scripts/os$OS_VERSION/optimize.sh
-    source scripts/os$OS_VERSION/epel.sh
-    source scripts/os$OS_VERSION/libs.sh
+    source scripts/os${OS_VERSION}/optimize.sh
+    source scripts/os${OS_VERSION}/epel.sh
+    source scripts/os${OS_VERSION}/libs.sh
     
     source scripts/softs/supervisor.sh
     
@@ -85,38 +85,68 @@ function from_clean()
 {
     echo_title
 
-    setup_if_choice "CHOICE_TYPE" "Please choice your setup your setup type" "...,Lang,ELK,ServiceMesh,Softs,Ha,Exit" "$TMP_SPLITER"
+    setup_if_choice "CHOICE_TYPE" "Please choice your setup your setup type" "...,Lang,DevOps,Cluster,BI,ServiceMesh,Database,Web,Ha,Network,Softs,Exit" "${TMP_SPLITER}"
 
 	return $?
 }
 
 function lang()
 {
-    setup_if_choice "CHOICE_LANG" "Please choice which dev lang you want to setup" "...,Python,Java,Scala,Php,NodeJs,Exit" "$TMP_SPLITER" "scripts/lang"
+    setup_if_choice "CHOICE_LANG" "Please choice which dev lang you want to setup" "...,Python,Java,Scala,Php,NodeJs,Exit" "${TMP_SPLITER}" "scripts/lang"
 	return $?
 }
 
-function elk()
+function devops()
 {
-    setup_if_choice "CHOICE_ELK" "Please choice which elk compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Exit" "$TMP_SPLITER" "scripts/elk"
+    setup_if_choice "CHOICE_DEVOPS" "Please choice which devops compoment you want to setup" "...,Git,Jenkins,Exit" "${TMP_SPLITER}" "scripts/devops"
+	return $?
+}
+
+function cluster()
+{
+    setup_if_choice "CHOICE_CLUSTER" "Please choice which cluster compoment you want to setup" "...,JumpServer,OpenSTF,Exit" "${TMP_SPLITER}" "scripts/cluster"
+	return $?
+}
+
+function bi()
+{
+    setup_if_choice "CHOICE_ELK" "Please choice which bi compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Redis,Kafka,Flink,Exit" "${TMP_SPLITER}" "scripts/bi"
 	return $?
 }
 
 function servicemesh()
 {
-    setup_if_choice "CHOICE_SERVICEMESH" "Please choice which service-mesh compoment you want to setup" "...,Docker,MiniKube,Kong,Kubernetes,Istio,Exit" "$TMP_SPLITER" "scripts/servicemesh"
+    setup_if_choice "CHOICE_SERVICEMESH" "Please choice which service-mesh compoment you want to setup" "...,Docker,MiniKube,Kong,Kubernetes,Istio,Exit" "${TMP_SPLITER}" "scripts/servicemesh"
 	return $?
 }
 
-function softs()
+function database()
 {
-	setup_if_choice "CHOICE_SOFT" "Please choice which soft you want to setup" "...,OpenResty,Redis,Kafka,Mycat,MySql,PostgreSql,ClickHouse,Flink,Exit" "$TMP_SPLITER" "scripts/softs"
+	setup_if_choice "CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,Mycat,MySql,PostgreSql,ClickHouse,Exit" "${TMP_SPLITER}" "scripts/database"
+	return $?
+}
+
+function web()
+{
+	setup_if_choice "CHOICE_SOFT" "Please choice which web compoment you want to setup" "...,Nginx,OpenResty,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
 	return $?
 }
 
 function ha()
 {
-	setup_if_choice "CHOICE_HA" "Please choice which ha compoment you want to setup" "...,Zookeeper,Hadoop,Consul,Mesos,Docker,JumpServer,Exit" "$TMP_SPLITER" "scripts/ha"
+	setup_if_choice "CHOICE_HA" "Please choice which ha compoment you want to setup" "...,Zookeeper,Hadoop,Consul,Docker,Exit" "${TMP_SPLITER}" "scripts/ha"
+	return $?
+}
+
+function network()
+{
+	setup_if_choice "CHOICE_SOFT" "Please choice which network you want to setup" "...,N2N,Frp,OpenClash,Shadowsocks,Exit" "${TMP_SPLITER}" "scripts/network"
+	return $?
+}
+
+function softs()
+{
+	setup_if_choice "CHOICE_SOFT" "Please choice which soft you want to setup" "...,Supervisor,Exit" "${TMP_SPLITER}" "scripts/softs"
 	return $?
 }
 
