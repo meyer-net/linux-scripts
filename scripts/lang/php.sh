@@ -335,4 +335,4 @@ function check_setup_remi_php73()
 	return $?
 }
 
-setup_if_choice "CHOICE_PHPVER" "Please choice which php version you want to setup" "...,PHP56,Remi_PHP73,Exit" "$TMP_SPLITER" "check_setup_"
+exec_if_choice "CHOICE_PHPVER" "Please choice which php version you want to setup" "...,PHP56,Remi_PHP73,Exit" "$TMP_SPLITER" "check_setup_"

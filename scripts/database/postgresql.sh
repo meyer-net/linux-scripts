@@ -80,7 +80,7 @@ EOF
 
 function check_setup_set()
 {
-    setup_if_choice "CHOICE_POSTGRES_SET" "Please choice which postgresql mode you want to set" "...,Master,Slave,Exit" "$TMP_SPLITER" "set_db_"
+    exec_if_choice "CHOICE_POSTGRES_SET" "Please choice which postgresql mode you want to set" "...,Master,Slave,Exit" "$TMP_SPLITER" "set_db_"
 	return $?
 }
 
@@ -199,4 +199,4 @@ function set_db_slave()
 }
 
 set_environment
-setup_if_choice "CHOICE_POSTGRES" "Please choice which postgresql action you want to done" "...,PostgreSql,Set,Exit" "$TMP_SPLITER" "check_setup_"
+exec_if_choice "CHOICE_POSTGRES" "Please choice which postgresql action you want to done" "...,PostgreSql,Set,Exit" "$TMP_SPLITER" "check_setup_"

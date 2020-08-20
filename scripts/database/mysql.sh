@@ -180,7 +180,7 @@ function set_mariadb()
 
 function check_setup_set()
 {
-    setup_if_choice "CHOICE_MYSQL_SET" "Please choice which mysql set you want to do" "...,Master,Slave,Exit" "$TMP_SPLITER" "set_db_"
+    exec_if_choice "CHOICE_MYSQL_SET" "Please choice which mysql set you want to do" "...,Master,Slave,Exit" "$TMP_SPLITER" "set_db_"
 	return $?
 }
 
@@ -267,4 +267,4 @@ function set_db_slave()
     
 TMP_SETUP_MYSQL_PWD="123456"
 set_environment
-setup_if_choice "CHOICE_MYSQL" "Please choice which mysql version you want to setup" "...,Mysql,MariaDB,Set,Exit" "$TMP_SPLITER" "check_setup_"
+exec_if_choice "CHOICE_MYSQL" "Please choice which mysql version you want to setup" "...,Mysql,MariaDB,Set,Exit" "$TMP_SPLITER" "check_setup_"

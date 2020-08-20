@@ -1091,7 +1091,7 @@ function set_if_choice()
 #参数3：选项参数
 #参数4：自定义的Spliter
 #参数5：脚本路径/前缀
-function setup_if_choice()
+function exec_if_choice()
 {
 	if [ $? -ne 0 ]; then
 		return $?
@@ -1110,30 +1110,30 @@ function setup_if_choice()
 		fi
 
 		if [ -n "$5" ]; then
-			local TMP_SETUP_IF_CHOICE_SCRIPT_PATH="$5/$NEW_VAL"
-			local TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR=($TMP_SETUP_IF_CHOICE_SCRIPT_PATH)
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[1]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@-@.@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[2]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@-@_@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[3]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@_@-@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[4]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@_@.@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[5]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@\.@-@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[6]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@\.@_@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[7]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@ @-@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[8]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@ @_@g"`
-			TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[9]=`echo "$TMP_SETUP_IF_CHOICE_SCRIPT_PATH" | sed "s@ @.@g"`
+			local TMP_exec_if_choice_SCRIPT_PATH="$5/$NEW_VAL"
+			local TMP_exec_if_choice_SCRIPT_PATH_ARR=($TMP_exec_if_choice_SCRIPT_PATH)
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[1]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@-@.@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[2]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@-@_@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[3]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@_@-@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[4]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@_@.@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[5]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@\.@-@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[6]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@\.@_@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[7]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@ @-@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[8]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@ @_@g"`
+			TMP_exec_if_choice_SCRIPT_PATH_ARR[9]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@ @.@g"`
 
 			# 识别文件转换
-			for TMP_SETUP_IF_CHOICE_SCRIPT_PATH in ${TMP_SETUP_IF_CHOICE_SCRIPT_PATH_ARR[@]}; do
-				if [ -f "${TMP_SETUP_IF_CHOICE_SCRIPT_PATH}.sh" ]; then
-					TMP_SETUP_IF_CHOICE_SCRIPT_PATH="${TMP_SETUP_IF_CHOICE_SCRIPT_PATH}.sh"
+			for TMP_exec_if_choice_SCRIPT_PATH in ${TMP_exec_if_choice_SCRIPT_PATH_ARR[@]}; do
+				if [ -f "${TMP_exec_if_choice_SCRIPT_PATH}.sh" ]; then
+					TMP_exec_if_choice_SCRIPT_PATH="${TMP_exec_if_choice_SCRIPT_PATH}.sh"
 					break
 				fi
 			done
 
-			if [ ! -f "${TMP_SETUP_IF_CHOICE_SCRIPT_PATH}" ];then
+			if [ ! -f "${TMP_exec_if_choice_SCRIPT_PATH}" ];then
 				exec_check_action "$5$NEW_VAL"
 			else
-				source ${TMP_SETUP_IF_CHOICE_SCRIPT_PATH}
+				source ${TMP_exec_if_choice_SCRIPT_PATH}
 			fi
 		else
 			exec_check_action "$NEW_VAL"
@@ -1149,7 +1149,7 @@ function setup_if_choice()
 			read -n 1 -p "Press <Enter> go on..."
 		fi
 
-		setup_if_choice "$1" "$2" "$3" "$4" "$5"
+		exec_if_choice "$1" "$2" "$3" "$4" "$5"
 	fi
 
 
@@ -1618,7 +1618,7 @@ function proxy_by_ss()
     echo "---------------------------------------------------------------------"
 
     # 选择启动模式
-    # setup_if_choice "TMP_SHADOWSOCK_MODE" "Please choice your shadowsocks run mode on this computer" "Server,Client,Exit" "$TMP_SPLITER" "boot_shadowsocks_"
+    # exec_if_choice "TMP_SHADOWSOCK_MODE" "Please choice your shadowsocks run mode on this computer" "Server,Client,Exit" "$TMP_SPLITER" "boot_shadowsocks_"
 	local TMP_SHADOWSOCK_MODE_NECESSARY_CHECK=""
 	if [ "$TMP_IS_WANT_CROSS_FIREWALL" -eq "000" ]; then
 		TMP_SHADOWSOCK_MODE_NECESSARY_CHECK="client"
