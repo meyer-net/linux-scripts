@@ -887,11 +887,14 @@ function input_if_empty()
 	return $?
 }
 
-#查找列表中，最新的文件名
+#查找网页文件列表中，最新的文件名
+#描述：本函数先获取关键字最新的发布日期，再找对应行的文件名，最后提取href，适合比较通用型的文件列表
 #参数1：需要设置的变量名
 #参数2：需要找寻的URL路径
 #参数3：查找关键字
-function find_url_list_newer_link_files()
+#示例：
+# 	find_url_list_newer_date_link_file "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-.*.x86_64.rpm"
+function find_url_list_newer_date_link_file()
 {
 	if [ $? -ne 0 ]; then
 		return $?
@@ -903,11 +906,45 @@ function find_url_list_newer_link_files()
 
 	#  | awk '{if (NR>2) {print}}' ，缺失无效行去除的判断
     local TMP_NEWER_DATE=`curl -s $TMP_VAR_FIND_URL | grep "$TMP_VAR_KEY_WORDS" | awk -F'</a>' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | sed '/^$/d' | awk -F' ' '{print $1}' | awk 'function t_f(t){"date -d \""t"\" +%s" | getline ft; return ft}{print t_f($1)}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} env LC_ALL=en_US.en date -d@{} "+%d-%h-%Y"`
-	
+
     local TMP_NEWER_LINK_FILENAME=`curl -s $TMP_VAR_FIND_URL | grep "$TMP_VAR_KEY_WORDS" | grep "$TMP_NEWER_DATE" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g'`
 
 	if [ -n "$TMP_NEWER_LINK_FILENAME" ]; then
 		eval ${1}='$TMP_NEWER_LINK_FILENAME'
+	fi
+
+	return $?
+}
+
+#查找网页文件列表中，最新的文件名
+#描述：本函数先获取href标签行，再提取href内容，最后提取文本关键字中最新的发布日期，该方法合适比较简单的关键字带版本信息，不合适比较复杂的内容信息
+#参数1：需要设置的变量名
+#参数2：需要找寻的URL路径
+#参数3：查找关键字（必须在关键字中将版本号括起‘()’，否则无法匹配具体的版本）
+#示例：
+# 	find_url_list_newer_href_link_file "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-().x86_64.rpm"
+# 	find_url_list_newer_href_link_file "TMP_NEWER_LINK" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
+function find_url_list_newer_href_link_file()
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	local TMP_VAR_NAME=$1
+	local TMP_VAR_FIND_URL=$2
+	local TMP_VAR_KEY_WORDS=$(echo ${3} | sed 's@()@.*@g')  #‘gradle-()-bin.zip’ -> 'gradle-.*-bin.zip'
+	
+	# 零宽断言
+	local TMP_VAR_KEY_WORDS_ZREG_LEFT=$(echo ${3} | grep -o ".*(" | sed 's@(@@g' | xargs -I {} echo '(?<={})')
+	local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ")." | sed 's@)@@g' | xargs -I {} echo '[^{}]+')
+	local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
+	
+    local TMP_NEWER_VERSION=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}'`
+	local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${TMP_NEWER_VERSION}.*@g")
+    local TMP_NEWER_LINK_FILENAME=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
+
+	if [ -n "${TMP_NEWER_LINK_FILENAME}" ]; then
+		eval ${1}='${TMP_NEWER_LINK_FILENAME}'
 	fi
 
 	return $?
@@ -1100,52 +1137,52 @@ function exec_if_choice()
 	set_if_choice "$1" "$2" "$3" "$4"
 
 	NEW_VAL=`eval echo '$'$1`
-	if [ -n "$NEW_VAL" ]; then
-		if [ "$NEW_VAL" = "exit" ]; then
+	if [ -n "${NEW_VAL}" ]; then
+		if [ "${NEW_VAL}" = "exit" ]; then
 			exit 1
 		fi
 
-		if [ "$NEW_VAL" = "..." ]; then
+		if [ "${NEW_VAL}" = "..." ]; then
 			return $?
 		fi
 
 		if [ -n "$5" ]; then
-			local TMP_exec_if_choice_SCRIPT_PATH="$5/$NEW_VAL"
-			local TMP_exec_if_choice_SCRIPT_PATH_ARR=($TMP_exec_if_choice_SCRIPT_PATH)
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[1]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@-@.@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[2]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@-@_@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[3]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@_@-@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[4]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@_@.@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[5]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@\.@-@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[6]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@\.@_@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[7]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@ @-@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[8]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@ @_@g"`
-			TMP_exec_if_choice_SCRIPT_PATH_ARR[9]=`echo "$TMP_exec_if_choice_SCRIPT_PATH" | sed "s@ @.@g"`
+			local TMP_EXEC_IF_CHOICE_SCRIPT_PATH="${5}/${NEW_VAL}"
+			local TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR=(${TMP_EXEC_IF_CHOICE_SCRIPT_PATH})
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[1]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@-@.@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[2]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@-@_@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[3]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@_@-@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[4]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@_@.@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[5]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@\.@-@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[6]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@\.@_@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[7]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@ @-@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[8]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@ @_@g"`
+			TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[9]=`echo "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" | sed "s@ @.@g"`
 
 			# 识别文件转换
-			for TMP_exec_if_choice_SCRIPT_PATH in ${TMP_exec_if_choice_SCRIPT_PATH_ARR[@]}; do
-				if [ -f "${TMP_exec_if_choice_SCRIPT_PATH}.sh" ]; then
-					TMP_exec_if_choice_SCRIPT_PATH="${TMP_exec_if_choice_SCRIPT_PATH}.sh"
+			for TMP_EXEC_IF_CHOICE_SCRIPT_PATH in ${TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR[@]}; do
+				if [ -f "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}.sh" ]; then
+					TMP_EXEC_IF_CHOICE_SCRIPT_PATH="${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}.sh"
 					break
 				fi
 			done
 
-			if [ ! -f "${TMP_exec_if_choice_SCRIPT_PATH}" ];then
-				exec_check_action "$5$NEW_VAL"
+			if [ ! -f "${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}" ];then
+				exec_check_action "${5}${NEW_VAL}"
 			else
-				source ${TMP_exec_if_choice_SCRIPT_PATH}
+				source ${TMP_EXEC_IF_CHOICE_SCRIPT_PATH}
 			fi
 		else
-			exec_check_action "$NEW_VAL"
+			exec_check_action "${NEW_VAL}"
 		fi
 		
-		RETURN=$?
+		local TMP_RETURN=$?
 		#返回非0，跳出循环，指导后续请求不再进行
-		if [ $RETURN != 0 ]; then
-			return $RETURN
+		if [ ${TMP_RETURN} != 0 ]; then
+			return ${TMP_RETURN}
 		fi
 
-		if [ "$NEW_VAL" != "..." ]; then
+		if [ "${NEW_VAL}" != "..." ]; then
 			read -n 1 -p "Press <Enter> go on..."
 		fi
 

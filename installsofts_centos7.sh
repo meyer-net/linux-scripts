@@ -116,7 +116,7 @@ function bi()
 
 function servicemesh()
 {
-    exec_if_choice "CHOICE_SERVICEMESH" "Please choice which service-mesh compoment you want to setup" "...,Docker,MiniKube,Kong,Kubernetes,Istio,Exit" "${TMP_SPLITER}" "scripts/servicemesh"
+    exec_if_choice "CHOICE_SERVICEMESH" "Please choice which service-mesh compoment you want to setup" "...,Docker,MiniKube,Kubernetes,Istio,Exit" "${TMP_SPLITER}" "scripts/servicemesh"
 	return $?
 }
 
@@ -128,13 +128,13 @@ function database()
 
 function web()
 {
-	exec_if_choice "CHOICE_SOFT" "Please choice which web compoment you want to setup" "...,Nginx,OpenResty,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
+	exec_if_choice "CHOICE_SOFT" "Please choice which web compoment you want to setup" "...,Nginx,OpenResty,Kong,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
 	return $?
 }
 
 function ha()
 {
-	exec_if_choice "CHOICE_HA" "Please choice which ha compoment you want to setup" "...,Zookeeper,Hadoop,Consul,Docker,Exit" "${TMP_SPLITER}" "scripts/ha"
+	exec_if_choice "CHOICE_HA" "Please choice which ha compoment you want to setup" "...,Zookeeper,Hadoop,Consul,Exit" "${TMP_SPLITER}" "scripts/ha"
 	return $?
 }
 

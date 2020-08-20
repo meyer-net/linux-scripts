@@ -37,6 +37,7 @@ function setup_flume()
 	ln -sf ${TMP_FLM_LNK_LOGS_DIR} ${TMP_FLM_LOGS_DIR}
 	ln -sf ${TMP_FLM_LNK_DATA_DIR} ${TMP_FLM_DATA_DIR}
 
+	# 环境变量
     echo "FLUME_HOME=${TMP_FLM_SETUP_DIR}" >> /etc/profile
     echo 'FLUME_BIN=${FLUME_HOME}/bin' >> /etc/profile
     echo 'PATH=${FLUME_BIN}:${PATH}' >> /etc/profile
