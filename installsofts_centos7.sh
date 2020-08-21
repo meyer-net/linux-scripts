@@ -85,7 +85,7 @@ function from_clean()
 {
     echo_title
 
-    exec_if_choice "CHOICE_TYPE" "Please choice your setup your setup type" "...,Lang,DevOps,Cluster,BI,ServiceMesh,Database,Web,Ha,Network,Softs,Exit" "${TMP_SPLITER}"
+    exec_if_choice "CHOICE_TYPE" "Please choice your setup your setup type" "...,Lang,DevOps,Cluster,BI,ServiceMesh,Database,Web,Ha,Network,Softs,Tools,Exit" "${TMP_SPLITER}"
 
 	return $?
 }
@@ -104,13 +104,13 @@ function devops()
 
 function cluster()
 {
-    exec_if_choice "CHOICE_CLUSTER" "Please choice which cluster compoment you want to setup" "...,JumpServer,OpenSTF,Exit" "${TMP_SPLITER}" "scripts/cluster"
+    exec_if_choice "CHOICE_CLUSTER" "Please choice which cluster compoment you want to setup" "...,JumpServer,STF,Exit" "${TMP_SPLITER}" "scripts/cluster"
 	return $?
 }
 
 function bi()
 {
-    exec_if_choice "CHOICE_ELK" "Please choice which bi compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Redis,Kafka,Flink,Exit" "${TMP_SPLITER}" "scripts/bi"
+    exec_if_choice "CHOICE_ELK" "Please choice which bi compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Redis,Kafka,ZeroMQ,Flink,Exit" "${TMP_SPLITER}" "scripts/bi"
 	return $?
 }
 
@@ -122,13 +122,13 @@ function servicemesh()
 
 function database()
 {
-	exec_if_choice "CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,Mycat,MySql,PostgreSql,ClickHouse,Exit" "${TMP_SPLITER}" "scripts/database"
+	exec_if_choice "CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,MySql,Mycat,PostgreSql,ClickHouse,RethinkDB,Exit" "${TMP_SPLITER}" "scripts/database"
 	return $?
 }
 
 function web()
 {
-	exec_if_choice "CHOICE_SOFT" "Please choice which web compoment you want to setup" "...,Nginx,OpenResty,Kong,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
+	exec_if_choice "CHOICE_WEB" "Please choice which web compoment you want to setup" "...,Nginx,OpenResty,Kong,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
 	return $?
 }
 
@@ -140,13 +140,19 @@ function ha()
 
 function network()
 {
-	exec_if_choice "CHOICE_SOFT" "Please choice which network you want to setup" "...,N2N,Frp,OpenClash,Shadowsocks,Exit" "${TMP_SPLITER}" "scripts/network"
+	exec_if_choice "CHOICE_NETWORK" "Please choice which network you want to setup" "...,N2N,Frp,OpenClash,Shadowsocks,Exit" "${TMP_SPLITER}" "scripts/network"
 	return $?
 }
 
 function softs()
 {
-	exec_if_choice "CHOICE_SOFT" "Please choice which soft you want to setup" "...,Supervisor,Exit" "${TMP_SPLITER}" "scripts/softs"
+	exec_if_choice "CHOICE_SOFTS" "Please choice which soft you want to setup" "...,Supervisor,Exit" "${TMP_SPLITER}" "scripts/softs"
+	return $?
+}
+
+function tools()
+{
+	exec_if_choice "CHOICE_TOOLS" "Please choice which soft you want to setup" "...,Yasm,Graphics-Magick,Pkg-Config,Protocol-Buffers,Exit" "${TMP_SPLITER}" "scripts/tools"
 	return $?
 }
 

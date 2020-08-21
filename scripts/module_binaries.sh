@@ -21,12 +21,23 @@ function set_environment()
 # 2-安装软件
 function setup_$soft_name()
 {
-	local TMP_$soft_upper_name_SETUP_DIR=${1}
-	local TMP_$soft_upper_name_CURRENT_DIR=`pwd`
+	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
+	local TMP_$soft_upper_short_name_CURRENT_DIR=`pwd`
 
-	# 编译模式
-	./configure --prefix=${TMP_$soft_upper_name_SETUP_DIR}
-	sudo make -j4 && make -j4 install
+	## 直装模式
+    sudo cat << EOF > /etc/yum.repos.d/$setup_name.repo
+[$setup_name]
+name=RethinkDB
+enabled=1
+baseurl=https://download.$setup_name.com/repository/centos/7/x86_64/
+gpgkey=https://download.$setup_name.com/repository/raw/pubkey.gpg
+gpgcheck=1
+EOF
+	sudo yum -y install $soft_name
+
+	cd ..
+
+	mv ${TMP_$soft_upper_short_name_CURRENT_DIR} ${TMP_$soft_upper_short_name_SETUP_DIR}
 
 	# 创建日志软链
 	local TMP_$soft_upper_short_name_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
@@ -42,16 +53,15 @@ function setup_$soft_name()
 
 	ln -sf ${TMP_$soft_upper_short_name_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_LOGS_DIR}
 	ln -sf ${TMP_$soft_upper_short_name_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_DATA_DIR}
-	
+
 	# 环境变量或软连接
 	echo "$soft_upper_name_HOME=${TMP_$soft_upper_name_SETUP_DIR}" >> /etc/profile
-	echo 'PATH=$$soft_upper_name_HOME/bin:$PATH' >> /etc/profile
+	echo 'PATH=$$soft_upper_name/bin:$PATH' >> /etc/profile
 	echo "export PATH $soft_upper_name_HOME" >> /etc/profile
 	source /etc/profile
-	# ln -sf ${TMP_$soft_upper_short_name_SETUP_DIR}/bin/$setup_name /usr/bin/$setup_name
 
-	# 移除源文件
-	rm -rf ${TMP_$soft_upper_name_CURRENT_DIR}
+	# 授权权限，否则无法写入
+	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}
 
 	return $?
 }
@@ -118,18 +128,12 @@ function exec_step_$soft_name()
 }
 
 # x1-下载软件
-function down_$soft_name()
+function check_setup_$soft_name()
 {
-	TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"
-	set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_NEWER" "meyer-net/snake"
-	exec_text_format "TMP_$soft_upper_short_name_SETUP_NEWER" "https://www.xxx.com/downloads/$setup_name-%s.tar.gz"
-	# set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_NEWER" "http://www.xxx.net/projects/releases/" "$setup_name-.*.tar.gz"
-	# set_url_list_newer_href_link_filename "TMP_$soft_upper_short_name_SETUP_NEWER" "http://www.xxx.net/projects/releases/" "$setup_name-().tar.gz"
-	# exec_text_format "TMP_$soft_upper_short_name_SETUP_NEWER" "http://www.xxx.net/projects/releases/%s"
-    setup_soft_wget "$setup_name" "${TMP_$soft_upper_short_name_SETUP_NEWER}" "exec_step_$soft_name"
+    soft_yum_check_action "$soft_name" "exec_step_$soft_name"
 
 	return $?
 }
 
 #安装主体
-setup_soft_basic "$title_name" "down_$soft_name"
+setup_soft_basic "$title_name" "check_setup_$soft_name"

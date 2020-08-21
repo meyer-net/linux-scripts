@@ -101,10 +101,10 @@ function exec_step_elasticsearch()
 # x-下载软件
 function down_elasticsearch()
 {
-	ELK_ELASTICSEARCH_SETUP_NEWER="7.8.0"
-	set_github_soft_releases_newer_version "ELK_ELASTICSEARCH_SETUP_NEWER" "elastic/elasticsearch"
-	exec_text_format "ELK_ELASTICSEARCH_SETUP_NEWER" "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-%-linux-x86_64.tar.gz"
-    setup_soft_wget "elasticsearch" "$ELK_ELASTICSEARCH_SETUP_NEWER" "exec_step_elasticsearch"
+	ELK_ES_SETUP_NEWER="7.8.0"
+	set_github_soft_releases_newer_version "ELK_ES_SETUP_NEWER" "elastic/elasticsearch"
+	exec_text_format "ELK_ES_SETUP_NEWER" "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-%s-linux-x86_64.tar.gz"
+    setup_soft_wget "elasticsearch" "$ELK_ES_SETUP_NEWER" "exec_step_elasticsearch"
 
 	return $?
 }

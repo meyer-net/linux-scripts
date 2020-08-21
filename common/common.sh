@@ -226,7 +226,7 @@ function cp_nginx_starter()
 	local TMP_NGINX_PROJECT_RUNNING_DIR=$2
 	local TMP_NGINX_PROJECT_RUNNING_PORT=$3
 
-	local TMP_NGINX_PROJECT_CONTAINER_DIR=$NGINX_DIR/$1_$3
+	local TMP_NGINX_PROJECT_CONTAINER_DIR=${NGINX_DIR}/${1}_${3}
 
 	mkdir -pv $NGINX_DIR
 
@@ -234,25 +234,25 @@ function cp_nginx_starter()
 	#	git clone https://github.com/meyer-net/env-scripts.git "nginx"
 	#fi
 
-	echo "Copy '$WORK_PATH/scripts/nginx/server' To '$TMP_NGINX_PROJECT_CONTAINER_DIR'"
-	cp -r $WORK_PATH/scripts/nginx/server $TMP_NGINX_PROJECT_CONTAINER_DIR
+	echo "Copy '${WORK_PATH}/templates/nginx/server' To '${TMP_NGINX_PROJECT_CONTAINER_DIR}'"
+	cp -r ${WORK_PATH}/templates/nginx/server ${TMP_NGINX_PROJECT_CONTAINER_DIR}
 	
 	if [ ! -d "$TMP_NGINX_PROJECT_RUNNING_DIR" ]; then
-		echo "Copy '$WORK_PATH/scripts/nginx/template' To '$TMP_NGINX_PROJECT_RUNNING_DIR'"
-		cp -r $WORK_PATH/scripts/nginx/template $TMP_NGINX_PROJECT_RUNNING_DIR
+		echo "Copy '${WORK_PATH}/templates/nginx/template' To '${TMP_NGINX_PROJECT_RUNNING_DIR}'"
+		cp -r ${WORK_PATH}/templates/nginx/template ${TMP_NGINX_PROJECT_RUNNING_DIR}
 	fi
 
-	cd $TMP_NGINX_PROJECT_CONTAINER_DIR
+	cd ${TMP_NGINX_PROJECT_CONTAINER_DIR}
 
-	sed -i "s@\%prj_port\%@$TMP_NGINX_PROJECT_RUNNING_PORT@g" conf/vhosts/project.conf
-	sed -i "s@\%prj_name\%@$TMP_NGINX_PROJECT_NAME@g" conf/vhosts/project.conf
-	sed -i "s@\%prj_dir\%@$TMP_NGINX_PROJECT_RUNNING_DIR@g" conf/vhosts/project.conf
+	sed -i "s@\%prj_port\%@${TMP_NGINX_PROJECT_RUNNING_PORT}@g" conf/vhosts/project.conf
+	sed -i "s@\%prj_name\%@${TMP_NGINX_PROJECT_NAME}@g" conf/vhosts/project.conf
+	sed -i "s@\%prj_dir\%@${TMP_NGINX_PROJECT_RUNNING_DIR}@g" conf/vhosts/project.conf
 
-	mv conf/vhosts/project.conf conf/vhosts/$TMP_NGINX_PROJECT_NAME.conf
+	mv conf/vhosts/project.conf conf/vhosts/${TMP_NGINX_PROJECT_NAME}.conf
 	bash start.sh master
 
-    echo_soft_port $TMP_NGINX_PROJECT_RUNNING_PORT
-    echo_startup_config "$TMP_NGINX_PROJECT_NAME" "$TMP_NGINX_PROJECT_CONTAINER_DIR" "bash start.sh master" "" "99"
+    echo_soft_port ${TMP_NGINX_PROJECT_RUNNING_PORT}
+    echo_startup_config "${TMP_NGINX_PROJECT_NAME}" "${TMP_NGINX_PROJECT_CONTAINER_DIR}" "bash start.sh master" "" "99"
 
 	return $?
 }
@@ -267,16 +267,16 @@ function gen_nginx_starter()
 	rand_val "TMP_NGX_APP_PORT" 1024 2048
     
     input_if_empty "TMP_NGX_APP_NAME" "NGX_CONF: Please Ender Application Name Like 'nginx' Or Else"
-	set_if_empty "TMP_NGX_APP_NAME" "prj_$TMP_DATE"
+	set_if_empty "TMP_NGX_APP_NAME" "prj_${TMP_DATE}"
     
-    local TMP_NGX_APP_PATH="$HTML_DIR/$TMP_NGX_APP_NAME"
+    local TMP_NGX_APP_PATH="${HTML_DIR}/${TMP_NGX_APP_NAME}"
     input_if_empty "TMP_NGX_APP_PATH" "NGX_CONF: Please Ender Application Path Like '/usr/bin' Or Else"
-	set_if_empty "TMP_NGX_APP_PATH" "$NGINX_DIR"
+	set_if_empty "TMP_NGX_APP_PATH" "${NGINX_DIR}"
     
     input_if_empty "TMP_NGX_APP_PORT" "Please Ender Application Port Like '8080' Or Else"
-	set_if_empty "TMP_NGX_APP_PORT" "$TMP_NGX_CONF_PORT"
+	set_if_empty "TMP_NGX_APP_PORT" "${TMP_NGX_CONF_PORT}"
 
-	cp_nginx_starter "$TMP_NGX_APP_NAME" "$TMP_NGX_APP_PATH" "$TMP_NGX_APP_PORT"
+	cp_nginx_starter "${TMP_NGX_APP_NAME}" "${TMP_NGX_APP_PATH}" "${TMP_NGX_APP_PORT}"
 
 	return $?
 }
@@ -801,6 +801,40 @@ function setup_soft_pip()
 	return $?
 }
 
+#安装软件下载模式
+#参数1：软件安装名称
+#参数2：软件下载后执行函数名称
+function setup_soft_npm() 
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	local TMP_SOFT_NPM_SETUP_NAME=`echo "$1" | awk -F',' '{print $1}'`
+	local TMP_SOFT_NPM_SETUP_PATH=`echo "$1" | awk -F',' '{print $NF}'`
+	local TMP_SOFT_NPM_SETUP_FUNC=$2
+	
+	typeset -l TMP_SOFT_NPM_SETUP_NAME_LOWER
+	local TMP_SOFT_NPM_SETUP_NAME_LOWER=${TMP_SOFT_NPM_SETUP_NAME}
+
+	local TMP_SOFT_NPM_SETUP_INFO=`npm list -g --depth 0 | grep -o ${TMP_SOFT_NPM_SETUP_NAME_LOWER}.*`
+
+	if [ -z "${TMP_SOFT_NPM_SETUP_INFO}" ]; then
+		echo "Npm start to install ${TMP_SOFT_NPM_SETUP_NAME}"
+		npm install -g ${TMP_SOFT_LOWER_NAME}
+		echo "Npm installed ${TMP_SOFT_NPM_SETUP_NAME}"
+
+		#安装后配置函数
+		${TMP_SOFT_NPM_SETUP_FUNC} "/usr/lib/node_modules"
+	else
+    	echo ${TMP_SOFT_NPM_SETUP_INFO}
+
+		return 1
+	fi
+
+	return $?
+}
+
 # #循环执行
 # #参数1：提示标题
 # #参数2：函数名称
@@ -893,8 +927,8 @@ function input_if_empty()
 #参数2：需要找寻的URL路径
 #参数3：查找关键字
 #示例：
-# 	find_url_list_newer_date_link_file "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-.*.x86_64.rpm"
-function find_url_list_newer_date_link_file()
+# 	set_url_list_newer_date_link_filename "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-.*.x86_64.rpm"
+function set_url_list_newer_date_link_filename()
 {
 	if [ $? -ne 0 ]; then
 		return $?
@@ -917,14 +951,14 @@ function find_url_list_newer_date_link_file()
 }
 
 #查找网页文件列表中，最新的文件名
-#描述：本函数先获取href标签行，再提取href内容，最后提取文本关键字中最新的发布日期，该方法合适比较简单的关键字带版本信息，不合适比较复杂的内容信息
+#描述：本函数先获取href标签行，再提取href内容，最后提取文本关键字中最新的发布日期，该方法合适比较简单的数字关键字版本信息
 #参数1：需要设置的变量名
 #参数2：需要找寻的URL路径
 #参数3：查找关键字（必须在关键字中将版本号括起‘()’，否则无法匹配具体的版本）
 #示例：
-# 	find_url_list_newer_href_link_file "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-().x86_64.rpm"
-# 	find_url_list_newer_href_link_file "TMP_NEWER_LINK" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
-function find_url_list_newer_href_link_file()
+# 	set_url_list_newer_href_link_filename "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-().x86_64.rpm"
+# 	set_url_list_newer_href_link_filename "TMP_NEWER_LINK" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
+function set_url_list_newer_href_link_filename()
 {
 	if [ $? -ne 0 ]; then
 		return $?
@@ -934,40 +968,20 @@ function find_url_list_newer_href_link_file()
 	local TMP_VAR_FIND_URL=$2
 	local TMP_VAR_KEY_WORDS=$(echo ${3} | sed 's@()@.*@g')  #‘gradle-()-bin.zip’ -> 'gradle-.*-bin.zip'
 	
-	# 零宽断言
+	# 零宽断言，参考两篇即明白：https://segmentfault.com/q/1010000009346369，https://blog.csdn.net/iteye_5616/article/details/81855906
 	local TMP_VAR_KEY_WORDS_ZREG_LEFT=$(echo ${3} | grep -o ".*(" | sed 's@(@@g' | xargs -I {} echo '(?<={})')
-	local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ")." | sed 's@)@@g' | xargs -I {} echo '[^{}]+')
-	local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
+	local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ").*" | sed 's@)@@g' | xargs -I {} echo '(?={})')
+	local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}.*${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
 	
-    local TMP_NEWER_VERSION=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}'`
+	# local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ")." | sed 's@)@@g' | xargs -I {} echo '[^{}]+')
+	# local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
+
+    local TMP_NEWER_VERSION=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | sort -rV | awk 'NR==1'`
 	local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${TMP_NEWER_VERSION}.*@g")
     local TMP_NEWER_LINK_FILENAME=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
 
 	if [ -n "${TMP_NEWER_LINK_FILENAME}" ]; then
 		eval ${1}='${TMP_NEWER_LINK_FILENAME}'
-	fi
-
-	return $?
-}
-
-#查找列表中，获取关键字首行
-#参数1：需要设置的变量名
-#参数2：需要查找的内容
-#参数3：查找关键字
-function find_content_list_first_line()
-{
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
-	local TMP_VAR_NAME=$1
-	local TMP_VAR_FIND_CONTENT=$2
-	local TMP_VAR_KEY_WORDS=$3
-
-    local TMP_MATCH_CONTENT_FIRST_LINE=`echo $TMP_VAR_FIND_CONTENT | grep "$TMP_VAR_KEY_WORDS" | awk 'NR==1'`
-
-	if [ -n "$TMP_MATCH_CONTENT_FIRST_LINE" ]; then
-		eval ${1}='$TMP_MATCH_CONTENT_FIRST_LINE'
 	fi
 
 	return $?
@@ -1002,11 +1016,34 @@ function set_github_soft_releases_newer_version()
 	local TMP_GITHUB_SOFT_NEWER_VERSION=`curl -s $TMP_GITHUB_SOFT_HTTPS_PATH | grep "$TMP_GITHUB_SOFT_TAG_PATH" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("\">.+", "");print}' | awk NR==1`
 
 	if [ -n "$TMP_GITHUB_SOFT_NEWER_VERSION" ]; then
-		echo "Seted the soft in github repos of '${red}$TMP_GITHUB_SOFT_PATH${reset}' releases newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERSION}${reset}'"
+		echo "Upgrade the soft in github repos of '${red}$TMP_GITHUB_SOFT_PATH${reset}' releases newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERSION}${reset}'"
 		eval ${1}=`echo '$TMP_GITHUB_SOFT_NEWER_VERSION'`
 	fi
     echo $TMP_SPLITER
 	
+	return $?
+}
+
+#查找列表中，获取关键字首行
+#参数1：需要设置的变量名
+#参数2：需要查找的内容
+#参数3：查找关键字
+function find_content_list_first_line()
+{
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+
+	local TMP_VAR_NAME=$1
+	local TMP_VAR_FIND_CONTENT=$2
+	local TMP_VAR_KEY_WORDS=$3
+
+    local TMP_MATCH_CONTENT_FIRST_LINE=`echo $TMP_VAR_FIND_CONTENT | grep "$TMP_VAR_KEY_WORDS" | awk 'NR==1'`
+
+	if [ -n "$TMP_MATCH_CONTENT_FIRST_LINE" ]; then
+		eval ${1}='$TMP_MATCH_CONTENT_FIRST_LINE'
+	fi
+
 	return $?
 }
 
@@ -1073,7 +1110,10 @@ function set_if_choice()
 	TMP_CHOICE_SPLITER_LEN=${#TMP_CHOICE_SPLITER}
 	
 	echo $TMP_CHOICE_SPLITER
-	arr=(${TMP_CHOICE//,/ })
+	local arr=(${TMP_CHOICE//,/ })
+	local arr_len=${#arr[@]}
+	
+	local TMP_SPACE=""
 	for I in ${!arr[@]};  
 	do
 		# TMP_ITEM_LEN=${#arr[$I]}
@@ -1087,8 +1127,8 @@ function set_if_choice()
 
 		# echo "|     $((I+1)). ${TMP_COLOR}${arr[$I]}${reset}$TMP_SPACE_STR|"
 		TMP_SIGN=$((I+1))
-		TMP_SPACE=""
-		if [ $TMP_SIGN -ge 10 ]; then
+		
+		if [ $I -ge 9 ]; then
 			TMP_SPACE=""
 		fi
 
@@ -1100,11 +1140,17 @@ function set_if_choice()
 
 		echo_fill_right "$TMP_SET_IF_CHOICE_ITEM" "" $((TMP_CHOICE_SPLITER_LEN-13)) "|     [$TMP_SIGN].$TMP_SPACE${TMP_COLOR}%${reset}|"
 	done
+	
 	echo $TMP_CHOICE_SPLITER
 	if [ -n "$TMP_NOTICE" ]; then
-		echo "$TMP_NOTICE, by above keys"
+		echo "$TMP_NOTICE, by above keys, then enter it"
 	fi
-	read -n 1 KEY
+	
+	if [ $arr_len -le 9 ]; then
+		read -n 1 KEY
+	else
+		read KEY
+	fi
 	echo
 	
 	typeset -l NEW_VAL
@@ -1359,7 +1405,7 @@ function exec_funcs_repeat_until_output()
 #参数2：格式化字符串规格
 #示例：
 #	TMP_TEST_FORMATED_TEXT="World"
-#	exec_text_format "TMP_TEST_FORMATED_TEXT" "Hello %"
+#	exec_text_format "TMP_TEST_FORMATED_TEXT" "Hello %s"
 #	echo "The formated text is ‘$TMP_TEST_FORMATED_TEXT’"
 function exec_text_format()
 {
@@ -1369,15 +1415,19 @@ function exec_text_format()
 
 	local TMP_EXEC_TEXT_FORMAT_VAR_NAME=${1}
 	local TMP_EXEC_TEXT_FORMAT_VAR_FORMAT=${2}
-	local TMP_EXEC_TEXT_FORMAT_VAR_VAL=`eval echo '$'$TMP_EXEC_TEXT_FORMAT_VAR_NAME`
+	local TMP_EXEC_TEXT_FORMAT_VAR_VAL=`eval echo '$'${TMP_EXEC_TEXT_FORMAT_VAR_NAME}`
 	
 	# 判断格式化模板是否为空，为空不继续执行
-	if [ -z "$TMP_EXEC_TEXT_FORMAT_VAR_FORMAT" ]; then
+	if [ -z "${TMP_EXEC_TEXT_FORMAT_VAR_FORMAT}" ]; then
 		return $?
 	fi
+	
+	# 附加动态参数
+	local TMP_EXEC_TEXT_FORMAT_COUNT=$(echo ${TMP_EXEC_TEXT_FORMAT_VAR_FORMAT} | grep -o "%" | wc -l)
+	local TMP_EXEC_TEXT_FORMATED_VAL=`seq -s "{}" $((TMP_EXEC_TEXT_FORMAT_COUNT+1)) | sed 's@[0-9]@ @g' | sed "s@{}@${TMP_EXEC_TEXT_FORMAT_VAR_VAL}@g"`
+	local TMP_EXEC_TEXT_FORMAT_FORMATED_VAL=`echo "${TMP_EXEC_TEXT_FORMAT_VAR_FORMAT}" | xargs -I {} printf {} ${TMP_EXEC_TEXT_FORMATED_VAL}`
 
-	local TMP_EXEC_TEXT_FORMAT_FORMATED_VAL=`echo "${TMP_EXEC_TEXT_FORMAT_VAR_FORMAT}" | sed s@%@"$TMP_EXEC_TEXT_FORMAT_VAR_VAL"@g`
-	eval ${1}='${TMP_EXEC_TEXT_FORMAT_FORMATED_VAL:-$TMP_EXEC_TEXT_FORMAT_VAR_VAL}'
+	eval ${1}='${TMP_EXEC_TEXT_FORMAT_FORMATED_VAL:-${TMP_EXEC_TEXT_FORMAT_VAR_VAL}}'
 
 	return $?
 }

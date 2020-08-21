@@ -113,7 +113,7 @@ function down_logstash()
 {
 	ELK_LOGSTASH_SETUP_NEWER="7.8.0"
 	set_github_soft_releases_newer_version "ELK_LOGSTASH_SETUP_NEWER" "elastic/logstash"
-	exec_text_format "ELK_LOGSTASH_SETUP_NEWER" "https://artifacts.elastic.co/downloads/logstash/logstash-%.tar.gz"
+	exec_text_format "ELK_LOGSTASH_SETUP_NEWER" "https://artifacts.elastic.co/downloads/logstash/logstash-%s.tar.gz"
     setup_soft_wget "logstash" "$ELK_LOGSTASH_SETUP_NEWER" "exec_step_logstash"
 
 	return $?

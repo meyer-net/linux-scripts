@@ -81,7 +81,7 @@ function down_filebeat()
 {
 	ELK_FBT_SETUP_NEWER="7.8.0"
 	set_github_soft_releases_newer_version "ELK_FBT_SETUP_NEWER" "elastic/beats"
-	exec_text_format "ELK_FBT_SETUP_NEWER" "https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-%-linux-x86_64.tar.gz"
+	exec_text_format "ELK_FBT_SETUP_NEWER" "https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-%s-linux-x86_64.tar.gz"
     setup_soft_wget "filebeat" "$ELK_FBT_SETUP_NEWER" "exec_step_filebeat"
 
 	return $?

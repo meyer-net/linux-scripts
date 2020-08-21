@@ -35,8 +35,6 @@ function setup_java()
 	
 	source /etc/profile
 
-	java -version
-
 	return $?
 }
 
@@ -48,13 +46,28 @@ function conf_java()
 	return $?
 }
 
+# 4-启动软件
+function boot_java()
+{
+	local TMP_LANG_JAVA_SETUP_DIR=${1}
+
+	cd ${TMP_LANG_JAVA_SETUP_DIR}
+
+    # 验证安装
+	java -version
+
+    # echo_startup_config "graphics_magick" "${TMP_TL_GM_SETUP_DIR}" "bin/graphics_magick" "" "100"
+
+	return $?
+}
+
 ##########################################################################################################
 
 # 下载驱动/插件
 function down_tool_gradle()
 {
 	TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER="gradle-6.6-bin.zip"
-	find_url_list_newer_href_link_file "TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
+	set_url_list_newer_href_link_filename "TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
 	setup_soft_wget "gradle" "https://services.gradle.org/distributions/${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER}" "setup_gradle"
 
 	return $?
@@ -104,7 +117,9 @@ function exec_step_java()
 
 	setup_java "${TMP_LANG_JAVA_SETUP_DIR}"
 
-	set_java "${TMP_LANG_JAVA_SETUP_DIR}"
+	conf_java "${TMP_LANG_JAVA_SETUP_DIR}"
+
+	boot_java "${TMP_LANG_JAVA_SETUP_DIR}"
 
     down_tool_gradle
 	
@@ -117,6 +132,11 @@ function exec_step_java()
 function down_java()
 {
 	# http://dl.mycat.io/jdk-8u20-linux-x64.tar.gz
+	# wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" +链接地址
+	# https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html
+	# wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" https://download.oracle.com/otn-pub/java/jdk/8u201-b09/42970487e3af4f5aa5bca3f542482c60/jdk-8u151-linux-x64.rpm 
+	# rpm -ivh jdk-8u151-linux-x64.rpm 
+
 	setup_soft_wget "java" '--no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u192-b12/750e1c8617c5452694857ad95c3ee230/jdk-8u192-linux-x64.tar.gz' "exec_step_java"
 
 	return $?

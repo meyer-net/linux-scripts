@@ -49,7 +49,7 @@ function setup_flume()
 }
 
 # 3-设置软件
-function set_flume()
+function conf_flume()
 {
 	cd ${1}
 
@@ -152,7 +152,7 @@ function exec_step_flume()
 
 	setup_flume "${TMP_FLM_SETUP_DIR}"
 
-	set_flume "${TMP_FLM_SETUP_DIR}"
+	conf_flume "${TMP_FLM_SETUP_DIR}"
 
     down_driver_ng_sql_source "${TMP_FLM_SETUP_DIR}"
 

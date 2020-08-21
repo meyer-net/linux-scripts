@@ -40,7 +40,7 @@ function setup_kafka()
     sed -i "s@broker.id=0@broker.id=$TMP_SETUP_KAFKA_BROKER@g" config/server.properties
 
     TMP_SETUP_KAFKA_ZK_HOSTS="$LOCAL_HOST"
-    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '$LOCAL_HOST'" "%:2233" "
+    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '$LOCAL_HOST'" "%s:2233" "
         if [ \"\$CURRENT\" = \"\$LOCAL_HOST\" ]; then
             echo_soft_port 2233 \"\$CURRENT\"
             echo_soft_port 6123 \"\$CURRENT\"
@@ -81,7 +81,7 @@ function  setup_kafka_eagle()
     source /etc/profile
 
     TMP_SETUP_KAFKA_ZK_HOSTS="$LOCAL_HOST"
-    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '$LOCAL_HOST'" "%:2233"
+    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '$LOCAL_HOST'" "%s:2233"
 
     cd $KAFKA_EAGLE_DIR
     sed -i "s@kafka\.eagle\.zk\.cluster\.alias=cluster1.*@kafka.eagle.zk.cluster.alias=cluster1@g" conf/system-config.properties
