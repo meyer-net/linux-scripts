@@ -8,6 +8,7 @@
 # 1-配置环境
 function set_environment()
 {	
+	configure: error: Either a previously installed pkg-config or "glib-2.0 >= 2.16" could not be found. Please set GLIB_CFLAGS and GLIB_LIBS to the correct values or pass --with-internal-glib to configure to use the bundled copy.
 	return $?
 }
 
@@ -18,7 +19,7 @@ function setup_pkg_config()
 	local TMP_PKG_CONFIG_CURRENT_DIR=`pwd`
 
 	# 编译模式
-	./configure --prefix=${TMP_PKG_CONFIG_SETUP_DIR}
+	./configure --prefix=${TMP_PKG_CONFIG_SETUP_DIR} --with-internal-glib
 	sudo make -j4 && make -j4 install
 	
 	# 环境变量或软连接

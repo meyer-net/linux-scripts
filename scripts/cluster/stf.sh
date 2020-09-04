@@ -23,8 +23,6 @@ function set_environment()
     cd $WORK_PATH
 
     #安装依赖库
-    source scripts/lang/nodejs.sh
-
     source scripts/lang/java.sh
 
     source scripts/database/rethinkdb.sh
@@ -107,14 +105,15 @@ function boot_stf()
 	boot_stf_rethinkdb ${1}
 
 	local TMP_CL_STF_SETUP_DIR=${1}
+	local TMP_CL_STF_NODE_VERSION=${2}
 
 	cd ${TMP_CL_STF_SETUP_DIR}
 
 	stf doctor
 
-	stf local --public-ip 0.0.0.0 --allow-remote &
+	nvm use ${TMP_CL_STF_NODE_VERSION} && bin/stf local --public-ip 0.0.0.0 --allow-remote &
 
-    echo_startup_config "stf" "${TMP_CL_STF_SETUP_DIR}" "stf local --public-ip 0.0.0.0 --allow-remote &" "" "100"
+    echo_startup_config "stf" "${TMP_CL_STF_SETUP_DIR}" "nvm use ${TMP_CL_STF_NODE_VERSION} && bin/stf local --public-ip 0.0.0.0 --allow-remote &" "" "100"
 
 	return $?
 }
@@ -153,10 +152,10 @@ function setup_android_tools()
 	local TMP_ANDROID_TOOLS_CURRENT_DIR=`pwd`
 	
     mkdir -pv ${TMP_ANDROID_TOOLS_SETUP_DIR}
-    mv tools ${TMP_ANDROID_TOOLS_SETUP_DIR}
+    mv ${TMP_ANDROID_TOOLS_CURRENT_DIR} ${TMP_ANDROID_TOOLS_SETUP_DIR}
 
 	echo "ANDROID_HOME=${TMP_ANDROID_TOOLS_SETUP_DIR}" >> /etc/profile
-	echo 'PATH=${TMP_ANDROID_HOME}/tools:${TMP_ANDROID_HOME}/tools/bin:${TMP_ANDROID_HOME}/platform-tools:$PATH' >> /etc/profile
+	echo 'PATH=${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools:$PATH' >> /etc/profile
 	echo "export PATH ANDROID_HOME" >> /etc/profile
 	source /etc/profile
 
@@ -175,6 +174,7 @@ function setup_android_tools()
 function exec_step_stf()
 {
 	local TMP_CL_STF_SETUP_DIR=${1}
+	local TMP_CL_STF_NODE_VERSION=${2}
     
 	set_environment "${TMP_CL_STF_SETUP_DIR}"
 
@@ -184,7 +184,7 @@ function exec_step_stf()
 
 	set_stf "${TMP_CL_STF_SETUP_DIR}"
 
-	boot_stf "${TMP_CL_STF_SETUP_DIR}"
+	boot_stf "${TMP_CL_STF_SETUP_DIR}" "${TMP_CL_STF_NODE_VERSION}"
 
 	return $?
 }
@@ -192,7 +192,7 @@ function exec_step_stf()
 # x1-下载软件
 function down_stf()
 {
-    setup_soft_npm "stf" "exec_step_stf"
+    setup_soft_npm "stf" "exec_step_stf" "v8.1.4"
 
 	return $?
 }

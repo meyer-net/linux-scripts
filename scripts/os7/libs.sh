@@ -86,7 +86,7 @@ function setup_libs()
 	soft_yum_check_setup "iptables-services"
 	soft_yum_check_setup "rsync"
 	soft_yum_check_setup "xinetd"
-	soft_yum_check_setup "htop"
+	soft_yum_check_setup "htop,iftop"
 	soft_yum_check_setup "httpie"
 	soft_yum_check_setup "tmpwatch"
 	soft_yum_check_setup "qperf"

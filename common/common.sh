@@ -804,6 +804,7 @@ function setup_soft_pip()
 #安装软件下载模式
 #参数1：软件安装名称
 #参数2：软件下载后执行函数名称
+#参数3：指定node版本（node有兼容性问题）
 function setup_soft_npm() 
 {
 	if [ $? -ne 0 ]; then
@@ -813,19 +814,43 @@ function setup_soft_npm()
 	local TMP_SOFT_NPM_SETUP_NAME=`echo "$1" | awk -F',' '{print $1}'`
 	local TMP_SOFT_NPM_SETUP_PATH=`echo "$1" | awk -F',' '{print $NF}'`
 	local TMP_SOFT_NPM_SETUP_FUNC=$2
+	local TMP_SOFT_NPM_NODE_VERSION=$3
 	
 	typeset -l TMP_SOFT_NPM_SETUP_NAME_LOWER
 	local TMP_SOFT_NPM_SETUP_NAME_LOWER=${TMP_SOFT_NPM_SETUP_NAME}
 
+	# 提前检查命令是否存在
+	source ${WORK_PATH}/scripts/lang/nodejs.sh
+
+	npm install -g npm@latest
+
+	# 指定版本
+	if [ -n "${TMP_SOFT_NPM_NODE_VERSION}" ]; then
+		nvm install ${TMP_SOFT_NPM_NODE_VERSION}
+		nvm use ${TMP_SOFT_NPM_NODE_VERSION}
+	else
+		TMP_SOFT_NPM_NODE_VERSION=`nvm current`
+	fi
+
 	local TMP_SOFT_NPM_SETUP_INFO=`npm list -g --depth 0 | grep -o ${TMP_SOFT_NPM_SETUP_NAME_LOWER}.*`
+	# 在当前指定安装版本的目录下找是否安装
+	local TMP_SOFT_NPM_SETUP_DIR=`dirname $(npm config get prefix)`/${TMP_SOFT_NPM_NODE_VERSION}/lib/node_modules/${TMP_SOFT_NPM_SETUP_NAME_LOWER}
 
 	if [ -z "${TMP_SOFT_NPM_SETUP_INFO}" ]; then
+		npm update
+
 		echo "Npm start to install ${TMP_SOFT_NPM_SETUP_NAME}"
-		npm install -g ${TMP_SOFT_LOWER_NAME}
+	
+		# 谨防网速慢的情况，重复安装
+		while [ ! -d "${TMP_SOFT_NPM_SETUP_DIR}" ]; do
+			npm cache clean --force
+			npm install --verbose -g ${TMP_SOFT_NPM_SETUP_NAME}
+		done
+		
 		echo "Npm installed ${TMP_SOFT_NPM_SETUP_NAME}"
 
 		#安装后配置函数
-		${TMP_SOFT_NPM_SETUP_FUNC} "/usr/lib/node_modules"
+		${TMP_SOFT_NPM_SETUP_FUNC} "${TMP_SOFT_NPM_SETUP_DIR}" "${TMP_SOFT_NPM_NODE_VERSION}"
 	else
     	echo ${TMP_SOFT_NPM_SETUP_INFO}
 
@@ -1532,8 +1557,7 @@ function exec_while_read_json()
 		esac
 
 		TMP_ITEM="$TMP_ITEM{ "
-		for I in ${!arr[@]};
-		do
+		for I in ${!arr[@]}; do
 			TMP_KEY=${arr[$I]}
 			echo $TMP_NOTICE | sed 's@\$i@'$i'@g' | sed 's@\$@'\'$TMP_KEY\''@g'
 			read -e CURRENT
@@ -1694,7 +1718,7 @@ function proxy_by_ss()
 	local TMP_SHADOWSOCK_MODE="$1"
 
     #加载脚本
-    source $WORK_PATH/scripts/tools/shadowsocks.sh
+    source ${WORK_PATH}/scripts/tools/shadowsocks.sh
 
 	# 判断境外网络，决定为客户端或服务端
     echo "---------------------------------------------------------------------"

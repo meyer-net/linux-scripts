@@ -20,21 +20,6 @@ function setup_protocol_buffers()
 	# 编译模式
 	./configure --prefix=${TMP_PROTOCOL_BUFFERS_SETUP_DIR}
 	sudo make -j4 && make -j4 install
-
-	# # 创建日志软链
-	# local TMP_TL_PB_LNK_LOGS_DIR=${LOGS_DIR}/protocolbuffers
-	# local TMP_TL_PB_LNK_DATA_DIR=${DATA_DIR}/protocolbuffers
-	# local TMP_TL_PB_LOGS_DIR=${TMP_TL_PB_SETUP_DIR}/logs
-	# local TMP_TL_PB_DATA_DIR=${TMP_TL_PB_SETUP_DIR}/data
-
-	# # 先清理文件，再创建文件
-	# rm -rf ${TMP_TL_PB_LOGS_DIR}
-	# rm -rf ${TMP_TL_PB_DATA_DIR}
-	# mkdir -pv ${TMP_TL_PB_LNK_LOGS_DIR}
-	# mkdir -pv ${TMP_TL_PB_LNK_DATA_DIR}
-
-	# ln -sf ${TMP_TL_PB_LNK_LOGS_DIR} ${TMP_TL_PB_LOGS_DIR}
-	# ln -sf ${TMP_TL_PB_LNK_DATA_DIR} ${TMP_TL_PB_DATA_DIR}
 	
 	# 环境变量或软连接
 	echo "PROTOCOL_BUFFERS_HOME=${TMP_PROTOCOL_BUFFERS_SETUP_DIR}" >> /etc/profile
@@ -42,7 +27,6 @@ function setup_protocol_buffers()
 	echo 'PATH=$PROTOCOL_BUFFERS_HOME/bin:$PATH' >> /etc/profile
 	echo "export PATH PROTOCOL_BUFFERS_HOME" >> /etc/profile
 	source /etc/profile
-	# ln -sf ${TMP_TL_PB_SETUP_DIR}/bin/protocolbuffers /usr/bin/protocolbuffers
 
 	# 移除源文件
 	rm -rf ${TMP_PROTOCOL_BUFFERS_CURRENT_DIR}
@@ -68,8 +52,6 @@ function boot_protocol_buffers()
 	# 验证安装
     protoc --version
 
-    # echo_startup_config "protocol_buffers" "${TMP_TL_PB_SETUP_DIR}" "bin/protocol_buffers" "" "100"
-
 	return $?
 }
 
@@ -85,8 +67,6 @@ function exec_step_protocol_buffers()
 	setup_protocol_buffers "${TMP_TL_PB_SETUP_DIR}"
 
 	conf_protocol_buffers "${TMP_TL_PB_SETUP_DIR}"
-
-    # down_plugin_protocol_buffers "${TMP_TL_PB_SETUP_DIR}"
 
 	boot_protocol_buffers "${TMP_TL_PB_SETUP_DIR}"
 
