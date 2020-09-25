@@ -8,19 +8,24 @@
 function set_python()
 {
     #export PIP_INDEX_URL=https://mirror.in.zhihu.com/simple
-	mkdir -pv $PY_DIR
+	mkdir -pv ${PY_DIR}
 	return $?
 }
 
 function setup_python()
 {
-	PYTHON_DIR=$SETUP_DIR/python3
-	./configure --prefix=$PYTHON_DIR
+	local PYTHON_CURRENT_DIR=`pwd`
+	local PYTHON_SETUP_DIR=${1}
+
+	./configure --prefix=${PYTHON_SETUP_DIR} --enable-optimizations
 	make -j4 && make -j4 install
 	
-	ln -sf $PYTHON_DIR/bin/python3 /usr/bin/python3
+	ln -sf ${PYTHON_SETUP_DIR}/bin/python3 /usr/bin/python3
+	ln -sf ${PYTHON_SETUP_DIR}/bin/pip3 /usr/bin/pip3
 
-	cd $SETUP_DIR
+	python3 -V
+	pip3 --version
+
 	python3 -m venv pyenv3
 
 	#把系统默认python命令改成python3
@@ -35,15 +40,16 @@ function setup_python()
 # index-url = https://pypi.tuna.tsinghua.edu.cn/simple
 # EOF
 
+	local PYTHON_DEPE_OPENSSL=`which openssl`
+	rm -rf /usr/local/ssl
+	ln -sf ${PYTHON_DEPE_OPENSSL} /usr/local/ssl
+
 	#easy_install pip
 	pip install --upgrade pip
 	pip3 install --upgrade pip
 	#pip install --upgrade setuptools
 	#pip install uwsgi
 	#pip list
-
-	python3 -V
-	pip3 --version
 
 	pip3 install --upgrade setuptools
 	
@@ -55,20 +61,21 @@ function setup_python()
 	# pip3 install setuptools # virtualenv virtualenvwrapper
 	# pip3 install zc.buildout  #buildout init, wget -O bootstrap.py https://bootstrap.pypa.io/bootstrap-buildout.py, wget -O ez_setup.py https://bootstrap.pypa.io/ez_setup.py, python bootstrap.py, buildout install
 	
-	#pip3 install hiredis
+	pip3 install hiredis
 	#pip3 install thrift
 	#pip3 install scrapy
 	#pip3 install django
 	#pip3 install djangorestframework
 	#pip3 install markdown       # Markdown support for the browsable API.
 	#pip3 install django-filter  # Filtering support
-	#pip3 install numpy
-	#pip3 install requests
-	#pip3 install nltk
+	pip3 install numpy
+	pip3 install requests
+	# pip3 install nltk
 
 	#https://www.zhihu.com/question/21639330
 	#pip freeze > requirements.txt
 	#pip install -r requirements.txt
+	rm -rf ${PYTHON_CURRENT_DIR}
 
 	return $?
 }
@@ -76,7 +83,7 @@ function setup_python()
 function down_python()
 {
 	set_python
-    setup_soft_wget "python3" "https://www.python.org/ftp/python/3.6.6/Python-3.6.6.tar.xz" "setup_python"
+    setup_soft_wget "python3" "https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz" "setup_python"
 
 	return $?
 }

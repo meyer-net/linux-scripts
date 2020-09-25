@@ -8,6 +8,14 @@
 function set_env()
 {
 	yum -y install tcl
+
+    # fix the version upper then 6.0
+    yum -y install centos-release-scl
+    yum -y install devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-binutils
+    scl enable devtoolset-9 bash
+    gcc -v
+    # echo "source /opt/rh/devtoolset-9/enable" >> /etc/profile
+
 	return $?
 }
 

@@ -165,7 +165,7 @@ function set_mariadb()
     mysql -e"
     use mysql;
     UPDATE user SET password=PASSWORD('$TMP_SETUP_MYSQL_PWD') WHERE user='root';
-    USE mysql;
+    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '$TMP_SETUP_MYSQL_PWD';
     DELETE FROM user WHERE user='' OR password='';
     FLUSH PRIVILEGES;
     exit"
@@ -174,6 +174,8 @@ function set_mariadb()
     systemctl enable mariadb.service
 
     rm -rf /etc/yum.repos.d/MariaDB.repo
+    
+    echo_soft_port 3306
 
 	return $?
 }

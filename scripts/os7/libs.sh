@@ -51,6 +51,7 @@ function setup_libs()
 	soft_yum_check_setup "krb5*"
 	soft_yum_check_setup "libidn*"
 	soft_yum_check_setup "openssl*,openldap*,nss_ldap"
+	soft_yum_check_setup "openssl-devel"
 	soft_yum_check_setup "openldap-clients,openldap-servers"
 	soft_yum_check_setup "patch"
 	soft_yum_check_setup "make"

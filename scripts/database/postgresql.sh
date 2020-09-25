@@ -17,15 +17,16 @@ function set_environment()
 function check_setup_postgresql()
 {
     path_not_exits_action "$DATA_DIR/postgresql" "setup_postgresql" "PostgreSql was installed"
+
 	return $?
 }
 
 function setup_postgresql()
 {
     #安装postgresql rpm包
-    sudo yum -y install https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7.5-x86_64/pgdg-centos11-11-2.noarch.rpm
-    sudo yum -y install postgresql11
-    sudo yum -y install postgresql11-server
+    sudo yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    sudo yum -y install postgresql13
+    sudo yum -y install postgresql13-server
 
     set_postgresql
 

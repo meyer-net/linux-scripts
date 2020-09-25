@@ -9,7 +9,7 @@
 function set_environment()
 {
     # 需要提前安装Python
-    source $WORK_PATH/scripts/lang/python.sh
+    source ${WORK_PATH}/scripts/lang/python.sh
 
 	return $?
 }
@@ -57,7 +57,7 @@ function set_supervisor_conf()
 	rm -rf ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
     ln -sf ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR} ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
 
-    sed -i "s@^[;]*logfile=.*@logfile=${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
+    sed -i "s@^[;]*logfile=.*@logfile=${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}/supervisor.log@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
     sed -i "s@^[;]*\[include\]@\[include\]@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
     sed -i "s@^[;]*files = .*@files = ${SUPERVISOR_ATT_DIR}/conf/*.conf@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
 

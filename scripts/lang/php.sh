@@ -34,6 +34,10 @@ function set_phpini()
 	sed -i 's@[;]*always_populate_raw_post_data@always_populate_raw_post_data@g' $TMP_PHP_INI_PATH
 	sed -i 's@[;]*disable_functions =.*@disable_functions = exec,system,chroot,scandir,chgrp,chown,popen,ini_alter,ini_restore,dl,openlog,syslog,readlink,symlink,popepassthru,stream_socket_server,passthru,proc_open,proc_get_status,shell_exec@g' $TMP_PHP_INI_PATH
 
+	# 提供给后续全局的通用变量
+	PHP_SETUP_COMPOSER_VERSION=`php -v | grep -oP '\d*\.\d+' | awk 'NR == 1{print}'`
+	PHP_SETUP_COMPOSER_VERSION_NO_FLOAT=`echo ${PHP_SETUP_COMPOSER_VERSION} | sed 's@\.@@g'`
+
 	return $?
 }
 
@@ -82,17 +86,15 @@ function set_phpfpm()
 function setup_composer()
 {
 	local TMP_PHP_SETUP_BIN_DIR=$1
-	local TMP_PHP_SETUP_COMPOSER_VERSION=`php -v | grep -oP '\d*\.\d+' | awk 'NR == 1{print}'`
-	local TMP_PHP_SETUP_COMPOSER_VERSION_NO_FLOAT=`echo ${TMP_PHP_SETUP_COMPOSER_VERSION} | sed 's@\.@@g'`
 
 	echo "------------------------------------------------------------------------------"
-	echo "Start to setup composer for '${TMP_PHP_SETUP_COMPOSER_VERSION}', the current php setup bin is '${TMP_PHP_SETUP_BIN_DIR}'"
+	echo "Start to setup composer for '${PHP_SETUP_COMPOSER_VERSION}', the current php setup bin is '${TMP_PHP_SETUP_BIN_DIR}'"
 	echo "------------------------------------------------------------------------------"
 	curl -sS https://getcomposer.org/installer | php -- --install-dir=$TMP_PHP_SETUP_BIN_DIR
 	ln -sf $TMP_PHP_SETUP_BIN_DIR/composer.phar /usr/bin/composer
 
 	# 依据版本安装依赖，否则composer会报错（可设置循环模式）
-	sudo yum -y install php${TMP_PHP_SETUP_COMPOSER_VERSION_NO_FLOAT}-php-xml
+	sudo yum -y install php${PHP_SETUP_COMPOSER_VERSION_NO_FLOAT}-php-xml
 
 	return $?
 }
@@ -104,18 +106,15 @@ function setup_phpredis()
 {
 	local TMP_PHP_SETUP_BIN_DIR=${1:-}
 	local TMP_PHP_SETUP_CONF_PATH=${2:-}
-	local TMP_PHP_SETUP_PHPCONFIG_PATH=$TMP_PHP_SETUP_BIN_DIR/php-config
-	local TMP_PHP_REDIS_CURRENT_DIR=`pwd`
+	local TMP_PHP_SETUP_PHPCONFIG_PATH=${TMP_PHP_SETUP_BIN_DIR}/php-config
 
-    path_not_exits_action "$TMP_PHP_SETUP_PHPCONFIG_PATH" "yum -y install php${TMP_PHP_SETUP_COMPOSER_VERSION_NO_FLOAT}-php-phpiredis"
+    path_not_exits_action "$TMP_PHP_SETUP_PHPCONFIG_PATH" "yum -y install php${PHP_SETUP_COMPOSER_VERSION_NO_FLOAT}-php-phpiredis"
 	if [ $? -eq 0 ]; then
 		phpize
 		./configure --with-php-config=$TMP_PHP_SETUP_PHPCONFIG_PATH
 		sudo make -j4 && sudo make -j4 install
 		echo "extension=\"redis.so\"" >> $TMP_PHP_SETUP_CONF_PATH
 	fi
-
-	rm -rf $TMP_PHP_REDIS_CURRENT_DIR
 
 	return $?
 }
