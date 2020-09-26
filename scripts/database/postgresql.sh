@@ -41,10 +41,10 @@ function set_postgresql()
 
     mkdir -pv $POSTGRESQL_DATA_DIR
     chown -R postgres:postgres $POSTGRESQL_DATA_DIR
-    su - postgres -c "/usr/pgsql-11/bin/initdb -D $POSTGRESQL_DATA_DIR"
+    su - postgres -c "/usr/pgsql-13/bin/initdb -D $POSTGRESQL_DATA_DIR"
 
     #停止服务
-    systemctl stop postgresql-11.service
+    systemctl stop postgresql-13.service
 
     #开启外网访问
     sed -i "s@^#listen_addresses =.*@listen_addresses = '*'@g" $POSTGRESQL_CONF_PATH
@@ -56,18 +56,18 @@ function set_postgresql()
     sed -i "s@^#data_directory =.*@data_directory = '$POSTGRESQL_DATA_DIR'@g" $POSTGRESQL_CONF_PATH
 
     #修改启动环境
-    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=$POSTGRESQL_DATA_DIR@g" /usr/lib/systemd/system/postgresql-11.service
+    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=$POSTGRESQL_DATA_DIR@g" /usr/lib/systemd/system/postgresql-13.service
     systemctl daemon-reload
 
     #修改认证
     echo "host    all             all              0.0.0.0/0              trust" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
 
     #唤醒服务
-    systemctl start postgresql-11.service
-    systemctl disable postgresql-11.service
-    systemctl enable postgresql-11.service
-    systemctl status postgresql-11.service
-    chkconfig postgresql-11 on
+    systemctl start postgresql-13.service
+    systemctl disable postgresql-13.service
+    systemctl enable postgresql-13.service
+    systemctl status postgresql-13.service
+    chkconfig postgresql-13 on
 
     #初始化密码
     echo "PostgreSql: Please Ender Your System Inited Password Of User 'postgres'"
@@ -126,7 +126,7 @@ psql -U postgres -h localhost -d postgres << EOF
 EOF
     
     #复制样例
-    cp /usr/pgsql-11/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.done
+    cp /usr/pgsql-13/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.done
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.done
@@ -144,7 +144,7 @@ EOF
     echo "$TMP_SET_DB_MASTER_SLAVER:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
-    systemctl restart postgresql-11.service
+    systemctl restart postgresql-13.service
 	echo "Config PostgreSql-Master Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"
@@ -161,7 +161,7 @@ function set_db_slave()
     input_if_empty "TMP_SET_DB_SLAVER_MASTER" "PostgreSql: Please ender ${red}postgresql master address in internal${reset}"
 
     #复制样例
-    cp /usr/pgsql-11/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
+    cp /usr/pgsql-13/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.conf
@@ -191,7 +191,7 @@ function set_db_slave()
 
     rm -rf ${POSTGRESQL_DATA_DIR}_replicate
 
-    systemctl restart postgresql-11.service
+    systemctl restart postgresql-13.service
 	echo "Config PostgreSql-Slaver Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"

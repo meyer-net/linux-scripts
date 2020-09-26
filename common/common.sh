@@ -996,11 +996,12 @@ function set_url_list_newer_href_link_filename()
 	# 零宽断言，参考两篇即明白：https://segmentfault.com/q/1010000009346369，https://blog.csdn.net/iteye_5616/article/details/81855906
 	local TMP_VAR_KEY_WORDS_ZREG_LEFT=$(echo ${3} | grep -o ".*(" | sed 's@(@@g' | xargs -I {} echo '(?<={})')
 	local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ").*" | sed 's@)@@g' | xargs -I {} echo '(?={})')
-	local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}.*${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
+	local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}\d.*${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
 	
 	# local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ")." | sed 's@)@@g' | xargs -I {} echo '[^{}]+')
 	# local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
 
+	# 清除字母开头： | tr -d "a-zA-Z-"
     local TMP_NEWER_VERSION=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | sort -rV | awk 'NR==1'`
 	local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${TMP_NEWER_VERSION}.*@g")
     local TMP_NEWER_LINK_FILENAME=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
@@ -1700,13 +1701,15 @@ function echo_soft_port()
 	# firewall-cmd --reload  # 重新载入规则
 	service iptables restart
 
-	local TMP_FIREWALL_STATE=`firewall-cmd --state`
+	# local TMP_FIREWALL_STATE=`firewall-cmd --state`
 	
-	firewall-cmd --permanent --add-port=${TMP_ECHO_SOFT_PORT}/tcp
-	firewall-cmd --permanent --add-port=${TMP_ECHO_SOFT_PORT}/udp
-	firewall-cmd --reload
+	# firewall-cmd --permanent --add-port=${TMP_ECHO_SOFT_PORT}/tcp
+	# firewall-cmd --permanent --add-port=${TMP_ECHO_SOFT_PORT}/udp
+	# firewall-cmd --reload
 
 	sleep 2
+
+	lsof -i:${TMP_ECHO_SOFT_PORT}
 
 	return $?
 }

@@ -27,20 +27,30 @@ function setup_ck()
     echo "------------------------------------------------------"
     echo "ClickHouse: System start find the newer stable version"
     echo "------------------------------------------------------"
-    local TMP_STABLE_VERSION_LIST=`curl -s http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/`
-    local TMP_MAX_STABLE_DATE=`echo "$TMP_STABLE_VERSION_LIST" | awk -F'</a>' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | sed '/^$/d' | awk '{if (NR>2) {print}}' | awk -F' ' '{print $1}' | awk 'function t_f(t){"date -d \""t"\" +%s" | getline ft; return ft}{print t_f($1)}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} env LC_ALL=en_US.en date -d@{} "+%d-%h-%Y"`
-    local TMP_NEWER_STABLE_VERSION=`echo "$TMP_STABLE_VERSION_LIST" | grep "$TMP_MAX_STABLE_DATE" | sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | sed 's@\.x86_64.*@@g' | sed 's@\.noarch.*@@g' | sed 's@[a-z]*@@g' | sed 's@^-*@@g' | awk 'NR==1'`
-    echo "ClickHouse: The newer stable version is ${TMP_NEWER_STABLE_VERSION}"
-    echo "------------------------------------------------------"
+    local TMP_NEWER_STABLE_VERSION_CH_SERVER="clickhouse-server-19.4.0-2.rpm"
+    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-().rpm"
+    local TMP_NEWER_STABLE_VERSION_CH_CLIENT=`echo "${TMP_NEWER_STABLE_VERSION_CH_SERVER}" | sed 's@server@client@g'`
+
+    local TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON="clickhouse-server-common-19.4.0-2.rpm"
+    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-common-().rpm"
+
+    local TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC="clickhouse-common-static-19.4.0-2.rpm"
+    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-().rpm"
 
     #19.13.3.26-1
     #curl -s https://packagecloud.io/install/repositories/Altinity/clickhouse/script.rpm.sh | sudo bash
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-server-common-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-server-common-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-common-static-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-common-static-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-server-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-server-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
-    while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-client-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-client-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
-    # while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-debuginfo-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-debuginfo-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
-    # while_wget "--content-disposition https://packagecloud.io/Altinity/clickhouse/packages/el/7/clickhouse-test-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm/download.rpm" "rpm -ivh clickhouse-test-${TMP_NEWER_STABLE_VERSION}.el7.x86_64.rpm"
+    
+    echo "ClickHouse[server-common]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON}"
+
+    echo "ClickHouse[server-static]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC}"
+
+    echo "ClickHouse[server]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_SERVER}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_SERVER}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_SERVER}"
+
+    echo "ClickHouse[client]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_CLIENT}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_CLIENT}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_CLIENT}"
 
     # 默认配置文件位置
     # /etc/clickhouse-server/config.xml  
@@ -48,18 +58,13 @@ function setup_ck()
 
     CLICKHOUSE_LOGS_DIR=$LOGS_DIR/clickhouse/server
     CLICKHOUSE_DATA_DIR=$DATA_DIR/clickhouse
-    CLICKHOUSE_DATA_DIR_OLD=$DATA_DIR/clickhouse/old
     mkdir -pv $CLICKHOUSE_LOGS_DIR
     mkdir -pv $CLICKHOUSE_DATA_DIR
-    mkdir -pv $CLICKHOUSE_DATA_DIR_OLD
-
-    mv /var/log/clickhouse-server $CLICKHOUSE_LOGS_DIR
-    ln -sf $CLICKHOUSE_LOGS_DIR /var/log/clickhouse-server
     # mv mycat $SETUP_DIR
 
     # 默认启动脚本，注意，这个名字虽然叫server，其实是个shell脚本
     sed -i "s@^CLICKHOUSE_LOGDIR=.*@CLICKHOUSE_LOGDIR=$CLICKHOUSE_LOGS_DIR@g" /etc/rc.d/init.d/clickhouse-server
-    sed -i "s@^CLICKHOUSE_DATADIR_OLD=.*@CLICKHOUSE_DATADIR_OLD=$CLICKHOUSE_DATA_DIR_OLD@g" /etc/rc.d/init.d/clickhouse-server
+    sed -i "s@^CLICKHOUSE_LOGDIR_USER=.*@CLICKHOUSE_LOGDIR_USER=clickhouse@g" /etc/rc.d/init.d/clickhouse-server
 
     local CLICKHOUSE_TCP_PORT=9876
 	input_if_empty "CLICKHOUSE_TCP_PORT" "Clickhouse: Please ender ${red}tcp port${reset}"
@@ -71,12 +76,15 @@ function setup_ck()
     
     echo_soft_port 8123
 
-    chown -R clickhouse:clickhouse $CLICKHOUSE_LOGS_DIR
-    chown -R clickhouse:clickhouse $CLICKHOUSE_DATA_DIR
-
     bash /etc/rc.d/init.d/clickhouse-server start
     sleep 3
     bash /etc/rc.d/init.d/clickhouse-server status
+
+    mv /var/log/clickhouse-server $CLICKHOUSE_LOGS_DIR
+    chown -R clickhouse:clickhouse $CLICKHOUSE_LOGS_DIR
+    ln -sf $CLICKHOUSE_LOGS_DIR /var/log/clickhouse-server
+
+    chown -R clickhouse:clickhouse $CLICKHOUSE_DATA_DIR
     
     echo_startup_config "clickhouse" "/etc/rc.d/init.d" "bash clickhouse-server start"
 

@@ -7,8 +7,9 @@
 
 function set_environment()
 {
-	sudo groupadd lnmp
-	sudo useradd -g lnmp php
+	create_user_if_not_exists lnmp php
+	
+	create_user_if_not_exists orsys project
 
 	return $?
 }
@@ -109,7 +110,7 @@ function setup_phpredis()
 	local TMP_PHP_SETUP_PHPCONFIG_PATH=${TMP_PHP_SETUP_BIN_DIR}/php-config
 
     path_not_exits_action "$TMP_PHP_SETUP_PHPCONFIG_PATH" "yum -y install php${PHP_SETUP_COMPOSER_VERSION_NO_FLOAT}-php-phpiredis"
-	if [ $? -eq 0 ]; then
+	if [ $? -ne 0 ]; then
 		phpize
 		./configure --with-php-config=$TMP_PHP_SETUP_PHPCONFIG_PATH
 		sudo make -j4 && sudo make -j4 install
