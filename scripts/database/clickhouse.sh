@@ -56,19 +56,26 @@ function setup_ck()
     # /etc/clickhouse-server/config.xml  
     # /etc/clickhouse-server/users.xml
 
-    CLICKHOUSE_CONF_DIR=$ATT_DIR/clickhouse/server/conf
-    CLICKHOUSE_LOGS_DIR=$LOGS_DIR/clickhouse/server
-    CLICKHOUSE_DATA_DIR=$DATA_DIR/clickhouse
-    CLICKHOUSE_DATA_ETC_DIR=$CLICKHOUSE_DATA_DIR/etc
-    CLICKHOUSE_DATA_XML_DIR=$CLICKHOUSE_DATA_DIR/xml
-    mkdir -pv ${CLICKHOUSE_LOGS_DIR}
-    mkdir -pv ${CLICKHOUSE_DATA_ETC_DIR}
-    mkdir -pv ${CLICKHOUSE_DATA_XML_DIR}
+    CLICKHOUSE_SERVER_CONF_DIR=${ATT_DIR}/clickhouse/server/conf
+    CLICKHOUSE_CLIENT_CONF_DIR=${ATT_DIR}/clickhouse/client/conf
+    CLICKHOUSE_SERVER_LOGS_DIR=${LOGS_DIR}/clickhouse/server
+    CLICKHOUSE_SERVER_DATA_DIR=${DATA_DIR}/clickhouse
+    CLICKHOUSE_SERVER_DATA_ETC_DIR=${CLICKHOUSE_SERVER_DATA_DIR}/etc
+    CLICKHOUSE_SERVER_DATA_XML_DIR=${CLICKHOUSE_SERVER_DATA_DIR}/xml
+    mkdir -pv ${CLICKHOUSE_SERVER_LOGS_DIR}
+    mkdir -pv ${CLICKHOUSE_SERVER_DATA_ETC_DIR} && rm -rf ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
+    mkdir -pv ${CLICKHOUSE_SERVER_DATA_XML_DIR} && rm -rf ${CLICKHOUSE_SERVER_DATA_XML_DIR}
     # mv mycat $SETUP_DIR
 
-    mv /etc/clickhouse-server ${CLICKHOUSE_CONF_DIR}
-    ln -sf ${CLICKHOUSE_CONF_DIR} /etc/clickhouse-server
+    mkdir -pv ${CLICKHOUSE_SERVER_CONF_DIR} && rm -rf ${CLICKHOUSE_SERVER_CONF_DIR}
+    mv /etc/clickhouse-server ${CLICKHOUSE_SERVER_CONF_DIR}
+    ln -sf ${CLICKHOUSE_SERVER_CONF_DIR} /etc/clickhouse-server
 
+    mkdir -pv ${CLICKHOUSE_CLIENT_CONF_DIR} && rm -rf ${CLICKHOUSE_CLIENT_CONF_DIR}
+    mv /etc/clickhouse-client ${CLICKHOUSE_CLIENT_CONF_DIR}
+    ln -sf ${CLICKHOUSE_CLIENT_CONF_DIR} /etc/clickhouse-client
+
+read -e T
     # 默认启动脚本，注意，这个名字虽然叫server，其实是个shell脚本
     sed -i "s@^CLICKHOUSE_LOGDIR_USER=.*@CLICKHOUSE_LOGDIR_USER=clickhouse@g" /etc/rc.d/init.d/clickhouse-server
 
@@ -76,23 +83,26 @@ function setup_ck()
 	input_if_empty "CLICKHOUSE_TCP_PORT" "Clickhouse: Please ender ${red}tcp port${reset}"
     sed -i "s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>$CLICKHOUSE_TCP_PORT</tcp_port>@g" /etc/clickhouse-server/config.xml
 
-    sed -i "s@<path>.*</path>@<path>${CLICKHOUSE_DATA_XML_DIR}/</path>@g" /etc/clickhouse-server/config.xml
-    sed -i "s@<tmp_path>.*</tmp_path>@<tmp_path>${CLICKHOUSE_DATA_XML_DIR}/tmp/</tmp_path>@g" /etc/clickhouse-server/config.xml
+    sed -i "s@<path>.*</path>@<path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/</path>@g" /etc/clickhouse-server/config.xml
+    sed -i "s@<tmp_path>.*</tmp_path>@<tmp_path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@g" /etc/clickhouse-server/config.xml
     sed -i "/<yandex>/a     <listen_host>0.0.0.0</listen_host>" /etc/clickhouse-server/config.xml
     
+read -e T
     echo_soft_port 8123
 
     bash /etc/rc.d/init.d/clickhouse-server start
     sleep 3
     bash /etc/rc.d/init.d/clickhouse-server status
 
-    mv /var/lib/clickhouse-server ${CLICKHOUSE_DATA_ETC_DIR}
-    chown -R clickhouse:clickhouse ${CLICKHOUSE_DATA_ETC_DIR}
-    ln -sf ${CLICKHOUSE_DATA_ETC_DIR} /var/lib/clickhouse-server
-    
-    mv /var/log/clickhouse-server ${CLICKHOUSE_LOGS_DIR}
-    chown -R clickhouse:clickhouse ${CLICKHOUSE_LOGS_DIR}
-    ln -sf ${CLICKHOUSE_LOGS_DIR} /var/log/clickhouse-server
+read -e T
+    mv /var/lib/clickhouse-server ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
+    chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
+    ln -sf ${CLICKHOUSE_SERVER_DATA_ETC_DIR} /var/lib/clickhouse-server
+
+read -e T
+    mv /var/log/clickhouse-server ${CLICKHOUSE_SERVER_LOGS_DIR}
+    chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_LOGS_DIR}
+    ln -sf ${CLICKHOUSE_SERVER_LOGS_DIR} /var/log/clickhouse-server
     
     echo_startup_config "clickhouse" "/etc/rc.d/init.d" "bash clickhouse-server start"
 

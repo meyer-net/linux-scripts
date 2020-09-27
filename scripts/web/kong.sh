@@ -50,10 +50,10 @@ function setup_kong()
     
     #初始化数据库，并设置密码
 
-	input_if_empty "TMP_SETUP_POSTGRESQL_DBADDRESS" "PostgreSql: Please ender ${red}host address${reset}"
-	input_if_empty "TMP_SETUP_POSTGRESQL_DBPORT" "PostgreSql: Please ender ${red}port${reset} of '$TMP_SETUP_POSTGRESQL_DBADDRESS'"
-	input_if_empty "TMP_SETUP_POSTGRESQL_ROOT_USRNAME" "PostgreSql: Please ender ${red}root user name${reset} of '$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT'"
-	input_if_empty "TMP_SETUP_POSTGRESQL_ROOT_USRPWD" "PostgreSql: Please ender ${red}root password${reset} of $TMP_SETUP_POSTGRESQL_ROOT_USRNAME@$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT"
+	input_if_empty "TMP_SETUP_POSTGRESQL_DBADDRESS" "PostgreSql: Please ender the ${red}root host address${reset} for kong"
+	input_if_empty "TMP_SETUP_POSTGRESQL_DBPORT" "PostgreSql: Please ender the ${red}root port${reset} of '$TMP_SETUP_POSTGRESQL_DBADDRESS' for kong"
+	input_if_empty "TMP_SETUP_POSTGRESQL_ROOT_USRNAME" "PostgreSql: Please ender the ${red}root user name${reset} of '$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT' for kong"
+	input_if_empty "TMP_SETUP_POSTGRESQL_ROOT_USRPWD" "PostgreSql: Please ender the ${red}root password${reset} of $TMP_SETUP_POSTGRESQL_ROOT_USRNAME@$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT for kong"
     
 	input_if_empty "TMP_SETUP_POSTGRESQL_KONG_DATABASE" "Kong.PostgreSql: Please ender ${red}kong database${reset} of '$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT'"
 	input_if_empty "TMP_SETUP_POSTGRESQL_KONG_USRNAME" "Kong.PostgreSql: Please ender ${red}kong user name${reset} of '$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT'"

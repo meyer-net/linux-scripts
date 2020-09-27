@@ -128,7 +128,7 @@ function database()
 
 function web()
 {
-	exec_if_choice "CHOICE_WEB" "Please choice which web compoment you want to setup" "...,Nginx,OpenResty,Kong,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
+	exec_if_choice "CHOICE_WEB" "Please choice which web compoment you want to setup" "...,OpenResty,Kong,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
 	return $?
 }
 

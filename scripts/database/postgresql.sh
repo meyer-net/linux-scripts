@@ -25,8 +25,8 @@ function setup_postgresql()
 {
     #安装postgresql rpm包
     sudo yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-    sudo yum -y install postgresql12
-    sudo yum -y install postgresql12-server
+    sudo yum -y install postgresql11
+    sudo yum -y install postgresql11-server
 
     psql --version
 
@@ -43,10 +43,10 @@ function set_postgresql()
 
     mkdir -pv $POSTGRESQL_DATA_DIR
     chown -R postgres:postgres $POSTGRESQL_DATA_DIR
-    su - postgres -c "/usr/pgsql-12/bin/initdb -D $POSTGRESQL_DATA_DIR"
+    su - postgres -c "/usr/pgsql-11/bin/initdb -D $POSTGRESQL_DATA_DIR"
 
     #停止服务
-    systemctl stop postgresql-12.service
+    systemctl stop postgresql-11.service
 
     #开启外网访问
     sed -i "s@^#listen_addresses =.*@listen_addresses = '*'@g" $POSTGRESQL_CONF_PATH
@@ -58,18 +58,18 @@ function set_postgresql()
     sed -i "s@^#data_directory =.*@data_directory = '$POSTGRESQL_DATA_DIR'@g" $POSTGRESQL_CONF_PATH
 
     #修改启动环境
-    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=$POSTGRESQL_DATA_DIR@g" /usr/lib/systemd/system/postgresql-12.service
+    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=$POSTGRESQL_DATA_DIR@g" /usr/lib/systemd/system/postgresql-11.service
     systemctl daemon-reload
 
     #修改认证
     echo "host    all             all              0.0.0.0/0              trust" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
 
     #唤醒服务
-    systemctl start postgresql-12.service
-    systemctl disable postgresql-12.service
-    systemctl enable postgresql-12.service
-    systemctl status postgresql-12.service
-    chkconfig postgresql-12 on
+    systemctl start postgresql-11.service
+    systemctl disable postgresql-11.service
+    systemctl enable postgresql-11.service
+    systemctl status postgresql-11.service
+    chkconfig postgresql-11 on
 
     #初始化密码
     echo "PostgreSql: Please Ender Your System Inited Password Of User 'postgres'"
@@ -128,7 +128,7 @@ psql -U postgres -h localhost -d postgres << EOF
 EOF
     
     #复制样例
-    cp /usr/pgsql-12/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.done
+    cp /usr/pgsql-11/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.done
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.done
@@ -146,7 +146,7 @@ EOF
     echo "$TMP_SET_DB_MASTER_SLAVER:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
-    systemctl restart postgresql-12.service
+    systemctl restart postgresql-11.service
 	echo "Config PostgreSql-Master Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"
@@ -163,7 +163,7 @@ function set_db_slave()
     input_if_empty "TMP_SET_DB_SLAVER_MASTER" "PostgreSql: Please ender ${red}postgresql master address in internal${reset}"
 
     #复制样例
-    cp /usr/pgsql-12/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
+    cp /usr/pgsql-11/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.conf
@@ -193,7 +193,7 @@ function set_db_slave()
 
     rm -rf ${POSTGRESQL_DATA_DIR}_replicate
 
-    systemctl restart postgresql-12.service
+    systemctl restart postgresql-11.service
 	echo "Config PostgreSql-Slaver Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"
