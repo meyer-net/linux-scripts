@@ -4,6 +4,7 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 参考资料：https://clickhouse.tech/docs/zh/
 
 function check_env()
 {
@@ -62,9 +63,9 @@ function setup_ck()
     CLICKHOUSE_SERVER_DATA_DIR=${DATA_DIR}/clickhouse
     CLICKHOUSE_SERVER_DATA_ETC_DIR=${CLICKHOUSE_SERVER_DATA_DIR}/etc
     CLICKHOUSE_SERVER_DATA_XML_DIR=${CLICKHOUSE_SERVER_DATA_DIR}/xml
-    mkdir -pv ${CLICKHOUSE_SERVER_LOGS_DIR}
+    mkdir -pv ${CLICKHOUSE_SERVER_LOGS_DIR} && rm -rf ${CLICKHOUSE_SERVER_LOGS_DIR}
     mkdir -pv ${CLICKHOUSE_SERVER_DATA_ETC_DIR} && rm -rf ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
-    mkdir -pv ${CLICKHOUSE_SERVER_DATA_XML_DIR} && rm -rf ${CLICKHOUSE_SERVER_DATA_XML_DIR}
+    mkdir -pv ${CLICKHOUSE_SERVER_DATA_XML_DIR}
     # mv mycat $SETUP_DIR
 
     mkdir -pv ${CLICKHOUSE_SERVER_CONF_DIR} && rm -rf ${CLICKHOUSE_SERVER_CONF_DIR}
@@ -75,34 +76,40 @@ function setup_ck()
     mv /etc/clickhouse-client ${CLICKHOUSE_CLIENT_CONF_DIR}
     ln -sf ${CLICKHOUSE_CLIENT_CONF_DIR} /etc/clickhouse-client
 
-read -e T
     # 默认启动脚本，注意，这个名字虽然叫server，其实是个shell脚本
     sed -i "s@^CLICKHOUSE_LOGDIR_USER=.*@CLICKHOUSE_LOGDIR_USER=clickhouse@g" /etc/rc.d/init.d/clickhouse-server
 
     local CLICKHOUSE_TCP_PORT=9876
 	input_if_empty "CLICKHOUSE_TCP_PORT" "Clickhouse: Please ender ${red}tcp port${reset}"
-    sed -i "s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>$CLICKHOUSE_TCP_PORT</tcp_port>@g" /etc/clickhouse-server/config.xml
+    sed -i "s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>$CLICKHOUSE_TCP_PORT</tcp_port>@g" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
 
-    sed -i "s@<path>.*</path>@<path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/</path>@g" /etc/clickhouse-server/config.xml
-    sed -i "s@<tmp_path>.*</tmp_path>@<tmp_path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@g" /etc/clickhouse-server/config.xml
-    sed -i "/<yandex>/a     <listen_host>0.0.0.0</listen_host>" /etc/clickhouse-server/config.xml
+    sed -i "s@<path>.*</path>@<path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/</path>@g" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
+    sed -i "s@<tmp_path>.*</tmp_path>@<tmp_path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@g" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
     
-read -e T
     echo_soft_port 8123
 
-    bash /etc/rc.d/init.d/clickhouse-server start
-    sleep 3
-    bash /etc/rc.d/init.d/clickhouse-server status
+    mv /var/lib/clickhouse ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
+    ln -sf ${CLICKHOUSE_SERVER_DATA_ETC_DIR} /var/lib/clickhouse
+    chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_DATA_DIR}
 
-read -e T
-    mv /var/lib/clickhouse-server ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
-    chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
-    ln -sf ${CLICKHOUSE_SERVER_DATA_ETC_DIR} /var/lib/clickhouse-server
-
-read -e T
     mv /var/log/clickhouse-server ${CLICKHOUSE_SERVER_LOGS_DIR}
     chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_LOGS_DIR}
     ln -sf ${CLICKHOUSE_SERVER_LOGS_DIR} /var/log/clickhouse-server
+
+
+    # 交互模式启动，预先排错
+    nohup sudo -u clickhouse /usr/bin/clickhouse-server --config-file ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml &
+
+    tail -f -n 200 nohup.out
+
+    sudo service clickhouse-server stop
+
+    # 启动完成以后再修改配置文件
+    sed -i "/<yandex>/a     \\\t<listen_host>::1</listen_host>\n\t<listen_host>0.0.0.0</listen_host>" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
+
+    sudo service clickhouse-server start
+    sudo journalctl -u clickhouse-server
+    sudo service clickhouse-server status
     
     echo_startup_config "clickhouse" "/etc/rc.d/init.d" "bash clickhouse-server start"
 
