@@ -100,7 +100,7 @@ function setup_ck()
     # 交互模式启动，预先排错
     nohup sudo -u clickhouse /usr/bin/clickhouse-server --config-file ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml &
 
-    tail -f -n 200 nohup.out
+    tail -f -n 100 nohup.out
 
     sudo service clickhouse-server stop
 
