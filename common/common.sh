@@ -822,7 +822,8 @@ function setup_soft_npm()
 	# 提前检查命令是否存在
 	source ${WORK_PATH}/scripts/lang/nodejs.sh
 
-	npm install -g npm@latest
+	npm install -g npm@next
+	npm audit fix
 
 	# 指定版本
 	if [ -n "${TMP_SOFT_NPM_NODE_VERSION}" ]; then

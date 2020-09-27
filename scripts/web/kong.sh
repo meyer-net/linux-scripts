@@ -84,6 +84,7 @@ EOF
 
     # 部分机器不识别/usr/local/bin下环境
     ln -sf /usr/local/bin/kong /usr/bin/kong
+    ln -sf /usr/local/openresty/bin/resty /usr/bin/resty
 
     kong migrations bootstrap
     kong start

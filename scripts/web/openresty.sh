@@ -322,7 +322,7 @@ function down_openresty()
 
 function down_luarocks()
 {
-    setup_soft_wget "luarocks" "http://luarocks.github.io/luarocks/releases/luarocks-3.3.1.tar.gz" "setup_luarocks"
+    setup_soft_wget "luarocks" "http://luarocks.github.io/luarocks/releases/luarocks-3.4.0.tar.gz" "setup_luarocks"
 
 	return $?
 }

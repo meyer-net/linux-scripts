@@ -91,7 +91,7 @@ function setup_nodejs()
 
 	# npm config set registry https://registry.npm.taobao.org
 	# npm config set disturl https://npm.taobao.org/dist
-	npm install -g npm@lastest cnpm
+	npm install -g npm@next cnpm
 	npm audit
 	npm install -g es-checker
 	npm --version
