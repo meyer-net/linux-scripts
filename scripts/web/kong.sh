@@ -84,7 +84,6 @@ EOF
 
     # 部分机器不识别/usr/local/bin下环境
     ln -sf /usr/local/bin/kong /usr/bin/kong
-    ln -sf /usr/local/openresty/bin/resty /usr/bin/resty
 
     kong migrations bootstrap
     kong start
@@ -184,13 +183,19 @@ EOF
 
 function rouse_openresty()
 {
-    local TMP_OPENRESTY_NGINX_PATH=`find / -name nginx | grep 'openresty/nginx/sbin'`
+    local TMP_OPENRESTY_NGINX_PATH=`sudo find / -name nginx | grep 'openresty/nginx/sbin'`
     if [ ! -f "/usr/bin/nginx" ]; then
         ln -sf $TMP_OPENRESTY_NGINX_PATH /usr/bin/nginx 
     fi
     nginx -v
+    
+    local TMP_OPENRESTY_RESTY_PATH=`sudo find / -name resty | grep 'openresty/bin'`
+    if [ ! -f "/usr/bin/resty" ]; then
+        ln -sf $TMP_OPENRESTY_RESTY_PATH /usr/bin/resty 
+    fi
+    resty -v
 
-    local TMP_OPENRESTY_LUAJIT_PATH=`find / -name luajit | grep 'openresty/luajit/bin'`
+    local TMP_OPENRESTY_LUAJIT_PATH=`sudo find / -name luajit | grep 'openresty/luajit/bin'`
     if [ ! -f "/usr/bin/luajit" ]; then
         ln -sf $TMP_OPENRESTY_LUAJIT_PATH /usr/bin/luajit 
     fi

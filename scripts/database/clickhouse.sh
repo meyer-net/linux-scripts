@@ -89,7 +89,7 @@ function setup_ck()
     mv /var/lib/clickhouse-server ${CLICKHOUSE_DATA_ETC_DIR}
     chown -R clickhouse:clickhouse ${CLICKHOUSE_DATA_ETC_DIR}
     ln -sf ${CLICKHOUSE_DATA_ETC_DIR} /var/lib/clickhouse-server
-
+    
     mv /var/log/clickhouse-server ${CLICKHOUSE_LOGS_DIR}
     chown -R clickhouse:clickhouse ${CLICKHOUSE_LOGS_DIR}
     ln -sf ${CLICKHOUSE_LOGS_DIR} /var/log/clickhouse-server
