@@ -105,13 +105,13 @@ function setup_ck()
     sudo service clickhouse-server stop
 
     # 启动完成以后再修改配置文件
-    sed -i "/<yandex>/a     \\\t<listen_host>::1</listen_host>\n\t<listen_host>0.0.0.0</listen_host>" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
+    sed -i "/<yandex>/a     \\\    <listen_host>::</listen_host>" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
 
     sudo service clickhouse-server start
     sudo journalctl -u clickhouse-server
     sudo service clickhouse-server status
     
-    echo_startup_config "clickhouse" "/etc/rc.d/init.d" "bash clickhouse-server start"
+    echo_startup_config "clickhouse" "/usr/bin" "clickhouse-server --config-file ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml" "" "1" "" "clickhouse"
 
 	return $?
 }
@@ -119,7 +119,6 @@ function setup_ck()
 setup_soft_basic "Clickhouse" "check_env"
 
 # 1、/etc/clickhouse-server/config.xml添加修改如下：
-#     <listen_host>::1</listen_host>
 #     <listen_host>0.0.0.0</listen_host>
 	
 #     <include_from>/etc/clickhouse-server/metrika.xml</include_from>
