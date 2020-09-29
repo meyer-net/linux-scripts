@@ -88,6 +88,8 @@ function setup_ck()
     
     echo_soft_port 8123
 
+    sudo service clickhouse-server start
+
     mv /var/lib/clickhouse ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
     ln -sf ${CLICKHOUSE_SERVER_DATA_ETC_DIR} /var/lib/clickhouse
     chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_DATA_DIR}
@@ -96,18 +98,18 @@ function setup_ck()
     chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_LOGS_DIR}
     ln -sf ${CLICKHOUSE_SERVER_LOGS_DIR} /var/log/clickhouse-server
 
+    sudo service clickhouse-server stop
 
     # 交互模式启动，预先排错
     nohup sudo -u clickhouse /usr/bin/clickhouse-server --config-file ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml &
 
+    sleep 5
+
     tail -f -n 100 nohup.out
 
-    sudo service clickhouse-server stop
-
     # 启动完成以后再修改配置文件
-    sed -i "/<yandex>/a     \\\    <listen_host>::</listen_host>" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
+    sed -i "/<yandex>/a     \\\    <listen_host>0.0.0.0</listen_host>" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
 
-    sudo service clickhouse-server start
     sudo journalctl -u clickhouse-server
     sudo service clickhouse-server status
     

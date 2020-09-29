@@ -12,9 +12,11 @@ function set_env()
     # fix the version upper then 6.0
     yum -y install centos-release-scl
     yum -y install devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-binutils
-    scl enable devtoolset-9 bash
+    #??? 解决执行命令后UI退出的问题
+    # scl enable devtoolset-9 bash
+    echo "source /opt/rh/devtoolset-9/enable" >> /etc/profile
+    source /etc/profile
     gcc -v
-    # echo "source /opt/rh/devtoolset-9/enable" >> /etc/profile
 
 	return $?
 }
@@ -38,7 +40,7 @@ function setup_redis()
         mkdir -pv $TMP_SETUP_REDIS_CONF_DIR
 
         sed -i "s@^daemonize no@daemonize yes@g" redis.conf
-        sed -i "s@^127.0.0.1@0.0.0.0@g" redis.conf
+        sed -i "s@^bind 127.0.0.1@bind 0.0.0.0@g" redis.conf
         cp redis.conf $TMP_SETUP_REDIS_CONF_DIR
     fi
 
@@ -55,6 +57,7 @@ function setup_redis()
 function down_redis()
 {
     set_env
+
     setup_soft_wget "redis" "http://download.redis.io/redis-stable.tar.gz" "setup_redis"
 
 	return $?

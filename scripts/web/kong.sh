@@ -92,6 +92,8 @@ EOF
 
     echo_startup_config "kong" "/usr/local/bin" "/usr/local/openresty/bin/resty kong start"
 
+    echo_soft_port 80
+
 	return $?
 }
 
@@ -103,10 +105,11 @@ function setup_kong_dashboard()
     #安装依赖库
     cd $WORK_PATH
     source scripts/lang/nodejs.sh
+	source $NVM_PATH
+    nvm install 12.16 && nvm use 12.16
 
     #初始化项目
     cd $TMP_SETUP_KONG_DASHBOARD_DIR
-	source $NVM_PATH
     
     #重复执行
 	#while_exec "su - root -c 'cd $TMP_SETUP_KONG_DASHBOARD_DIR && nvm install 8.11.3 && nvm use 8.11.3 && npm install > $DOWN_DIR/konga_install.log'" "cat $DOWN_DIR/konga_install.log | grep -o \"up to date\" | awk 'END{print NR}' | xargs -I {} [ {} -eq 1 ] && echo 1" "npm uninstall && rm -rf node_modules package-lock.json && rm -rf $NVM_DIR/versions/node/v8.11.3 && rm -rf $NVM_DIR/.cache"
@@ -133,6 +136,7 @@ function setup_kong_dashboard()
     local TMP_KONGA_TOKEN_SECURITY=`cat /proc/sys/kernel/random/uuid`
     #sed -i "/^KONGA_HOOK_TIMEOUT/d" .env
     sed -i "s@^PORT=.*@PORT=$TMP_SETUP_KONG_DASHBOARD_LOCAL_PORT@g" .env
+    sed -i "s@^KONGA_HOOK_TIMEOUT=.*@KONGA_HOOK_TIMEOUT=240000@g" .env
     sed -i "s@^DB_URI=.*@DB_URI=postgresql://$TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_USRNAME\@$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT/$TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_DATABASE@g" .env
     echo "DB_HOST=$TMP_SETUP_POSTGRESQL_DBADDRESS" >> .env
     echo "DB_USER=$TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_USRNAME" >> .env
@@ -176,7 +180,9 @@ EOF
     kong reload
 
     local TMP_KONGA_NPM_PATH=`npm config get prefix`
-    echo_startup_config "konga" "$TMP_SETUP_KONG_DASHBOARD_DIR" "npm run production" "$TMP_KONGA_NPM_PATH/bin"
+    echo_startup_config "konga" "$TMP_SETUP_KONG_DASHBOARD_DIR" "nvm use 12.16 && npm run production" "$TMP_KONGA_NPM_PATH/bin"
+
+    echo_soft_port 1337
 
 	return $?
 }
