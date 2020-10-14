@@ -32,7 +32,7 @@ function print_nodejs()
 
 function setup_nodejs()
 {
-	curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+	curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.36.0/install.sh | bash
 
 	source ${NVM_PATH}
 	nvm ls
@@ -96,7 +96,7 @@ function setup_nodejs()
 	npm --version
 	es-checker
 	npm install -g yarn
-	yarn config set registry https://registry.npm.taobao.org --global
+	# yarn config set registry https://registry.npm.taobao.org --global
 	# yarn config set disturl https://npm.taobao.org/dist --global
 
     echo_startup_config "nvm" `dirname ${NVM_PATH}` "tail -f $(dirname ~/1)/npm-debug.log" "" "1" "${NVM_PATH}"
