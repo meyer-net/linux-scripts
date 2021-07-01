@@ -319,10 +319,6 @@ function setup_soft_basic()
 #参数3：路径存在时输出信息
 function path_not_exits_action() 
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local _TMP_NOT_EXITS_PATH="$1"
 	local _TMP_NOT_EXITS_PATH_SCRIPT="$2"
 	local _TMP_NOT_EXITS_PATH_ECHO="$3"
@@ -356,10 +352,6 @@ function path_not_exits_action()
 #参数2：路径存在时输出信息
 function path_not_exits_create() 
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-	
 	local _TMP_NOT_EXITS_PATH="$1"
 	local _TMP_NOT_EXITS_PATH_ECHO="$2"
 
@@ -374,10 +366,6 @@ function path_not_exits_create()
 #参数3：包存在时输出信息
 function soft_rpm_check_action() 
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-	
 	local TMP_RPM_CHECK_SOFT=$1
 	local TMP_RPM_CHECK_SOFT_FUNC=$2
 
@@ -403,10 +391,6 @@ function soft_rpm_check_action()
 #	 soft_yum_check_action "wget,vim" "echo '%s setup'" "%s was installed"
 function soft_yum_check_action() 
 {    
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-	
 	local TMP_YUM_CHECK_SOFTS=${1}
 	local TMP_YUM_CHECK_ACTION_SCRIPT=${2}
     local TMP_YUM_CHECK_SOFT_STD=${3}
@@ -445,10 +429,6 @@ function soft_yum_check_action()
 #    soft_yum_check_setup "wget,vim" "%s was installed"
 function soft_yum_check_setup() 
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-	
 	local TMP_YUM_CHECK_SOFTS=${1}
 	local TMP_YUM_CHECK_SOFT_STD=${2:-"%s was installed"}
         
@@ -464,10 +444,6 @@ function soft_yum_check_setup()
 #参数4：模式
 function soft_npm_check_action() 
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-	
 	local TMP_NPM_CHECK_SOFT=$1
 	local TMP_NPM_CHECK_SOFT_FUNC=$2
 	local TMP_NPM_CHECK_MODE=$4
