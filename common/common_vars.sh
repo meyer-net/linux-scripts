@@ -17,9 +17,9 @@ CURRENT_USER=`whoami`
 #---------- DIR ---------- {
 DOWN_DIR=/tmp
 
-# 默认找最大的磁盘
+# 默认找最大的磁盘  ??? 优化为自动识别是否存在未挂载大磁盘 
 MOUNT_DIR=$(df -k | awk '{print $2}' | awk '{if (NR>2) {print}}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} sh -c 'df -k | grep "$1" | awk "{print \$NF}" | cut -c2' -- {})
-MOUNT_DIR=${MOUNT_DIR:-"/clouddisk"}/work
+MOUNT_DIR=${MOUNT_DIR:-"/mountdisk"}/work
 SETUP_DIR=/opt
 DEFAULT_DIR=/home/${CURRENT_USER}/default
 ATT_DIR=${MOUNT_DIR}/attach

@@ -6,11 +6,11 @@
 #------------------------------------------------
 
 #临时区变量
-local TMP_SETUP_KONG_DIR=$SETUP_DIR/kong
+local TMP_SETUP_KONG_DIR=${SETUP_DIR}/kong
 local TMP_SETUP_KONG_CONF_PATH=/etc/kong/kong.conf
-local TMP_SETUP_KONG_NGX_DIR=$TMP_SETUP_KONG_DIR/nginx/sbin
+local TMP_SETUP_KONG_NGX_DIR=${TMP_SETUP_KONG_DIR}/nginx/sbin
 
-local TMP_SETUP_KONG_DASHBOARD_DIR=$SETUP_DIR/konga
+local TMP_SETUP_KONG_DASHBOARD_DIR=${SETUP_DIR}/konga
 
 local TMP_SETUP_POSTGRESQL_DBADDRESS="127.0.0.1"
 local TMP_SETUP_POSTGRESQL_DBPORT="5432"
@@ -22,17 +22,21 @@ local TMP_SETUP_POSTGRESQL_KONG_USRNAME="kong"
 local TMP_SETUP_POSTGRESQL_KONG_USRPWD="dbkng%1it"
 
 #全局变量
-local KONG_LOGS_DIR=$LOGS_DIR/kong
+local KONG_LOGS_DIR=${LOGS_DIR}/kong
 
 function set_environment()
 {
     setup_libs
+    
 	return $?
 }
 
 function setup_libs()
 {
-    sudo yum install epel-release
+    #安装postgresql client包
+    sudo yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+    soft_yum_check_action "epel-release,postgresql11"
 
 	return $?
 }
@@ -43,10 +47,10 @@ function setup_kong()
     while_wget "https://bintray.com/kong/kong-rpm/rpm -O bintray-kong-kong-rpm.repo" "sed -i -e 's/baseurl.*/&\/centos\/'$MAJOR_VERSION''/ bintray-kong-kong-rpm.repo && sudo mv bintray-kong-kong-rpm.repo /etc/yum.repos.d/ && sudo yum install -y kong"
     
     #软连接
-    ln -sf /usr/local/kong $TMP_SETUP_KONG_DIR
+    ln -sf /usr/local/kong ${TMP_SETUP_KONG_DIR}
 
-    mkdir -pv $KONG_LOGS_DIR
-    ln -sf $KONG_LOGS_DIR $TMP_SETUP_KONG_DIR/logs
+    mkdir -pv ${KONG_LOGS_DIR}
+    ln -sf ${KONG_LOGS_DIR} ${TMP_SETUP_KONG_DIR}/logs
     
     #初始化数据库，并设置密码
 
@@ -86,6 +90,7 @@ EOF
     ln -sf /usr/local/bin/kong /usr/bin/kong
 
     kong migrations bootstrap
+
     kong start
     kong health
     kong restart
@@ -100,19 +105,19 @@ EOF
 function setup_kong_dashboard()
 {
     cd ..
-    mv konga $TMP_SETUP_KONG_DASHBOARD_DIR
+    mv konga ${TMP_SETUP_KONG_DASHBOARD_DIR}
 
     #安装依赖库
-    cd $WORK_PATH
+    cd ${WORK_PATH}
     source scripts/lang/nodejs.sh
-	source $NVM_PATH
-    nvm install 12.16 && nvm use 12.16
+	source ${NVM_PATH}
+    nvm install lts/erbium && nvm use lts/erbium
 
     #初始化项目
-    cd $TMP_SETUP_KONG_DASHBOARD_DIR
+    cd ${TMP_SETUP_KONG_DASHBOARD_DIR}
     
     #重复执行
-	#while_exec "su - root -c 'cd $TMP_SETUP_KONG_DASHBOARD_DIR && nvm install 8.11.3 && nvm use 8.11.3 && npm install > $DOWN_DIR/konga_install.log'" "cat $DOWN_DIR/konga_install.log | grep -o \"up to date\" | awk 'END{print NR}' | xargs -I {} [ {} -eq 1 ] && echo 1" "npm uninstall && rm -rf node_modules package-lock.json && rm -rf $NVM_DIR/versions/node/v8.11.3 && rm -rf $NVM_DIR/.cache"
+	#while_exec "su - root -c 'cd ${TMP_SETUP_KONG_DASHBOARD_DIR} && nvm install 8.11.3 && nvm use 8.11.3 && npm install > $DOWN_DIR/konga_install.log'" "cat $DOWN_DIR/konga_install.log | grep -o \"up to date\" | awk 'END{print NR}' | xargs -I {} [ {} -eq 1 ] && echo 1" "npm uninstall && rm -rf node_modules package-lock.json && rm -rf $NVM_DIR/versions/node/v8.11.3 && rm -rf $NVM_DIR/.cache"
     sudo npm install
     #npm rebuild node-sass
 
@@ -121,7 +126,7 @@ function setup_kong_dashboard()
     local TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_DATABASE="konga"
     local TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_USRPWD="dbknga!1it"
 
-    local TMP_SETUP_KONG_DASHBOARD_DOMAIN="dashboard.gateway.com"
+    local TMP_SETUP_KONG_DASHBOARD_DOMAIN="${LOCAL_IPV4}"
 
 	input_if_empty "TMP_SETUP_KONG_DASHBOARD_DOMAIN" "Kong.Dashboard.Web.Domain: Please ender ${red}kong dashboard web domain${reset}"
 	input_if_empty "TMP_SETUP_KONG_DASHBOARD_LOCAL_PORT" "Kong.Dashboard.Web: Please ender ${red}kong dashboard web local port${reset}, except '80'"
@@ -136,6 +141,7 @@ function setup_kong_dashboard()
     local TMP_KONGA_TOKEN_SECURITY=`cat /proc/sys/kernel/random/uuid`
     #sed -i "/^KONGA_HOOK_TIMEOUT/d" .env
     sed -i "s@^PORT=.*@PORT=$TMP_SETUP_KONG_DASHBOARD_LOCAL_PORT@g" .env
+    # 解决 api-health-checks 健康检查超时问题
     sed -i "s@^KONGA_HOOK_TIMEOUT=.*@KONGA_HOOK_TIMEOUT=240000@g" .env
     sed -i "s@^DB_URI=.*@DB_URI=postgresql://$TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_USRNAME\@$TMP_SETUP_POSTGRESQL_DBADDRESS:$TMP_SETUP_POSTGRESQL_DBPORT/$TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_DATABASE@g" .env
     echo "DB_HOST=$TMP_SETUP_POSTGRESQL_DBADDRESS" >> .env
@@ -154,33 +160,36 @@ psql -U $TMP_SETUP_POSTGRESQL_ROOT_USRNAME -h $TMP_SETUP_POSTGRESQL_DBADDRESS -d
     GRANT ALL PRIVILEGES ON DATABASE $TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_DATABASE TO $TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_USRNAME;
 EOF
 
+    # 解决sails.config.pubsub._hookTimeout 引发超时连接问题 config/pubsub.js，config/orm.js
+    sed -i "s@_hookTimeout: .*@_hookTimeout: 999999@g" config/orm.js
+    sed -i "s@_hookTimeout: .*@_hookTimeout: 999999@g" config/pubsub.js
     sudo node ./bin/konga.js prepare
 
 psql -U $TMP_SETUP_POSTGRESQL_ROOT_USRNAME -h $TMP_SETUP_POSTGRESQL_DBADDRESS -d postgres << EOF
     \c $TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_DATABASE;
-    INSERT INTO konga_kong_nodes (id,"name","type",kong_admin_url,netdata_url,kong_api_key,jwt_algorithm,jwt_key,jwt_secret,kong_version,health_checks,health_check_details,active,"createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'CONNECTION.KONG.LOCAL.$SYS_IP_CONNECT','default','http://localhost:8000',NULL,'','HS256',NULL,NULL,'1.2.0rc2',true,NULL,true,'$LOCAL_TIME','$LOCAL_TIME',1,1);
+    INSERT INTO konga_kong_nodes (id,"name","type",kong_admin_url,netdata_url,kong_api_key,jwt_algorithm,jwt_key,jwt_secret,kong_version,health_checks,health_check_details,active,"createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'CONNECTION.KONG.LOCAL.$SYS_IP_CONNECT','default','http://localhost:8000',NULL,'','HS256',NULL,NULL,'2.2.0',true,NULL,true,'$LOCAL_TIME','$LOCAL_TIME',1,1);
     UPDATE konga_settings SET "data"='{"signup_enable":true,"signup_require_activation":true,"info_polling_interval":1000,"email_default_sender_name":"Kong Net-Gateway","email_default_sender":"kong@gateway.com","email_notifications":false,"default_transport":"sendmail","notify_when":{"node_down":{"title":"A node is down or unresponsive","description":"Health checks must be enabled for the nodes that need to be monitored.","active":true},"api_down":{"title":"An API is down or unresponsive","description":"Health checks must be enabled for the APIs that need to be monitored.","active":true}},"user_permissions":{"apis":{"create":false,"read":true,"update":false,"delete":false},"services":{"create":false,"read":true,"update":false,"delete":false},"routes":{"create":false,"read":true,"update":false,"delete":false},"consumers":{"create":false,"read":true,"update":false,"delete":false},"plugins":{"create":false,"read":true,"update":false,"delete":false},"upstreams":{"create":false,"read":true,"update":false,"delete":false},"certificates":{"create":false,"read":true,"update":false,"delete":false},"connections":{"create":false,"read":false,"update":false,"delete":false},"users":{"create":false,"read":false,"update":false,"delete":false}},"baseUrl":"http://$TMP_SETUP_KONG_DASHBOARD_DOMAIN","integrations":[{"id":"slack","name":"Slack","image":"slack_rgb.png","config":{"enabled":true,"fields":[{"id":"slack_webhook_url","name":"Slack Webhook URL","type":"text","required":true,"value":"https://hooks.slack.com/services/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"}],"slack_webhook_url":""}}]}' where id = 1;
     INSERT INTO konga_kong_snapshot_schedules (id,"connection",active,cron,"lastRunAt","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,1,true,'* 1 * * *',NULL,'$LOCAL_TIME','$LOCAL_TIME',1,1);
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb',1,true,true,NULL,true,NULL,'$LOCAL_TIME','$LOCAL_TIME',NULL,NULL);
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (2,'c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',1,true,true,NULL,true,NULL,'$LOCAL_TIME','$LOCAL_TIME',NULL,NULL);
-
-    \c $TMP_SETUP_POSTGRESQL_KONG_DATABASE;
-    INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout) VALUES ('a45c36b6-ab85-47ad-ad20-022d03ff6996', '$LOCAL_TIME', '$LOCAL_TIME', 'SERVICE.KONGA', 5, 'http', 'UPS-LCL-GATEWAY.KONGA', '80', '/', 60000, 60000, 60000);
-    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441','$LOCAL_TIME','$LOCAL_TIME','a45c36b6-ab85-47ad-ad20-022d03ff6996','{http,https}','{}','{$TMP_SETUP_KONG_DASHBOARD_DOMAIN}','{/}',0,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL);
-    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags) VALUES ('6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb','$LOCAL_TIME','UPS-LCL-GATEWAY.KONG','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL);
-    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags) VALUES ('c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','$LOCAL_TIME','UPS-LCL-GATEWAY.KONGA','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL);
-    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags) VALUES ('d3a11b51-dc3c-414a-b320-95d360d56611','$LOCAL_TIME','6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb','127.0.0.1:8000',100,NULL);
-    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags) VALUES ('941a9b3e-72a0-4b32-854d-a3e282b33711','$LOCAL_TIME','c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','127.0.0.1:$TMP_SETUP_KONG_DASHBOARD_LOCAL_PORT',100,NULL);
     
+    \c $TMP_SETUP_POSTGRESQL_KONG_DATABASE;
+    INSERT INTO workspaces (id, name, created_at) VALUES ('e4b9993d-653f-44fd-acc5-338ce807582c','default','$LOCAL_TIME');
+    INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('a45c36b6-ab85-47ad-ad20-022d03ff6996', '$LOCAL_TIME', '$LOCAL_TIME', 'SERVICE.KONGA', 5, 'http', 'UPS-LCL-GATEWAY.KONGA', '80', '/', 60000, 60000, 60000, 'e4b9993d-653f-44fd-acc5-338ce807582c');
+    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441','$LOCAL_TIME','$LOCAL_TIME','a45c36b6-ab85-47ad-ad20-022d03ff6996','{http,https}','{}','{$TMP_SETUP_KONG_DASHBOARD_DOMAIN}','{/}',0,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL, 'e4b9993d-653f-44fd-acc5-338ce807582c');
+    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb','$LOCAL_TIME','UPS-LCL-GATEWAY.KONG','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, 'e4b9993d-653f-44fd-acc5-338ce807582c');
+    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','$LOCAL_TIME','UPS-LCL-GATEWAY.KONGA','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, 'e4b9993d-653f-44fd-acc5-338ce807582c');
+    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('d3a11b51-dc3c-414a-b320-95d360d56611','$LOCAL_TIME','6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb','127.0.0.1:8000',100,NULL, 'e4b9993d-653f-44fd-acc5-338ce807582c');
+    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('941a9b3e-72a0-4b32-854d-a3e282b33711','$LOCAL_TIME','c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','127.0.0.1:$TMP_SETUP_KONG_DASHBOARD_LOCAL_PORT',100,NULL, 'e4b9993d-653f-44fd-acc5-338ce807582c');
 EOF
 
     sudo npm run bower-deps
-    sudo nohup npm run production &
+    sudo nohup npm run production > ${KONG_LOGS_DIR}/konga.log 2>&1 &
     
     kong reload
 
     local TMP_KONGA_NPM_PATH=`npm config get prefix`
-    echo_startup_config "konga" "$TMP_SETUP_KONG_DASHBOARD_DIR" "nvm use 12.16 && npm run production" "$TMP_KONGA_NPM_PATH/bin"
+    echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "nvm use lts/erbium && npm run production" "${TMP_KONGA_NPM_PATH}/bin"
 
     echo_soft_port 1337
 
@@ -191,19 +200,19 @@ function rouse_openresty()
 {
     local TMP_OPENRESTY_NGINX_PATH=`sudo find / -name nginx | grep 'openresty/nginx/sbin'`
     if [ ! -f "/usr/bin/nginx" ]; then
-        ln -sf $TMP_OPENRESTY_NGINX_PATH /usr/bin/nginx 
+        ln -sf ${TMP_OPENRESTY_NGINX_PATH} /usr/bin/nginx 
     fi
     nginx -v
     
     local TMP_OPENRESTY_RESTY_PATH=`sudo find / -name resty | grep 'openresty/bin'`
     if [ ! -f "/usr/bin/resty" ]; then
-        ln -sf $TMP_OPENRESTY_RESTY_PATH /usr/bin/resty 
+        ln -sf ${TMP_OPENRESTY_RESTY_PATH} /usr/bin/resty 
     fi
     resty -v
 
     local TMP_OPENRESTY_LUAJIT_PATH=`sudo find / -name luajit | grep 'openresty/luajit/bin'`
     if [ ! -f "/usr/bin/luajit" ]; then
-        ln -sf $TMP_OPENRESTY_LUAJIT_PATH /usr/bin/luajit 
+        ln -sf ${TMP_OPENRESTY_LUAJIT_PATH} /usr/bin/luajit 
     fi
     luajit -v
 

@@ -230,10 +230,6 @@ function cp_nginx_starter()
 
 	mkdir -pv $NGINX_DIR
 
-	#if [ ! -d $WORK_PATH/nginx ]; then
-	#	git clone https://github.com/meyer-net/env-scripts.git "nginx"
-	#fi
-
 	echo "Copy '${WORK_PATH}/templates/nginx/server' To '${TMP_NGINX_PROJECT_CONTAINER_DIR}'"
 	cp -r ${WORK_PATH}/templates/nginx/server ${TMP_NGINX_PROJECT_CONTAINER_DIR}
 	
@@ -335,7 +331,10 @@ function path_not_exits_action()
 		_TMP_NOT_EXITS_PATH="/$USER"
 	fi
 
-	if [ ! -f "$_TMP_NOT_EXITS_PATH" ]; then		
+	# 缺失了对文件夹的判断，修复20-12.25
+	local _TMP_EXISTS_PATH_VAL=$([ -a "$_TMP_NOT_EXITS_PATH" ] && echo 1 || echo 0)
+	if [ ${_TMP_EXISTS_PATH_VAL} -eq 0 ]; then
+	# if [ ! -f "$_TMP_NOT_EXITS_PATH" ]; then
 		if [ "$(type -t $_TMP_NOT_EXITS_PATH_SCRIPT)" = "function" ] ; then
 			$_TMP_NOT_EXITS_PATH_SCRIPT $_TMP_NOT_EXITS_PATH
 		else
@@ -360,7 +359,7 @@ function path_not_exits_create()
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
-
+	
 	local _TMP_NOT_EXITS_PATH="$1"
 	local _TMP_NOT_EXITS_PATH_ECHO="$2"
 
@@ -378,7 +377,7 @@ function soft_rpm_check_action()
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
-
+	
 	local TMP_RPM_CHECK_SOFT=$1
 	local TMP_RPM_CHECK_SOFT_FUNC=$2
 
@@ -403,11 +402,11 @@ function soft_rpm_check_action()
 #	 soft_yum_check_action "sss" "test" "%s was installed"
 #	 soft_yum_check_action "wget,vim" "echo '%s setup'" "%s was installed"
 function soft_yum_check_action() 
-{
+{    
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
-    
+	
 	local TMP_YUM_CHECK_SOFTS=${1}
 	local TMP_YUM_CHECK_ACTION_SCRIPT=${2}
     local TMP_YUM_CHECK_SOFT_STD=${3}
@@ -449,7 +448,7 @@ function soft_yum_check_setup()
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
-    
+	
 	local TMP_YUM_CHECK_SOFTS=${1}
 	local TMP_YUM_CHECK_SOFT_STD=${2:-"%s was installed"}
         
@@ -468,7 +467,7 @@ function soft_npm_check_action()
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
-
+	
 	local TMP_NPM_CHECK_SOFT=$1
 	local TMP_NPM_CHECK_SOFT_FUNC=$2
 	local TMP_NPM_CHECK_MODE=$4

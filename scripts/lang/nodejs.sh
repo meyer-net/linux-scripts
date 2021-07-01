@@ -35,11 +35,8 @@ function setup_nodejs()
 	curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.36.0/install.sh | bash
 
 	source ${NVM_PATH}
-	nvm ls
-
-	#保留默认稳定版
-	nvm install stable
-	nvm current
+	echo "NodeJs: Remote list"
+	nvm ls-remote --lts
 	
     #安装官方指定稳定版,https://nodejs.org/en/查看
     echo "--------------------------------------------------"
@@ -61,8 +58,10 @@ function setup_nodejs()
 		nvm use node
 	fi
 
-	nvm current
+	echo "NodeJs: Local list"
 	nvm ls
+
+	nvm current
 
 	node --version
 	node --v8-options | grep harmony

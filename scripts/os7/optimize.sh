@@ -146,6 +146,8 @@ EOF
 	#单个用户可打开的最大文件描述符数量(硬限制)
 	echo "* hard nproc 65536" >> /etc/security/limits.conf
 
+	sysctl -p
+
 	#表示已设置优化
 	echo "" >> $SETUP_DIR/sys_seted
 	
