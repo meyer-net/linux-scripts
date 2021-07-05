@@ -58,18 +58,19 @@ function echo_title()
     TMP_FILL_RIGHT_TITLE_FORMAT="|${green}%${reset}|"
     TMP_FILL_RIGHT_ITEM_FORMAT="|%|"
 
-    echo $TMP_SPLITER
-    echo_fill_right "Function Boots Of Centos7" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_TITLE_FORMAT
-    echo_fill_right "Copy Right Meyer - http://www.thiskpi.com" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_TITLE_FORMAT
-    echo $TMP_SPLITER
+    echo ${TMP_SPLITER}
+    echo_fill_right "Function Boots Of Centos7" "" ${TMP_SPLITER_LEN} ${TMP_FILL_RIGHT_TITLE_FORMAT}
+    echo_fill_right "Copy Right Meyer - http://www.epudev.com" "" ${TMP_SPLITER_LEN} ${TMP_FILL_RIGHT_TITLE_FORMAT}
+    echo ${TMP_SPLITER}
     
-    echo_fill_right "System Name: $SYS_NAME" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_ITEM_FORMAT
-    echo_fill_right "OS Version: CentOS.$OS_VERSION" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_ITEM_FORMAT
-    echo_fill_right "Localhost: $LOCAL_HOST($LOCAL_ID)" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_ITEM_FORMAT
-    echo_fill_right "IpV4: $LOCAL_IPV4" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_ITEM_FORMAT
-    echo_fill_right "IpV6: $LOCAL_IPV6" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_ITEM_FORMAT
-    echo_fill_right "Processor: $PROCESSOR_COUNT" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_ITEM_FORMAT
-    echo_fill_right "FreeMemory: ${MEMORY_GB_FREE}GB" "" $TMP_SPLITER_LEN $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "System Name: ${SYS_NAME}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "Product Name: ${SYS_PRODUCT_NAME}(${SYSTEMD_DETECT_VIRT})" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "OS Version: CentOS.${OS_VERSION}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "Localhost: ${LOCAL_HOST}(${LOCAL_ID})" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "IpV4: ${LOCAL_IPV4}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "IpV6: ${LOCAL_IPV6}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "Processor: ${PROCESSOR_COUNT}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "FreeMemory: ${MEMORY_GB_FREE}GB" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
 
     return $?
 }

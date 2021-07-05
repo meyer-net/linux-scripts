@@ -52,10 +52,6 @@ function create_user_if_not_exists()
 #获取IP
 #参数1：需要设置的变量名
 function get_iplocal () {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_LOCAL_IP=`ip a | grep inet | grep -v inet6 | grep -v 127 | grep -v docker | awk '{print $2}' | awk -F'/' '{print $1}' | awk 'END {print}'`
     [ -z ${TMP_LOCAL_IP} ] && TMP_LOCAL_IP=`ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1`
 
@@ -69,10 +65,6 @@ function get_iplocal () {
 #获取IPv4
 #参数1：需要设置的变量名
 function get_ipv4 () {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	#wget -qO- -t1 -T2 ipv4.icanhazip.com
     local TMP_LOCAL_IPV4=`curl -s ipv4.icanhazip.com | awk 'NR==1'`
     [ -z ${TMP_LOCAL_IPV4} ] && TMP_LOCAL_IPV4=`curl -s ipinfo.io/ip | awk 'NR==1'`
@@ -88,14 +80,23 @@ function get_ipv4 () {
 #获取IPv6
 #参数1：需要设置的变量名
 function get_ipv6 () {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
     local TMP_LOCAL_IPV6=`curl -s ipv6.icanhazip.com | awk 'NR==1'`
 
 	if [ -n "$TMP_LOCAL_IPV6" ]; then
 		eval ${1}=`echo '$TMP_LOCAL_IPV6'`
+	fi
+
+	return $?
+}
+
+#获取国码
+#参数1：需要设置的变量名
+function get_country_code () {
+	local TMP_LOCAL_IPV4=`curl -s ip.sb`
+    local TMP_COUNTRY_CODE=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4} | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
+
+	if [ -n "${TMP_COUNTRY_CODE}" ]; then
+		eval ${1}=`echo '${TMP_COUNTRY_CODE}'`
 	fi
 
 	return $?
@@ -212,6 +213,84 @@ function curx_line_insert()
 	else
 		eval ${1}=`echo -1`
 	fi
+
+	return $?
+}
+
+# 识别磁盘挂载
+# 参数1：磁盘挂载数组，当带入参数时，以带入的参数来决定脚本挂载几块硬盘
+function resolve_unmount_disk () {
+
+	local TMP_FUNC_TITLE="MountDisk"
+	local TMP_ARR_MOUNT_PATH_PREFIX_STR=${1:-}
+	local TMP_ARR_MOUNT_PATH_PREFIX=(${TMP_ARR_MOUNT_PATH_PREFIX_STR//,/ })
+	
+	# 获取当前磁盘的格式，例如sd,vd
+	local TMP_FDISK_L_DISKS_STR=`lsblk | grep disk | awk 'NR>=2{print $1}'`
+	
+	local TMP_ARR_DISK_POINT=(${TMP_FDISK_L_DISKS_STR// / })
+	
+	for I in ${!TMP_ARR_DISK_POINT[@]};  
+	do
+		local TMP_DISK_POINT="/dev/${TMP_ARR_DISK_POINT[$I]}"
+
+		# 判断未格式化
+		local TMP_DISK_FORMATED_COUNT=`fdisk -l | grep "^${TMP_DISK_POINT}" | wc -l`
+
+		if [ ${TMP_DISK_FORMATED_COUNT} -eq 0 ]; then
+			echo "${TMP_FUNC_TITLE}: Checked there's one of disk[$((I+1))/${#TMP_ARR_DISK_POINT[@]}] '${TMP_DISK_POINT}' ${red}not format${reset}"
+			echo "${TMP_FUNC_TITLE}: Suggest step："
+			echo "                                Type ${green}n${reset}, ${red}enter${reset}"
+			echo "                                Type ${green}p${reset}, ${red}enter${reset}"
+			echo "                                Type ${green}1${reset}, ${red}enter${reset}"
+			echo "                                Type ${red}enter${reset}"
+			echo "                                Type ${red}enter${reset}"
+			echo "                                Type ${green}w${reset}, ${red}enter${reset}"
+			echo "---------------------------------------------"
+
+			fdisk ${TMP_DISK_POINT}
+			
+			echo "---------------------------------------------"
+
+			# 格式化：
+			mkfs.ext4 ${TMP_DISK_POINT}
+
+			fdisk -l | grep "^${TMP_DISK_POINT}1"
+			echo "${TMP_FUNC_TITLE}: Disk of '${TMP_DISK_POINT}' ${green}formated${reset}"
+	
+			echo "---------------------------------------------"
+		fi
+
+		# 判断未挂载
+		local TMP_DISK_MOUNTED_COUNT=`df -h | grep "^${TMP_DISK_POINT}" | wc -l`
+		if [ ${TMP_DISK_MOUNTED_COUNT} -eq 0 ]; then
+			echo "${TMP_FUNC_TITLE}: Checked there's one of disk[$((I+1))/${#TMP_ARR_DISK_POINT[@]}] '${TMP_DISK_POINT}' ${red}no mount${reset}"
+
+			# ??? 缺失判断数组的情况
+			local TMP_MOUNT_PATH_PREFIX_CURRENT=""
+			local TMP_MOUNT_PATH_PREFIX=${TMP_ARR_MOUNT_PATH_PREFIX[$I]}
+			if [ -z "${TMP_MOUNT_PATH_PREFIX}" ]; then
+				input_if_empty "TMP_MOUNT_PATH_PREFIX_CURRENT" "${TMP_FUNC_TITLE}: Please ender the disk of '${TMP_DISK_POINT}' mount path prefix like '/tmp/downloads'"
+			else
+				TMP_MOUNT_PATH_PREFIX_CURRENT="${TMP_MOUNT_PATH_PREFIX:-}"
+			fi
+
+			if [ -n "${TMP_MOUNT_PATH_PREFIX_CURRENT}" ]; then
+				# 挂载
+				mkdir -pv ${TMP_MOUNT_PATH_PREFIX_CURRENT}
+				echo "${TMP_DISK_POINT} ${TMP_MOUNT_PATH_PREFIX_CURRENT} ext4 defaults 0 0" >> /etc/fstab
+				mount -a
+		
+				df -h | grep "${TMP_MOUNT_PATH_PREFIX_CURRENT}"
+				echo "${TMP_FUNC_TITLE}: Disk of '${TMP_DISK_POINT}' ${green}mounted${reset}"
+			else
+				echo "${TMP_FUNC_TITLE}: Path of '${TMP_MOUNT_PATH_PREFIX_CURRENT}' error，the disk '${TMP_DISK_POINT}' ${red}not mount${reset}"
+			fi
+
+			echo "---------------------------------------------"
+		fi
+
+	done
 
 	return $?
 }
@@ -1346,11 +1425,11 @@ function exec_repeat_funcs()
 		return $?
 	fi
 
-	TMP_VAR_NAME=$1
-	TMP_ARRAY_STR=$2
-	TMP_FORMAT_FUNC=$3
+	local TMP_VAR_NAME=$1
+	local TMP_ARRAY_STR=$2
+	local TMP_FORMAT_FUNC=$3
 	
-	arr=(${TMP_ARRAY_STR//,/ })
+	local arr=(${TMP_ARRAY_STR//,/ })
 	for I in ${!arr[@]};  
 	do
 		TMP_OUTPUT=`$TMP_FORMAT_FUNC "${arr[$I]}"`
@@ -1732,9 +1811,12 @@ MAJOR_VERSION=`grep -oE '[0-9]+\.[0-9]+' /etc/redhat-release | cut -d "." -f1`
 LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
 #---------- SYSTEM ---------- }
 
-#---------- HARDWARE ---------- {
-#主机名称
+#---------- HARDWARE ---------- { 
+# 主机名称
 SYS_NAME=`hostname`
+
+# 系统产品名称
+SYS_PRODUCT_NAME=`dmidecode -t system | grep "Product Name" | awk -F':' '{print $NF}' | awk '{sub("^ *","");sub(" *$","");print}'`
 
 # 系统位数
 CPU_ARCHITECTURE=`lscpu | awk NR==1 | awk -F' ' '{print $NF}'`
@@ -1750,6 +1832,9 @@ MEMORY_FREE=`awk '($1 == "MemFree:"){print $2/1048576}' /proc/meminfo`
 
 # GB -> BYTES
 MEMORY_GB_FREE=${MEMORY_FREE%.*}
+
+# 机器环境信息
+SYSTEMD_DETECT_VIRT=`systemd-detect-virt`
 
 # 本机IP
 # NET_HOST=`ping -c 1 -t 1 enginx.net | grep 'PING' | awk '{print $3}' | sed 's/[(,)]//g'`

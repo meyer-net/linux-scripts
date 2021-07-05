@@ -12,35 +12,30 @@ WORK_PATH=`pwd`
 # 清理系统缓存后执行
 echo 3 > /proc/sys/vm/drop_caches
 
-# 全部给予执行权限
-chmod +x -R scripts/*.sh
-chmod +x -R common/*.sh
-source common/common.sh
-
 #---------- BASE ---------- {
-# 迁移packages
-yes | cp packages/* ${DOWN_DIR}
-#}
-
-#---------- CHANGE ---------- {
-SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
-SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"
-sudo hostnamectl set-hostname ${SYS_NEW_NAME}
-#---------- CHANGE ---------- }
-
-#---------- BASE ---------- {
+# 统一将日志指向挂载盘
 function link_logs()
 {
+    # 先创建，避免存在有些系统存在或不存在的问题。一般存在
     mkdir -pv /logs
 
     local TMP_LOGS_IS_LINK=`ls -il /logs | grep "\->"`
     if [ -z "${TMP_LOGS_IS_LINK}" ]; then
-        if [ -d "/logs" ]; then
-            mv /logs ${LOGS_DIR}
-            ln -sf ${LOGS_DIR} /logs
-        fi
+        mv /logs ${LOGS_DIR}
+        ln -sf ${LOGS_DIR} /logs
     fi
     
+    local TMP_VARLOG_IS_LINK=`ls -il /var/log | grep "\->"`
+    if [ -z "${TMP_VARLOG_IS_LINK}" ]; then
+        chattr -a /var/log/messages 
+
+        cp -ra /var/log/* ${LOGS_DIR}/
+        rm -rf /var/log 
+        ln -sf ${LOGS_DIR} /var/log
+
+        chattr +a /var/log/messages 
+    fi
+
 	return $?
 }
 
@@ -57,9 +52,6 @@ function mkdirs()
 
     return $?
 }
-
-mkdirs
-#}
 
 function choice_type()
 {    
@@ -175,4 +167,42 @@ function gen_sup_conf()
 	return $?
 }
 
-choice_type 
+# 初始基本参数启动目录
+function bootstrap() {
+    # Set magic variables for current file & dir
+    __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+    __conf="$(cd; pwd)"
+    readonly __dir __file __conf
+
+    cd ${__dir}
+
+    echo "Current script __dir：${__dir}"
+    echo "Current script __file：${__file}"
+    echo "Current script __conf：${__conf}"
+
+    # 全部给予执行权限
+    chmod +x -R scripts/*.sh
+    chmod +x -R common/*.sh
+    source common/common.sh
+
+    #---------- BASE ---------- {
+    # 迁移packages
+    yes | cp packages/* ${DOWN_DIR}
+    #}
+
+    #---------- CHANGE ---------- {
+    SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
+    SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"
+    sudo hostnamectl set-hostname ${SYS_NEW_NAME}
+    #---------- CHANGE ---------- }
+
+    choice_type
+}
+
+if [ "${BASH_SOURCE[0]:-}" != "${0}" ]; then
+    export -f bootstrap
+else
+    bootstrap ${@}
+    exit $?
+fi
