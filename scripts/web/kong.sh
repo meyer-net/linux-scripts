@@ -108,7 +108,7 @@ function setup_kong_dashboard()
     mv konga ${TMP_SETUP_KONG_DASHBOARD_DIR}
 
     #安装依赖库
-    cd ${WORK_PATH}
+    cd ${__DIR}
     source scripts/lang/nodejs.sh
 	source ${NVM_PATH}
     nvm install lts/erbium && nvm use lts/erbium

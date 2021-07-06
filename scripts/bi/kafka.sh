@@ -141,7 +141,7 @@ function print_kafka_manager()
 function set_env_kafka()
 {
     # 需要提前安装Zookeeper    
-    exec_yn_action "cd $WORK_PATH && source scripts/ha/zookeeper.sh" "Kafka: Please sure if u want to got a zookeeper server"
+    exec_yn_action "cd ${__DIR} && source scripts/ha/zookeeper.sh" "Kafka: Please sure if u want to got a zookeeper server"
     echo ""
 
 	return $?
@@ -149,7 +149,7 @@ function set_env_kafka()
 
 function down_kafka()
 {
-    cd $WORK_PATH
+    cd ${__DIR}
 
     setup_soft_wget "kafka" "https://mirrors.cnnic.cn/apache/kafka/2.3.0/kafka_2.12-2.3.0.tgz" "setup_kafka" 
 
@@ -159,7 +159,7 @@ function down_kafka()
 function down_kafka_eagle()
 {
     # 需要提前安装Java
-    cd $WORK_PATH
+    cd ${__DIR}
     source scripts/lang/java.sh
 
     setup_soft_wget "kafka_eagle" "https://codeload.github.com/smartloli/kafka-eagle-bin/tar.gz/v1.2.6" "setup_kafka_eagle" 

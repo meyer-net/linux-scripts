@@ -20,7 +20,7 @@
 # 1-配置环境
 function set_environment()
 {
-    cd $WORK_PATH
+    cd ${__DIR}
 
     #安装依赖库
     source scripts/lang/java.sh

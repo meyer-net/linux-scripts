@@ -10,7 +10,7 @@ function set_environment()
 {
 	create_user_if_not_exists elk elk
 	
-    source ${WORK_PATH}/scripts/lang/java.sh
+    source ${__DIR}/scripts/lang/java.sh
 
 	return $?
 }

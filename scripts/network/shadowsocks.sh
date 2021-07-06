@@ -27,7 +27,7 @@
 
 function set_environment()
 {
-    cd $WORK_PATH
+    cd ${__DIR}
 
     source scripts/lang/nodejs.sh
 

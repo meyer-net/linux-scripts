@@ -8,7 +8,7 @@
 function set_environment()
 {
     # 需要提前安装Java
-    cd $WORK_PATH
+    cd ${__DIR}
     source scripts/lang/java.sh
 
 	echo "Some Infomation Please See：http://www.jianshu.com/p/b49712bbe044"

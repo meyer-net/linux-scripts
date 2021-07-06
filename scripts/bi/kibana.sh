@@ -11,7 +11,7 @@ function set_environment()
 	create_user_if_not_exists elk elk
 
     # 安装插件需要提前安装nodejs
-    source ${WORK_PATH}/scripts/lang/nodejs.sh
+    source ${__DIR}/scripts/lang/nodejs.sh
 
 	return $?
 }

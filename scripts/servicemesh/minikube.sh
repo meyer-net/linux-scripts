@@ -11,7 +11,7 @@
 
 function set_environment()
 {
-	cd $WORK_PATH
+	cd ${__DIR}
 
 	source scripts/servicemesh/docker.sh
 	source scripts/servicemesh/kubectl.sh

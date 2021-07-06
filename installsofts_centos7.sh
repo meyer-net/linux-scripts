@@ -6,7 +6,11 @@
 #------------------------------------------------
 
 #---------- DIR ---------- {
-WORK_PATH=`pwd`
+# Set magic variables for current file & dir
+__DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"
+__CONF="$(cd; pwd)"
+readonly __DIR __FILE __CONF
 #---------- DIR ---------- }
 
 # 清理系统缓存后执行
@@ -41,6 +45,8 @@ function link_logs()
 
 function mkdirs()
 {
+    resolve_unmount_disk "${MOUNT_ROOT}"
+    
     #path_not_exits_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
     path_not_exits_create "${SETUP_DIR}"
     path_not_exits_create "${WWW_DIR}"
@@ -85,67 +91,78 @@ function from_clean()
 function lang()
 {
     exec_if_choice "CHOICE_LANG" "Please choice which dev lang you want to setup" "...,Python,Java,Scala,Php,NodeJs,Exit" "${TMP_SPLITER}" "scripts/lang"
+
 	return $?
 }
 
 function devops()
 {
     exec_if_choice "CHOICE_DEVOPS" "Please choice which devops compoment you want to setup" "...,Git,Jenkins,Exit" "${TMP_SPLITER}" "scripts/devops"
+
 	return $?
 }
 
 function cluster()
 {
     exec_if_choice "CHOICE_CLUSTER" "Please choice which cluster compoment you want to setup" "...,JumpServer,STF,Exit" "${TMP_SPLITER}" "scripts/cluster"
+
 	return $?
 }
 
 function bi()
 {
     exec_if_choice "CHOICE_ELK" "Please choice which bi compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Redis,Kafka,ZeroMQ,Flink,Exit" "${TMP_SPLITER}" "scripts/bi"
-	return $?
+	
+    return $?
 }
 
 function servicemesh()
 {
     exec_if_choice "CHOICE_SERVICEMESH" "Please choice which service-mesh compoment you want to setup" "...,Docker,MiniKube,Kubernetes,Istio,Exit" "${TMP_SPLITER}" "scripts/servicemesh"
-	return $?
+	
+    return $?
 }
 
 function database()
 {
 	exec_if_choice "CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,MySql,Mycat,PostgreSql,ClickHouse,RethinkDB,Exit" "${TMP_SPLITER}" "scripts/database"
-	return $?
+	
+    return $?
 }
 
 function web()
 {
 	exec_if_choice "CHOICE_WEB" "Please choice which web compoment you want to setup" "...,OpenResty,Kong,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
-	return $?
+	
+    return $?
 }
 
 function ha()
 {
 	exec_if_choice "CHOICE_HA" "Please choice which ha compoment you want to setup" "...,Zookeeper,Hadoop,Consul,Exit" "${TMP_SPLITER}" "scripts/ha"
-	return $?
+	
+    return $?
 }
 
 function network()
 {
 	exec_if_choice "CHOICE_NETWORK" "Please choice which network you want to setup" "...,N2N,Frp,OpenClash,Shadowsocks,Exit" "${TMP_SPLITER}" "scripts/network"
-	return $?
+	
+    return $?
 }
 
 function softs()
 {
 	exec_if_choice "CHOICE_SOFTS" "Please choice which soft you want to setup" "...,Supervisor,Exit" "${TMP_SPLITER}" "scripts/softs"
-	return $?
+	
+    return $?
 }
 
 function tools()
 {
 	exec_if_choice "CHOICE_TOOLS" "Please choice which soft you want to setup" "...,Yasm,Graphics-Magick,Pkg-Config,Protocol-Buffers,Exit" "${TMP_SPLITER}" "scripts/tools"
-	return $?
+	
+    return $?
 }
 
 function from_bak()
@@ -169,21 +186,16 @@ function gen_sup_conf()
 
 # 初始基本参数启动目录
 function bootstrap() {
-    # Set magic variables for current file & dir
-    __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
-    __conf="$(cd; pwd)"
-    readonly __dir __file __conf
+    cd ${__DIR}
 
-    cd ${__dir}
-
-    echo "Current script __dir：${__dir}"
-    echo "Current script __file：${__file}"
-    echo "Current script __conf：${__conf}"
+    echo "Current script __dir：${__DIR}"
+    echo "Current script __file：${__FILE}"
+    echo "Current script __conf：${__CONF}"
 
     # 全部给予执行权限
     chmod +x -R scripts/*.sh
     chmod +x -R common/*.sh
+    source common/common_vars.sh
     source common/common.sh
 
     #---------- BASE ---------- {

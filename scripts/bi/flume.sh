@@ -9,7 +9,7 @@
 function set_environment()
 {    
     # 需要提前安装Java,Hadoop
-    source ${WORK_PATH}/scripts/lang/java.sh
+    source ${__DIR}/scripts/lang/java.sh
 
 	return $?
 }

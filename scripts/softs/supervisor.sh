@@ -9,7 +9,7 @@
 function set_environment()
 {
     # 需要提前安装Python
-    source ${WORK_PATH}/scripts/lang/python.sh
+    source ${__DIR}/scripts/lang/python.sh
 
 	return $?
 }

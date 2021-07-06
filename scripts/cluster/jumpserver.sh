@@ -9,7 +9,7 @@ local TMP_PY3_JMS_ENV=$SETUP_DIR/pyenv3.jms
 function set_env()
 {
     # 需要提前安装Python
-    cd $WORK_PATH
+    cd ${__DIR}
     source scripts/lang/python.sh
     #source scripts/softs/redis.sh
     #source scripts/softs/mysql.sh

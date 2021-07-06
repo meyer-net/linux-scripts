@@ -8,7 +8,7 @@
 function set_environment()
 {
     # 需要提前安装Java
-    cd $WORK_PATH
+    cd ${__DIR}
     source scripts/lang/java.sh
 
 	return $?

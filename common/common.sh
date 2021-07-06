@@ -17,15 +17,6 @@
 # $0：脚本的名称
 # $！：运行在后台的最后一个进程ID
 
-# 独有公共变量
-__DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-__FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"
-__CONF="$(cd; pwd)"
-readonly __DIR __FILE __CONF
-
-# 依赖引用
-source ${__DIR}/common_vars.sh
-
 #创建用户及组，如果不存在
 #参数1：组
 #参数2：用户
@@ -266,13 +257,16 @@ function resolve_unmount_disk () {
 		if [ ${TMP_DISK_MOUNTED_COUNT} -eq 0 ]; then
 			echo "${TMP_FUNC_TITLE}: Checked there's one of disk[$((I+1))/${#TMP_ARR_DISK_POINT[@]}] '${TMP_DISK_POINT}' ${red}no mount${reset}"
 
-			# ??? 缺失判断数组的情况
+			# 必要判断项
+			# 1：数组为空，检测到所有项都提示
+			# 2：数组不为空，多余的略过
+
 			local TMP_MOUNT_PATH_PREFIX_CURRENT=""
-			local TMP_MOUNT_PATH_PREFIX=${TMP_ARR_MOUNT_PATH_PREFIX[$I]}
-			if [ -z "${TMP_MOUNT_PATH_PREFIX}" ]; then
+			if [ ${TMP_ARR_MOUNT_PATH_PREFIX_LEN} -eq 0 ]; then
 				input_if_empty "TMP_MOUNT_PATH_PREFIX_CURRENT" "${TMP_FUNC_TITLE}: Please ender the disk of '${TMP_DISK_POINT}' mount path prefix like '/tmp/downloads'"
 			else
-				TMP_MOUNT_PATH_PREFIX_CURRENT="${TMP_MOUNT_PATH_PREFIX:-}"
+				TMP_MOUNT_PATH_PREFIX_CURRENT=${TMP_ARR_MOUNT_PATH_PREFIX[$I]}
+				# [ ${TMP_ARR_MOUNT_PATH_PREFIX_LEN} -gt $((I+1)) ];
 			fi
 
 			if [ -n "${TMP_MOUNT_PATH_PREFIX_CURRENT}" ]; then
@@ -309,12 +303,12 @@ function cp_nginx_starter()
 
 	mkdir -pv $NGINX_DIR
 
-	echo "Copy '${WORK_PATH}/templates/nginx/server' To '${TMP_NGINX_PROJECT_CONTAINER_DIR}'"
-	cp -r ${WORK_PATH}/templates/nginx/server ${TMP_NGINX_PROJECT_CONTAINER_DIR}
+	echo "Copy '${__DIR}/templates/nginx/server' To '${TMP_NGINX_PROJECT_CONTAINER_DIR}'"
+	cp -r ${__DIR}/templates/nginx/server ${TMP_NGINX_PROJECT_CONTAINER_DIR}
 	
 	if [ ! -d "$TMP_NGINX_PROJECT_RUNNING_DIR" ]; then
-		echo "Copy '${WORK_PATH}/templates/nginx/template' To '${TMP_NGINX_PROJECT_RUNNING_DIR}'"
-		cp -r ${WORK_PATH}/templates/nginx/template ${TMP_NGINX_PROJECT_RUNNING_DIR}
+		echo "Copy '${__DIR}/templates/nginx/template' To '${TMP_NGINX_PROJECT_RUNNING_DIR}'"
+		cp -r ${__DIR}/templates/nginx/template ${TMP_NGINX_PROJECT_RUNNING_DIR}
 	fi
 
 	cd ${TMP_NGINX_PROJECT_CONTAINER_DIR}
@@ -874,7 +868,7 @@ function setup_soft_npm()
 	local TMP_SOFT_NPM_SETUP_NAME_LOWER=${TMP_SOFT_NPM_SETUP_NAME}
 
 	# 提前检查命令是否存在
-	source ${WORK_PATH}/scripts/lang/nodejs.sh
+	source ${__DIR}/scripts/lang/nodejs.sh
 
 	npm install -g npm@next
 	npm audit fix
@@ -1776,7 +1770,7 @@ function proxy_by_ss()
 	local TMP_SHADOWSOCK_MODE="$1"
 
     #加载脚本
-    source ${WORK_PATH}/scripts/tools/shadowsocks.sh
+    source ${__DIR}/scripts/tools/shadowsocks.sh
 
 	# 判断境外网络，决定为客户端或服务端
     echo "---------------------------------------------------------------------"
