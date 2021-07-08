@@ -32,6 +32,10 @@ function setup_python()
 	ln -sf ${PYTHON_SETUP_DIR}/bin/python3 /usr/bin/python3
 	ln -sf ${PYTHON_SETUP_DIR}/bin/pip3 /usr/bin/pip3
 
+	local TMP_PY_NEWER_SETUP_PATH=`pip3 show pip | grep "Location" | awk -F' ' '{print $2}'`
+	mv ${TMP_PY_NEWER_SETUP_PATH} ${PY3_PKGS_SETUP_DIR}
+	ln -sf ${PY3_PKGS_SETUP_DIR} ${TMP_PY_NEWER_SETUP_PATH}
+
 	python3 -V
 	pip3 --version
 

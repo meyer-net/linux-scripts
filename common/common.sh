@@ -851,6 +851,10 @@ function setup_soft_pip()
 		while_curl "https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py" "python get-pip.py && rm -rf get-pip.py"
 		pip install --upgrade pip
 		pip install --upgrade setuptools
+		
+		local TMP_PY_DFT_SETUP_PATH=`pip show pip | grep "Location" | awk -F' ' '{print $2}'`
+		mv ${TMP_PY_DFT_SETUP_PATH} ${PY_PKGS_SETUP_DIR}
+		ln -sf ${PY_PKGS_SETUP_DIR} ${TMP_PY_DFT_SETUP_PATH}
 	fi
 
 	# pip show supervisor
@@ -861,7 +865,7 @@ function setup_soft_pip()
 		echo "Pip installed ${TMP_SOFT_PIP_NAME}"
 
 		#安装后配置函数
-		${TMP_SOFT_PIP_SETUP_FUNC} "${TMP_SOFT_SETUP_PATH}"
+		${TMP_SOFT_PIP_SETUP_FUNC} "${PY_PKGS_SETUP_DIR}/${TMP_SOFT_LOWER_NAME}"
 	else
     	sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep ${TMP_SOFT_PIP_NAME} | grep -v grep
 

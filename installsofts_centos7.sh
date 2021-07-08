@@ -47,6 +47,7 @@ function mkdirs()
 {
     # 检测到有未挂载磁盘，默认将挂载第一个磁盘为/mountdisk，并重置变量
     if [ ${#LSBLK_DISKS_STR} -gt 0 ] && [ -z "${LSBLK_MOUNT_ROOT}" ]; then
+        echo "----------------------------------------------------------------------------------------"
         echo "Checking Start：There's no mountdisk was mounted。Please step by step to create & format"
         echo "----------------------------------------------------------------------------------------"
         resolve_unmount_disk "${MOUNT_ROOT}"

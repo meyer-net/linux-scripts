@@ -11,12 +11,12 @@ function check_env()
     # local SSE42_SUPPORTED=`grep -q sse4_2 /proc/cpuinfo`
     # check_yn_action "SSE42_SUPPORTED"
     
-    soft_rpm_check_action "clickhouse" "setup_ck" "Clickhouse was installed"
+    soft_rpm_check_action "clickhouse" "setup_clickhouse" "Clickhouse was installed"
 
     return $?
 }
 # https://www.zouyesheng.com/clickhouse.html
-function setup_ck()
+function setup_clickhouse()
 {
     cd $DOWN_DIR
     mkdir -pv rpms/clickhouse

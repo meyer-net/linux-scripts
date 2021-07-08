@@ -43,6 +43,8 @@ DOCKER_DIR=${DATA_DIR}/docker
 
 JAVA_HOME=${SETUP_DIR}/java
 MYCAT_DIR=${SETUP_DIR}/mycat
+PY_PKGS_SETUP_DIR=${SETUP_DIR}/python_packages
+PY3_PKGS_SETUP_DIR=${SETUP_DIR}/python3_packages
 SUPERVISOR_ATT_DIR=${ATT_DIR}/supervisor
 #---------- DIR ---------- }
 

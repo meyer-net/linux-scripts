@@ -284,10 +284,8 @@ function exec_step_supervisor()
     # 全局变量，因supervisor本身非编译安装方式，所以创建虚拟路径
     TMP_SFT_SUPERVISOR_VTL_SETUP_DIR=${SETUP_DIR}/supervisor
 
-    # 局部变量
+    # 局部变量，对supervisor来说，无效。因为其自身根据pip的路径进行安装 ??? 规范待改进
 	local TMP_SFT_SPV_SETUP_DIR=${1}
-
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${TMP_SFT_SPV_SETUP_DIR}"
 
 	set_environment "${TMP_SFT_SPV_SETUP_DIR}"
 

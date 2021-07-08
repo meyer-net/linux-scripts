@@ -6,11 +6,23 @@
 #------------------------------------------------
 
 # 1-配置环境
+function setup_jemalloc()
+{
+	local TMP_NEWER_FILE_VERSION_JEMALLOC="jemalloc-3.6.0-1.el7.x86_64.rpm"
+	set_url_list_newer_href_link_filename "TMP_NEWER_FILE_VERSION_JEMALLOC" "https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/j/" "jemalloc-().el7.x86_64.rpm"
+	while_wget "--content-disposition https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/j/${TMP_NEWER_FILE_VERSION_JEMALLOC}" "rpm -ivh ${TMP_NEWER_FILE_VERSION_JEMALLOC}"
+	
+	return $?
+}
+
 function set_environment()
 {
     soft_yum_check_setup "openssl-devel,libcurl-devel,wget,tar,m4,git-core,boost-static,m4,gcc-c++,npm,ncurses-devel,which,make,ncurses-static,zlib-devel,zlib-static,bzip2,patch"
 
-    soft_yum_check_setup "protobuf-devel protobuf-static jemalloc-devel"
+    soft_yum_check_setup "epel-release protobuf-devel protobuf-static"
+	
+	# yum不一定能安装成功，jemalloc-devel，改用rpm
+    soft_rpm_check_action "jemalloc" "setup_jemalloc" "Jemalloc was installed"
 
 	return $?
 }
