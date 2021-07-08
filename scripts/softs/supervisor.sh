@@ -285,7 +285,9 @@ function exec_step_supervisor()
     TMP_SFT_SUPERVISOR_VTL_SETUP_DIR=${SETUP_DIR}/supervisor
 
     # 局部变量
-	# local TMP_SFT_SPV_SETUP_DIR=${1}
+	local TMP_SFT_SPV_SETUP_DIR=${1}
+
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${TMP_SFT_SPV_SETUP_DIR}"
 
 	set_environment "${TMP_SFT_SPV_SETUP_DIR}"
 

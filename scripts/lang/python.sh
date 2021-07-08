@@ -9,6 +9,15 @@ function set_python()
 {
     #export PIP_INDEX_URL=https://mirror.in.zhihu.com/simple
 	mkdir -pv ${PY_DIR}
+
+    sudo yum -y install python-setuptools
+
+	# active gcc to 
+	soft_yum_check_setup "devtoolset-8-gcc*"
+	# scl enable devtoolset-8 bash
+	source /opt/rh/devtoolset-8/enable
+	gcc -v
+
 	return $?
 }
 
@@ -33,24 +42,11 @@ function setup_python()
 	#sed -i '1s@^.*$@#!/usr/bin/python2.7@' /usr/bin/yum
 	#sed -i '1s@^.*$@#!/usr/bin/python2.7@' /usr/libexec/urlgrabber-ext-down
 
-	# 修改 RPM源
-# 	mkdir -pv ~/.pip
-# 	cat >> ~/.pip/pip.conf <<EOF
-# [global]
-# index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-# EOF
-
 	local PYTHON_DEPE_OPENSSL=`which openssl`
 	rm -rf /usr/local/ssl
 	ln -sf ${PYTHON_DEPE_OPENSSL} /usr/local/ssl
 
-	#easy_install pip
-	pip install --upgrade pip
 	pip3 install --upgrade pip
-	#pip install --upgrade setuptools
-	#pip install uwsgi
-	#pip list
-
 	pip3 install --upgrade setuptools
 	
 	#virtualenv --distribute $pyDir
@@ -83,7 +79,7 @@ function setup_python()
 function down_python()
 {
 	set_python
-    setup_soft_wget "python3" "https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz" "setup_python"
+    setup_soft_wget "python3" "https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz" "setup_python"
 
 	return $?
 }

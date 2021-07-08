@@ -17,9 +17,12 @@ CURRENT_USER=`whoami`
 #---------- DIR ---------- {
 DOWN_DIR=/tmp
 
-# 默认找最大的磁盘  ??? 优化为自动识别是否存在未挂载大磁盘 
-MOUNT_ROOT=$(df -k | awk '{print $2}' | awk '{if (NR>2) {print}}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} sh -c 'df -k | grep "$1" | awk "{print \$NF}" | cut -c2' -- {})
-MOUNT_ROOT=${MOUNT_ROOT:-"/mountdisk"}
+# 默认找最大的磁盘  ??? 优化为自动识别是否存在挂载第一个磁盘
+# MOUNT_ROOT=$(df -k | awk '{print $2}' | awk '{if (NR>2) {print}}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} sh -c 'df -k | grep "$1" | awk "{print \$NF}" | cut -c2' -- {})
+LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR==2{print $1}'`
+LSBLK_MOUNT_ROOT=`df -h | grep ${TMP_LSBLK_DISKS_STR:-":"} | awk -F' ' '{print $NF}'`
+
+MOUNT_ROOT=${LSBLK_MOUNT_ROOT:-"/mountdisk"}
 MOUNT_DIR=${MOUNT_ROOT}/work
 SETUP_DIR=/opt
 DEFAULT_DIR=/home/${CURRENT_USER}/default
@@ -54,7 +57,7 @@ function echo_title()
 
     # Clear deleted
     kill_deleted
-
+    
     echo "Current script __dir：${__DIR}"
     echo "Current script __file：${__FILE}"
     echo "Current script __conf：${__CONF}"

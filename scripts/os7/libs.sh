@@ -81,19 +81,24 @@ function setup_libs()
 	soft_yum_check_setup "libevent"
 	soft_yum_check_setup "libevent-devel"
 	soft_yum_check_setup "gif*"
+	soft_yum_check_setup "libffi-devel"
 	soft_yum_check_setup "libtiff*,libjpeg*,libpng* "
 	soft_yum_check_setup "mcrypt"
 	soft_yum_check_setup "libuuid*"
-	soft_yum_check_setup "iptables-services"
+	# soft_yum_check_setup "iptables-services"
 	soft_yum_check_setup "rsync"
 	soft_yum_check_setup "xinetd"
 	soft_yum_check_setup "htop,iftop"
 	soft_yum_check_setup "httpie"
 	soft_yum_check_setup "tmpwatch"
 	soft_yum_check_setup "qperf"
-	soft_yum_check_setup "vim"
+	soft_yum_check_setup "vim-enhanced"
 	soft_yum_check_setup "screen"
 	soft_yum_check_setup "lrzsz"
+
+	# gcc 切换：https://www.cnblogs.com/jixiaohua/p/11732225.html
+	soft_yum_check_setup "centos-release-scl"
+
 	sudo tmpwatch 168 /tmp
 
 	ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -115,7 +120,7 @@ function setup_libs()
 	#IPTABLES 失效
 	/usr/sbin/iptables-restore /etc/sysconfig/iptables
 	
-	echo "" >> $SETUP_DIR/lib_installed
+	echo "" >> ${SETUP_DIR}/lib_installed
 
 	return $?
 }

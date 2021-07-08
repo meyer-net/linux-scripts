@@ -96,6 +96,10 @@ function get_country_code () {
 #关闭删除文件占用进程
 function kill_deleted()
 {
+	if [ ! -f "/usr/sbin/lsof" ]; then
+		yum -y install lsof
+	fi
+
 	`lsof | grep deleted | awk -F' ' '{print $2}' | awk '!a[$0]++' | xargs -I {} kill -9 {}`
 
 	return $?
@@ -208,6 +212,20 @@ function curx_line_insert()
 	return $?
 }
 
+# 获取挂载根路径，取第一个挂载的磁盘
+# 参数1：需要设置的变量名
+function get_mount_root() {
+	local TMP_MOUNT_ROOT=""
+	local TMP_LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR==2{print $1}'`
+	if [ -z "${TMP_LSBLK_DISKS_STR}" ]; then
+		TMP_MOUNT_ROOT=`df -h | grep ${TMP_LSBLK_DISKS_STR} | awk -F' ' '{print $NF}'`
+	fi
+
+	eval ${1}=`echo '${TMP_MOUNT_ROOT}'`
+
+	return $?
+}
+
 # 识别磁盘挂载
 # 参数1：磁盘挂载数组，当带入参数时，以带入的参数来决定脚本挂载几块硬盘
 function resolve_unmount_disk () {
@@ -217,9 +235,9 @@ function resolve_unmount_disk () {
 	local TMP_ARR_MOUNT_PATH_PREFIX=(${TMP_ARR_MOUNT_PATH_PREFIX_STR//,/ })
 	
 	# 获取当前磁盘的格式，例如sd,vd
-	local TMP_FDISK_L_DISKS_STR=`lsblk | grep disk | awk 'NR>=2{print $1}'`
+	local TMP_LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR>=2{print $1}'`
 	
-	local TMP_ARR_DISK_POINT=(${TMP_FDISK_L_DISKS_STR// / })
+	local TMP_ARR_DISK_POINT=(${TMP_LSBLK_DISKS_STR// / })
 	
 	for I in ${!TMP_ARR_DISK_POINT[@]};  
 	do
@@ -262,7 +280,7 @@ function resolve_unmount_disk () {
 			# 2：数组不为空，多余的略过
 
 			local TMP_MOUNT_PATH_PREFIX_CURRENT=""
-			if [ ${TMP_ARR_MOUNT_PATH_PREFIX_LEN} -eq 0 ]; then
+			if [ ${#TMP_ARR_MOUNT_PATH_PREFIX_STR} -eq 0 ]; then
 				input_if_empty "TMP_MOUNT_PATH_PREFIX_CURRENT" "${TMP_FUNC_TITLE}: Please ender the disk of '${TMP_DISK_POINT}' mount path prefix like '/tmp/downloads'"
 			else
 				TMP_MOUNT_PATH_PREFIX_CURRENT=${TMP_ARR_MOUNT_PATH_PREFIX[$I]}
@@ -827,21 +845,25 @@ function setup_soft_pip()
 	
 	typeset -l TMP_SOFT_LOWER_NAME
 	local TMP_SOFT_LOWER_NAME=${TMP_SOFT_PIP_NAME}
-	local TMP_SOFT_SETUP_PATH=`pip show $TMP_SOFT_LOWER_NAME | grep "Location" | awk -F' ' '{print $2}' | xargs -I {} echo "{}/supervisor"`
+	local TMP_SOFT_SETUP_PATH=`pip show ${TMP_SOFT_LOWER_NAME} | grep "Location" | awk -F' ' '{print $2}' | xargs -I {} echo "{}/${TMP_SOFT_LOWER_NAME}"`
+
+	if [ ! -f "/usr/bin/pip" ]; then
+		while_curl "https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py" "python get-pip.py && rm -rf get-pip.py"
+		pip install --upgrade pip
+		pip install --upgrade setuptools
+	fi
 
 	# pip show supervisor
 	# pip freeze | grep "supervisor=="
 	if [ -z "${TMP_SOFT_SETUP_PATH}" ]; then
-		easy_install pip
-
-		echo "Pip start to install $TMP_SOFT_PIP_NAME"
+		echo "Pip start to install ${TMP_SOFT_PIP_NAME}"
 		pip install ${TMP_SOFT_LOWER_NAME}
-		echo "Pip installed $TMP_SOFT_PIP_NAME"
+		echo "Pip installed ${TMP_SOFT_PIP_NAME}"
 
 		#安装后配置函数
-		$TMP_SOFT_PIP_SETUP_FUNC "$TMP_SOFT_SETUP_PATH"
+		${TMP_SOFT_PIP_SETUP_FUNC} "${TMP_SOFT_SETUP_PATH}"
 	else
-    	sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep $TMP_SOFT_PIP_NAME | grep -v grep
+    	sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep ${TMP_SOFT_PIP_NAME} | grep -v grep
 
 		return 1
 	fi
@@ -1726,6 +1748,15 @@ function echo_soft_port()
 	local TMP_ECHO_SOFT_PORT_IP=${2}
 	local TMP_ECHO_SOFT_PORT_TYPE=${3}
 
+	# 非VmWare产品的情况下，不安装iptables
+	if [ "${SYSTEMD_DETECT_VIRT}" != "vmware" ]; then
+		return $?
+	fi
+
+	if [ ! -f "/etc/sysconfig/iptables" ]; then
+		soft_yum_check_setup "iptables-services"
+	fi
+
 	# 判断是否加端口类型
 	local TMP_ECHO_SOFT_PORT_GREP_TYPE="-p ${TMP_ECHO_SOFT_PORT_TYPE}"
 
@@ -1783,7 +1814,7 @@ function proxy_by_ss()
     # 选择启动模式
     # exec_if_choice "TMP_SHADOWSOCK_MODE" "Please choice your shadowsocks run mode on this computer" "Server,Client,Exit" "$TMP_SPLITER" "boot_shadowsocks_"
 	local TMP_SHADOWSOCK_MODE_NECESSARY_CHECK=""
-	if [ "$TMP_IS_WANT_CROSS_FIREWALL" -eq "000" ]; then
+	if [ "$TMP_IS_WANT_CROSS_FIREWALL" == "000" ]; then
 		TMP_SHADOWSOCK_MODE_NECESSARY_CHECK="client"
     else
         if [ ${#all_proxy} -gt 0 ]; then

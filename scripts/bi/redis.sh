@@ -10,13 +10,16 @@ function set_env()
 	yum -y install tcl
 
     # fix the version upper then 6.0
-    yum -y install centos-release-scl
-    yum -y install devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-binutils
+    
+	soft_yum_check_setup "devtoolset-9-gcc*"
+	soft_yum_check_setup "devtoolset-9-binutils"
+    scl enable devtoolset-9 bash
+    gcc -v
+    
     #??? 解决执行命令后UI退出的问题
     # scl enable devtoolset-9 bash
     echo "source /opt/rh/devtoolset-9/enable" >> /etc/profile
     source /etc/profile
-    gcc -v
 
 	return $?
 }

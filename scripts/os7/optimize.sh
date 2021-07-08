@@ -149,7 +149,7 @@ EOF
 	sysctl -p
 
 	#表示已设置优化
-	echo "" >> $SETUP_DIR/sys_seted
+	echo "" >> ${SETUP_DIR}/sys_seted
 	
     return $?
 }

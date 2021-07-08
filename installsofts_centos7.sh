@@ -45,8 +45,14 @@ function link_logs()
 
 function mkdirs()
 {
-    resolve_unmount_disk "${MOUNT_ROOT}"
-    
+    # 检测到有未挂载磁盘，默认将挂载第一个磁盘为/mountdisk，并重置变量
+    if [ ${#LSBLK_DISKS_STR} -gt 0 ] && [ -z "${LSBLK_MOUNT_ROOT}" ]; then
+        echo "Checking Start：There's no mountdisk was mounted。Please step by step to create & format"
+        echo "----------------------------------------------------------------------------------------"
+        resolve_unmount_disk "${MOUNT_ROOT}"
+        source common/common_vars.sh
+    fi
+
     #path_not_exits_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
     path_not_exits_create "${SETUP_DIR}"
     path_not_exits_create "${WWW_DIR}"
@@ -60,10 +66,10 @@ function mkdirs()
 }
 
 function choice_type()
-{    
+{   
 	echo_title
 
-	exec_if_choice "CHOICE_CTX" "Please choice your setup type" "Update_libs,From_clean,From_bak,Gen_ngx_conf,Gen_sup_conf,Proxy_by_ss,Exit" "${TMP_SPLITER}"
+	exec_if_choice "CHOICE_CTX" "Please choice your setup type" "Update_libs,From_clean,From_bak,Mount_unmount_disks,Gen_ngx_conf,Gen_sup_conf,Proxy_by_ss,Exit" "${TMP_SPLITER}"
 
 	return $?
 }
@@ -172,6 +178,13 @@ function from_bak()
 	return $?
 }
 
+function mount_unmount_disks()
+{
+    resolve_unmount_disk
+    
+	return $?
+}
+
 function gen_ngx_conf()
 {
     gen_nginx_starter
@@ -187,10 +200,6 @@ function gen_sup_conf()
 # 初始基本参数启动目录
 function bootstrap() {
     cd ${__DIR}
-
-    echo "Current script __dir：${__DIR}"
-    echo "Current script __file：${__FILE}"
-    echo "Current script __conf：${__CONF}"
 
     # 全部给予执行权限
     chmod +x -R scripts/*.sh
@@ -209,6 +218,8 @@ function bootstrap() {
     sudo hostnamectl set-hostname ${SYS_NEW_NAME}
     #---------- CHANGE ---------- }
 
+    mkdirs
+ 
     choice_type
 }
 
