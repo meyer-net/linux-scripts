@@ -104,7 +104,7 @@ function setup_mariadb()
 [mariadb]
 name = MariaDB
 #baseurl = http://mirrors.ustc.edu.cn/mariadb/yum/10.0/centos7-amd64/
-baseurl = https://mirrors.ustc.edu.cn/mariadb/yum/10.1/centos7-amd64/
+baseurl = https://mirrors.ustc.edu.cn/mariadb/yum/10.6/centos7-amd64/
 gpgkey = http://mirrors.ustc.edu.cn/mariadb/yum/RPM-GPG-KEY-MariaDB
 gpgcheck=1' > /etc/yum.repos.d/MariaDB.repo
 

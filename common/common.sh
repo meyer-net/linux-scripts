@@ -216,7 +216,7 @@ function curx_line_insert()
 # 参数1：需要设置的变量名
 function get_mount_root() {
 	local TMP_MOUNT_ROOT=""
-	local TMP_LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR==2{print $1}'`
+	local TMP_LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR==2{print $1}' | xargs -I {} echo '/dev/{}'`
 	if [ -z "${TMP_LSBLK_DISKS_STR}" ]; then
 		TMP_MOUNT_ROOT=`df -h | grep ${TMP_LSBLK_DISKS_STR} | awk -F' ' '{print $NF}'`
 	fi
