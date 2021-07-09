@@ -28,15 +28,15 @@ function setup_clickhouse()
     echo "------------------------------------------------------"
     echo "ClickHouse: System start find the newer stable version"
     echo "------------------------------------------------------"
-    local TMP_NEWER_STABLE_VERSION_CH_SERVER="clickhouse-server-19.4.0-2.rpm"
-    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-().rpm"
+    local TMP_NEWER_STABLE_VERSION_CH_SERVER="clickhouse-server-21.6.6.51-2.noarch.rpm"
+    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-().noarch.rpm"
     local TMP_NEWER_STABLE_VERSION_CH_CLIENT=`echo "${TMP_NEWER_STABLE_VERSION_CH_SERVER}" | sed 's@server@client@g'`
 
-    local TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON="clickhouse-server-common-19.4.0-2.rpm"
-    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-common-().rpm"
+    local TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON="clickhouse-server-common-19.4.0-2.noarch.rpm"
+    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-common-().noarch.rpm"
 
-    local TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC="clickhouse-common-static-19.4.0-2.rpm"
-    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-().rpm"
+    local TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC="clickhouse-common-static-21.6.6.51-2.x86_64.rpm"
+    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-().x86_64.rpm"
 
     #19.13.3.26-1
     #curl -s https://packagecloud.io/install/repositories/Altinity/clickhouse/script.rpm.sh | sudo bash
@@ -81,10 +81,10 @@ function setup_clickhouse()
 
     local CLICKHOUSE_TCP_PORT=9876
 	input_if_empty "CLICKHOUSE_TCP_PORT" "Clickhouse: Please ender ${red}tcp port${reset}"
-    sed -i "s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>$CLICKHOUSE_TCP_PORT</tcp_port>@g" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
+    sed -i "0,/<tcp_port>[0-9]*<\/tcp_port>/{s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>$CLICKHOUSE_TCP_PORT</tcp_port>@}" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
 
-    sed -i "s@<path>.*</path>@<path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/</path>@g" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
-    sed -i "s@<tmp_path>.*</tmp_path>@<tmp_path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@g" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
+    sed -i "0,/<path>.*<\/path>/{s@<path>.*</path>@<path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/</path>@}" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
+    sed -i "0,/<tmp_path>.*<\/tmp_path>/{s@<tmp_path>.*</tmp_path>@<tmp_path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@}" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
     
     echo_soft_port 8123
 

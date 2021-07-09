@@ -23,10 +23,10 @@ LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR==2{print $1}' | xargs -I {} echo '/
 LSBLK_MOUNT_ROOT=`df -h | grep ${LSBLK_DISKS_STR:-":"} | awk -F' ' '{print $NF}'`
 
 MOUNT_ROOT=${LSBLK_MOUNT_ROOT:-"/mountdisk"}
-MOUNT_DIR=${MOUNT_ROOT}/work
+MOUNT_DIR=${MOUNT_ROOT}
 SETUP_DIR=/opt
 DEFAULT_DIR=/home/${CURRENT_USER}/default
-ATT_DIR=${MOUNT_DIR}/attach
+ATT_DIR=${MOUNT_DIR}/etc
 DATA_DIR=${MOUNT_DIR}/data
 LOGS_DIR=${MOUNT_DIR}/logs
 
