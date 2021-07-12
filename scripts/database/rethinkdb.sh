@@ -33,6 +33,10 @@ function setup_rethinkdb()
 	local TMP_DB_RTK_SETUP_DIR=${1}
 	local TMP_DB_RTK_CURRENT_DIR=`pwd`
 
+	# 等待jemalloc生效，有待测试。同脚本，手动尝试反而OK（也有可能网络问题，编译会安装npm相关依赖包）
+	echo "RethinkDB：Watting for jemalloc active"
+	sleep 15
+
 	# 编译模式
 	./configure --prefix=${TMP_DB_RTK_SETUP_DIR} --allow-fetch --dynamic jemalloc
 	sudo make -j4 && make -j4 install

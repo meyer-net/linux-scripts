@@ -32,7 +32,7 @@ function print_nodejs()
 
 function setup_nodejs()
 {
-	curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.36.0/install.sh | bash
+	curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.38.0/install.sh | bash
 
 	source ${NVM_PATH}
 	echo "NodeJs: Remote list"

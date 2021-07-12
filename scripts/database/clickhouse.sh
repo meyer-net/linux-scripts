@@ -103,9 +103,13 @@ function setup_clickhouse()
     # 交互模式启动，预先排错
     nohup sudo -u clickhouse /usr/bin/clickhouse-server --config-file ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml &
 
-    sleep 5
+    # 等待启动日志
+    echo "ClickHouse：Booting clickhouse..."
+    echo "---------------------------------"
+    sleep 15
 
-    tail -f -n 100 nohup.out
+    cat nohup.out
+    echo "---------------------------------"
 
     # 启动完成以后再修改配置文件
     sed -i "/<yandex>/a     \\\    <listen_host>0.0.0.0</listen_host>" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml

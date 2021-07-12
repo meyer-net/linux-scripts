@@ -67,8 +67,8 @@ function set_mysql()
 	input_if_empty "TMP_SETUP_MYSQL_PWD" "Mysql: Please ender ${red}mysql password${reset} of User(Root)"
 
     mysql -uroot -p$password -e"
-    SET password=PASSWORD('$TMP_SETUP_MYSQL_PWD');
-    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '$TMP_SETUP_MYSQL_PWD';
+    SET password=PASSWORD('${TMP_SETUP_MYSQL_PWD}');
+    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_SETUP_MYSQL_PWD}';
     USE mysql;
     DELETE FROM user WHERE user='' OR password='';
     SET GLOBAL MAX_CONNECT_ERRORS=1000;
@@ -76,7 +76,7 @@ function set_mysql()
     FLUSH PRIVILEGES;
     exit"
 
-    echo "Mysql: Password（'$TMP_SETUP_MYSQL_PWD'） Set Success！"
+    echo "Mysql: Password（'${TMP_SETUP_MYSQL_PWD}'） Set Success！"
 
     mysqlDbDir=$DATA_DIR/mysql
     systemctl stop mysqld.service
@@ -99,12 +99,12 @@ function set_mysql()
 
 function setup_mariadb()
 {
-    echo '# MariaDB 10.1 CentOS repository list - created 2014-10-18 16:58 UTC
+    # 仅适配10.2及以下版本的my.cnf，其后版本官方进行了变更，将导致mysql跟mariadb配置文件与当前修改产生不一致的情况
+    echo '# MariaDB 10.x CentOS repository list
 # http://mariadb.org/mariadb/repositories/
 [mariadb]
 name = MariaDB
-#baseurl = http://mirrors.ustc.edu.cn/mariadb/yum/10.0/centos7-amd64/
-baseurl = https://mirrors.ustc.edu.cn/mariadb/yum/10.6/centos7-amd64/
+baseurl = https://mirrors.ustc.edu.cn/mariadb/yum/10.2/centos7-amd64/
 gpgkey = http://mirrors.ustc.edu.cn/mariadb/yum/RPM-GPG-KEY-MariaDB
 gpgcheck=1' > /etc/yum.repos.d/MariaDB.repo
 
@@ -113,9 +113,11 @@ gpgcheck=1' > /etc/yum.repos.d/MariaDB.repo
     rm -rf /etc/my.cnf
     rm -rf /etc/init.d/mysql
 
-    yum -y install mariadb-devel mysql-devel
-    yum -y install MariaDB-client
-    yum -y install MariaDB-server
+	soft_yum_check_setup "MariaDB-devel"
+    
+	soft_yum_check_setup "MariaDB-client"
+    
+	soft_yum_check_setup "MariaDB-server"
 
     echo "---------------"
     mysql -V
@@ -126,18 +128,18 @@ gpgcheck=1' > /etc/yum.repos.d/MariaDB.repo
 
 function set_mariadb()
 {
-    TMP_DATA_DIR=$DATA_DIR/mariadb
-    
+    local TMP_DATA_DIR=${DATA_DIR}/mariadb
+
     yes | cp /usr/share/mysql/my-innodb-heavy-4G.cnf /etc/my.cnf
-    sed -i "/\[mysqld\]/a datadir = $TMP_DATA_DIR" /etc/my.cnf
+    sed -i "/\[mysqld\]/a datadir = ${TMP_DATA_DIR}" /etc/my.cnf
     sed -i "/\[mysqld\]/a skip-character-set-client-handshake" /etc/my.cnf
     sed -i "/\[mysqld\]/a collation-server=utf8_unicode_ci" /etc/my.cnf
     sed -i "/\[mysqld\]/a init_connect='SET collation_connection = utf8_unicode_ci'" /etc/my.cnf
     sed -i "/\[mysqld\]/a init_connect='SET NAMES utf8'" /etc/my.cnf
     sed -i "/\[mysqld\]/a character-set-server=utf8" /etc/my.cnf
     sed -i "/\[mysqld\]/a user = mysql" /etc/my.cnf
-    sed -i "s@^socket[[:space:]]*=[[:space:]]*.*@socket          = $TMP_DATA_DIR/mysql.sock@g" /etc/my.cnf
-    sed -i "s@^datadir=.*@datadir=$TMP_DATA_DIR@g" /etc/init.d/mysql
+    sed -i "s@^socket[[:space:]]*=[[:space:]]*.*@socket          = ${TMP_DATA_DIR}/mysql.sock@g" /etc/my.cnf
+    sed -i "s@^datadir=.*@datadir=${TMP_DATA_DIR}@g" /etc/init.d/mysql
     echo "------------------------------------------"
     echo "MariaDB: Config Was Changed"
     echo "------------------------------------------"
@@ -149,31 +151,32 @@ function set_mariadb()
     #CREATE DATABASE db_name DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
     #mysql_install_db
     
-    if [ ! -d "$TMP_DATA_DIR" ]; then
-        echo "MariaDB: Path '/var/lib/mysql' Will Be Move To '$TMP_DATA_DIR'"
-        mv /var/lib/mysql $TMP_DATA_DIR
+    if [ ! -d "${TMP_DATA_DIR}" ]; then
+        echo "MariaDB: Path '/var/lib/mysql' Will Be Move To '${TMP_DATA_DIR}'"
+        mv /var/lib/mysql ${TMP_DATA_DIR}
         sleep 10
         #mysqladmin -uroot password "$TMP_SETUP_MYSQL_PWD"
     fi
     
-    chgrp -R mysql $TMP_DATA_DIR
-    chown -R mysql:mysql $TMP_DATA_DIR
-    chmod 700 $TMP_DATA_DIR/test/
+    chgrp -R mysql ${TMP_DATA_DIR}
+    chown -R mysql:mysql ${TMP_DATA_DIR}
+    chmod 700 ${TMP_DATA_DIR}/test/
 
     systemctl start mariadb.service
 
     mysql -e"
     use mysql;
-    UPDATE user SET password=PASSWORD('$TMP_SETUP_MYSQL_PWD') WHERE user='root';
-    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '$TMP_SETUP_MYSQL_PWD';
+    UPDATE user SET password=PASSWORD('${TMP_SETUP_MYSQL_PWD}') WHERE user='root';
+    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_SETUP_MYSQL_PWD}';
     DELETE FROM user WHERE user='' OR password='';
     FLUSH PRIVILEGES;
     exit"
-    echo "MariaDB: Password（'$TMP_SETUP_MYSQL_PWD'） Set Success！"
+    echo "MariaDB: Password（'${TMP_SETUP_MYSQL_PWD}'） Set Success！"
 
     systemctl enable mariadb.service
 
     rm -rf /etc/yum.repos.d/MariaDB.repo
+    sudo yum clean all && sudo yum makecache fast
     
     echo_soft_port 3306
 
