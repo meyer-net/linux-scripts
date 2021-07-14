@@ -10,10 +10,12 @@ function set_env()
 	yum -y install tcl
 
     # fix the version upper then 6.0
-    
 	soft_yum_check_setup "devtoolset-9-gcc*"
-	soft_yum_check_setup "devtoolset-9-binutils"
-    scl enable devtoolset-9 bash
+	
+    soft_yum_check_setup "devtoolset-9-binutils"
+    
+    source /opt/rh/devtoolset-9/enable
+    
     gcc -v
     
     #??? 解决执行命令后UI退出的问题

@@ -174,7 +174,7 @@ function start_agent()
 function down_consul()
 {
     set_environment
-    setup_soft_wget "consul" "https://releases.hashicorp.com/consul/1.6.0+ent/consul_1.6.0+ent_linux_amd64.zip" "setup_consul"
+    setup_soft_wget "consul" "https://releases.hashicorp.com/consul/1.10.0+ent/consul_1.10.0+ent_linux_amd64.zip" "setup_consul"
 
 	return $?
 }

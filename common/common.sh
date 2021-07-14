@@ -83,7 +83,7 @@ function get_ipv6 () {
 #获取国码
 #参数1：需要设置的变量名
 function get_country_code () {
-	local TMP_LOCAL_IPV4=`curl -s ip.sb`
+	local TMP_LOCAL_IPV4=`curl ip.sb`
     local TMP_COUNTRY_CODE=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4} | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
 
 	if [ -n "${TMP_COUNTRY_CODE}" ]; then
@@ -1407,10 +1407,9 @@ function exec_yn_action()
 		return 1
 	esac
 
-	arr=(${TMP_FUNCS_ON_Y//,/ })
-	#echo ${#arr[@]} 
-	for TMP_FUNC_ON_Y in ${arr[@]};  
-	do
+	local TMP_ARR_FUNCS_OR_SCRIPTS=(${TMP_FUNCS_ON_Y//,/ })
+	#echo ${#TMP_ARR_FUNCS_OR_SCRIPTS[@]} 
+	for TMP_FUNC_ON_Y in ${TMP_ARR_FUNCS_OR_SCRIPTS[@]}; do
 		exec_check_action "$TMP_FUNC_ON_Y"
 		RETURN=$?
 		#返回非0，跳出循环，指导后续请求不再进行
@@ -1553,8 +1552,8 @@ function exec_while_read()
 	I=1
 	for I in $(seq 99);
 	do
-		TMP_EXEC_WHILE_READ_CURRENT_NOTICE=`echo "$TMP_EXEC_WHILE_READ_NOTICE"`
-		echo "$TMP_EXEC_WHILE_READ_CURRENT_NOTICE Or '${red}enter key${reset}' To Quit"
+		local TMP_EXEC_WHILE_READ_CURRENT_NOTICE=`echo "${TMP_EXEC_WHILE_READ_NOTICE}"`
+		echo "${TMP_EXEC_WHILE_READ_CURRENT_NOTICE} Or '${red}enter key${reset}' To Quit"
 		read -e CURRENT
 
 		echo "Item of '${red}$CURRENT${reset}' inputed"

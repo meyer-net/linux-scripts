@@ -14,51 +14,52 @@ function setup_kafka()
     KAFKA_DATA_DIR=$DATA_DIR/zookeeper/kafka
     KAFKA_LOGS_DIR=$LOGS_DIR/zookeeper/kafka
 
-    mkdir -pv $KAFKA_DATA_DIR
-    mkdir -pv $KAFKA_LOGS_DIR
+    mkdir -pv ${KAFKA_DATA_DIR}
+    mkdir -pv ${KAFKA_LOGS_DIR}
 
     cd ..
-    mv $TMP_UNZIP_DIR $KAFKA_DIR
-    cd $KAFKA_DIR
+    mv ${TMP_UNZIP_DIR} ${KAFKA_DIR}
+    cd ${KAFKA_DIR}
 
-    mkdir -pv $KAFKA_DATA_DIR
-    sed -i "s@dataDir=.*@dataDir=$KAFKA_DATA_DIR@g" config/zookeeper.properties
+    mkdir -pv ${KAFKA_DATA_DIR}
+    sed -i "s@dataDir=.*@dataDir=${KAFKA_DATA_DIR}@g" config/zookeeper.properties
     sed -i "s@clientPort=.*@clientPort=2233@g" config/zookeeper.properties
     sed -i "s@#listeners@listeners@g" config/server.properties
 
-    TMP_SETUP_KAFKA_HOST="$LOCAL_HOST"
+    TMP_SETUP_KAFKA_HOST="${LOCAL_HOST}"
     input_if_empty "TMP_SETUP_KAFKA_HOST" "Kafka: Please Ender Listener Internal Host Address"
-    if [ -n "$TMP_SETUP_KAFKA_HOST" ]; then
-        sed -i "s@#advertised.listeners=.*@advertised.listeners=PLAINTEXT://$TMP_SETUP_KAFKA_HOST:9092@g" config/server.properties
+    if [ -n "${TMP_SETUP_KAFKA_HOST}" ]; then
+        sed -i "s@#advertised.listeners=.*@advertised.listeners=PLAINTEXT://${TMP_SETUP_KAFKA_HOST}:9092@g" config/server.properties
     fi
 
-    mkdir -pv $KAFKA_DATA_DIR
-    sed -i "s@log.dirs=.*@log.dirs=$KAFKA_DATA_DIR@g" config/server.properties
+    mkdir -pv ${KAFKA_DATA_DIR}
+    sed -i "s@log.dirs=.*@log.dirs=${KAFKA_DATA_DIR}@g" config/server.properties
 
-    TMP_SETUP_KAFKA_BROKER="$LOCAL_ID"
+    TMP_SETUP_KAFKA_BROKER="${LOCAL_ID}"
     input_if_empty "TMP_SETUP_KAFKA_BROKER" "Kafka: Please Ender Broker.Id"
-    sed -i "s@broker.id=0@broker.id=$TMP_SETUP_KAFKA_BROKER@g" config/server.properties
+    sed -i "s@broker.id=0@broker.id=${TMP_SETUP_KAFKA_BROKER}@g" config/server.properties
 
-    TMP_SETUP_KAFKA_ZK_HOSTS="$LOCAL_HOST"
-    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '$LOCAL_HOST'" "%s:2233" "
-        if [ \"\$CURRENT\" = \"\$LOCAL_HOST\" ]; then
+    TMP_SETUP_KAFKA_ZK_HOSTS="${LOCAL_HOST}"
+    # ??? 端口未生效，待修改
+    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '${LOCAL_HOST}'" "%s:2233" "
+        if [ \"\$CURRENT\" == \"\${LOCAL_HOST}\" ]; then
             echo_soft_port 2233 \"\$CURRENT\"
             echo_soft_port 6123 \"\$CURRENT\"
             echo_soft_port 9092 \"\$CURRENT\"
         else
-            echo \"Please allow the port of '\${red}2233,6123,9092\${reset}' for '\${red}\$LOCAL_HOST\${reset}' from the zookeeper host '\$CURRENT'\"
+            echo \"Please allow the port of '\${red}2233,6123,9092\${reset}' for '\${red}\${LOCAL_HOST}\${reset}' from the zookeeper host '\$CURRENT'\"
         fi
     "
     echo_soft_port 10000
 
-    sed -i "s@zookeeper.connect=.*@zookeeper.connect=$TMP_SETUP_KAFKA_ZK_HOSTS@g" config/server.properties
+    sed -i "s@zookeeper.connect=.*@zookeeper.connect=${TMP_SETUP_KAFKA_ZK_HOSTS}@g" config/server.properties
 
     sed -i "/export KAFKA_HEAP_OPTS=/a export JMX_PORT=\"10000\"" bin/kafka-server-start.sh
 
-    echo "$TMP_SETUP_KAFKA_HOST $SYS_NAME" >> /etc/hosts 
-    JMX_PORT=10000 nohup sh bin/kafka-server-start.sh config/server.properties > $KAFKA_LOGS_DIR/kafka.log 2>&1 &
+    echo "${TMP_SETUP_KAFKA_HOST} $SYS_NAME" >> /etc/hosts 
+    JMX_PORT=10000 && nohup sh bin/kafka-server-start.sh config/server.properties > ${KAFKA_LOGS_DIR}/kafka.log 2>&1 &
     
-    echo_startup_config "kafka" "$KAFKA_DIR" "bash bin/kafka-server-start.sh config/server.properties" "JMX_PORT=10000" "999"
+    echo_startup_config "kafka" "${KAFKA_DIR}" "bash bin/kafka-server-start.sh config/server.properties" "JMX_PORT=10000" "999"
     #bin/kafka-topics.sh --create --zookeeper 192.168.1.100:2233,192.168.1.109:2233,192.168.1.110:2233 --replication-factor 2 --partitions 100 --topic test
     #bin/kafka-topics.sh  --describe  --zookeeper  192.168.1.185:2233 –-topic test
     #bin/kafka-console-producer.sh --broker-list 192.168.1.100:9092,192.168.1.109:9092,192.168.1.110:9092 --topic test
@@ -67,12 +68,21 @@ function setup_kafka()
 	return $?
 }
 
+function setup_zookeeper()
+{
+    cd ${__DIR} 
+    
+    source scripts/ha/zookeeper.sh
+
+    return $?
+}
+
 function  setup_kafka_eagle()
 {
-    tar -zxvf kafka-eagle-web-1.2.6-bin.tar.gz
+    tar -zxvf kafka-eagle-web-2.0.5-bin.tar.gz
 
     KAFKA_EAGLE_DIR=$SETUP_DIR/kafka_eagle
-    mv kafka-eagle-web-1.2.6 $KAFKA_EAGLE_DIR
+    mv kafka-eagle-web-2.0.5 $KAFKA_EAGLE_DIR
 
     echo "KE_HOME=$KAFKA_EAGLE_DIR" >> /etc/profile
     echo "KE_BIN=\$KE_HOME/bin" >> /etc/profile
@@ -80,8 +90,8 @@ function  setup_kafka_eagle()
     echo "export PATH KE_HOME KE_BIN" >> /etc/profile
     source /etc/profile
 
-    TMP_SETUP_KAFKA_ZK_HOSTS="$LOCAL_HOST"
-    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '$LOCAL_HOST'" "%s:2233"
+    TMP_SETUP_KAFKA_ZK_HOSTS="${LOCAL_HOST}"
+    exec_while_read "TMP_SETUP_KAFKA_ZK_HOSTS" "Kafka.Zookeeper: Please Ender Zookeeper Cluster Line Address Like '${LOCAL_HOST}'" "%s:2233"
 
     cd $KAFKA_EAGLE_DIR
     sed -i "s@kafka\.eagle\.zk\.cluster\.alias=cluster1.*@kafka.eagle.zk.cluster.alias=cluster1@g" conf/system-config.properties
@@ -129,19 +139,21 @@ function print_kafka()
 function print_kafka_eagle()
 {
     setup_soft_basic "Kafka_Eagle" "down_kafka_eagle"
+
 	return $?
 }
 
 function print_kafka_manager()
 {
     setup_soft_basic "Kafka_manager" "down_kafka_manager"
+
 	return $?
 }
 
 function set_env_kafka()
 {
     # 需要提前安装Zookeeper    
-    exec_yn_action "cd ${__DIR} && source scripts/ha/zookeeper.sh" "Kafka: Please sure if u want to got a zookeeper server"
+    exec_yn_action "setup_zookeeper" "Kafka: Please sure if u want to got a zookeeper server"
     echo ""
 
 	return $?
@@ -151,7 +163,7 @@ function down_kafka()
 {
     cd ${__DIR}
 
-    setup_soft_wget "kafka" "https://mirrors.cnnic.cn/apache/kafka/2.3.0/kafka_2.12-2.3.0.tgz" "setup_kafka" 
+    setup_soft_wget "kafka" "https://mirrors.cnnic.cn/apache/kafka/2.8.0/kafka_2.12-2.8.0.tgz" "setup_kafka" 
 
 	return $?
 }
@@ -162,7 +174,7 @@ function down_kafka_eagle()
     cd ${__DIR}
     source scripts/lang/java.sh
 
-    setup_soft_wget "kafka_eagle" "https://codeload.github.com/smartloli/kafka-eagle-bin/tar.gz/v1.2.6" "setup_kafka_eagle" 
+    setup_soft_wget "kafka_eagle" "https://codeload.github.com/smartloli/kafka-eagle-bin/tar.gz/v2.0.5" "setup_kafka_eagle" 
     
 	return $?
 }

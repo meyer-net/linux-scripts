@@ -66,7 +66,7 @@ function boot_java()
 # 下载驱动/插件
 function down_tool_gradle()
 {
-	TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER="gradle-6.6-bin.zip"
+	TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER="gradle-7.1.1-bin.zip"
 	set_url_list_newer_href_link_filename "TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
 	setup_soft_wget "gradle" "https://services.gradle.org/distributions/${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER}" "setup_gradle"
 
@@ -137,7 +137,7 @@ function down_java()
 	# wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" https://download.oracle.com/otn-pub/java/jdk/8u201-b09/42970487e3af4f5aa5bca3f542482c60/jdk-8u151-linux-x64.rpm 
 	# rpm -ivh jdk-8u151-linux-x64.rpm 
 
-	setup_soft_wget "java" '--no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u192-b12/750e1c8617c5452694857ad95c3ee230/jdk-8u192-linux-x64.tar.gz' "exec_step_java"
+	setup_soft_wget "java" '--no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u291-b10/d7fc238d0cbf4b0dac67be84580cfb4b/jdk-8u291-linux-x64.tar.gz' "exec_step_java"
 
 	return $?
 }
