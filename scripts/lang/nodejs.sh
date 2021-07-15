@@ -8,6 +8,7 @@
 function check_setup_nodejs()
 {
     path_not_exits_action "${NVM_PATH}" "print_nodejs" "Nodejs was installed"
+
 	source ${NVM_PATH}
 
 	local NPM_PATH=`which npm`

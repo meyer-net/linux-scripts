@@ -4,13 +4,22 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# ???待调整为选择版本，因konga需求postgresql最高只支持到11，所以目前只能装到11
 
 #路径配置
 POSTGRESQL_LOGS_DIR=$LOGS_DIR/postgresql
 POSTGRESQL_DATA_DIR=$DATA_DIR/postgresql
 POSTGRESQL_CONF_PATH=$POSTGRESQL_DATA_DIR/postgresql.conf
+POSTGRESQL_STP_VER=11
 function set_environment()
 {
+	return $?
+}
+
+function switch_setup_postgresql_version()
+{
+	input_if_empty "POSTGRESQL_STP_VER" "PostgreSql: Please ender the ${red}version 10/11/12/13${reset} for needs"
+
 	return $?
 }
 
@@ -23,10 +32,12 @@ function check_setup_postgresql()
 
 function setup_postgresql()
 {
+    switch_setup_postgresql_version
+    
     #安装postgresql rpm包
     sudo yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-    sudo yum -y install postgresql11
-    sudo yum -y install postgresql11-server
+    sudo yum -y install postgresql${POSTGRESQL_STP_VER}
+    sudo yum -y install postgresql${POSTGRESQL_STP_VER}-server
 
     psql --version
 
@@ -43,10 +54,10 @@ function set_postgresql()
 
     mkdir -pv $POSTGRESQL_DATA_DIR
     chown -R postgres:postgres $POSTGRESQL_DATA_DIR
-    su - postgres -c "/usr/pgsql-11/bin/initdb -D $POSTGRESQL_DATA_DIR"
+    su - postgres -c "/usr/pgsql-${POSTGRESQL_STP_VER}/bin/initdb -D $POSTGRESQL_DATA_DIR"
 
     #停止服务
-    systemctl stop postgresql-11.service
+    systemctl stop postgresql-${POSTGRESQL_STP_VER}.service
 
     #开启外网访问
     sed -i "s@^#listen_addresses =.*@listen_addresses = '*'@g" $POSTGRESQL_CONF_PATH
@@ -58,18 +69,18 @@ function set_postgresql()
     sed -i "s@^#data_directory =.*@data_directory = '$POSTGRESQL_DATA_DIR'@g" $POSTGRESQL_CONF_PATH
 
     #修改启动环境
-    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=$POSTGRESQL_DATA_DIR@g" /usr/lib/systemd/system/postgresql-11.service
+    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=$POSTGRESQL_DATA_DIR@g" /usr/lib/systemd/system/postgresql-${POSTGRESQL_STP_VER}.service
     systemctl daemon-reload
 
     #修改认证
     echo "host    all             all              0.0.0.0/0              trust" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
 
     #唤醒服务
-    systemctl start postgresql-11.service
-    systemctl disable postgresql-11.service
-    systemctl enable postgresql-11.service
-    systemctl status postgresql-11.service
-    chkconfig postgresql-11 on
+    systemctl start postgresql-${POSTGRESQL_STP_VER}.service
+    systemctl disable postgresql-${POSTGRESQL_STP_VER}.service
+    systemctl enable postgresql-${POSTGRESQL_STP_VER}.service
+    systemctl status postgresql-${POSTGRESQL_STP_VER}.service
+    chkconfig postgresql-${POSTGRESQL_STP_VER} on
 
     #初始化密码
     echo "PostgreSql: Please Ender Your System Inited Password Of User 'postgres'"
@@ -83,6 +94,7 @@ EOF
 
 function check_setup_set()
 {
+    switch_setup_postgresql_version
     exec_if_choice "CHOICE_POSTGRES_SET" "Please choice which postgresql mode you want to set" "...,Master,Slave,Exit" "$TMP_SPLITER" "set_db_"
 	return $?
 }
@@ -128,7 +140,7 @@ psql -U postgres -h localhost -d postgres << EOF
 EOF
     
     #复制样例
-    cp /usr/pgsql-11/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.done
+    cp /usr/pgsql-${POSTGRESQL_STP_VER}/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.done
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.done
@@ -146,7 +158,7 @@ EOF
     echo "$TMP_SET_DB_MASTER_SLAVER:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
-    systemctl restart postgresql-11.service
+    systemctl restart postgresql-${POSTGRESQL_STP_VER}.service
 	echo "Config PostgreSql-Master Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"
@@ -163,7 +175,7 @@ function set_db_slave()
     input_if_empty "TMP_SET_DB_SLAVER_MASTER" "PostgreSql: Please ender ${red}postgresql master address in internal${reset}"
 
     #复制样例
-    cp /usr/pgsql-11/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
+    cp /usr/pgsql-${POSTGRESQL_STP_VER}/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.conf
@@ -193,7 +205,7 @@ function set_db_slave()
 
     rm -rf ${POSTGRESQL_DATA_DIR}_replicate
 
-    systemctl restart postgresql-11.service
+    systemctl restart postgresql-${POSTGRESQL_STP_VER}.service
 	echo "Config PostgreSql-Slaver Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"

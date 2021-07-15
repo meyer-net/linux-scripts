@@ -52,10 +52,7 @@ function setup_openresty()
 
     #若是升级操作，则在此之前停止，完成以下操作
     #cp $MOUNT_DIR/bin/openresty/nginx/sbin/nginx $MOUNT_DIR/bin/openresty/nginx/sbin/nginx.bak
-    #cp $MOUNT_DIR/tmp/openresty-1.17.8.2/build/nginx-1.11.2/objs/nginx  $MOUNT_DIR/bin/openresty/nginx/sbin/
-
-    #创建软连接
-    ln -sf $TMP_SETUP_OPENRESTY_NGX_DIR/nginx /usr/bin/nginx
+    #cp $MOUNT_DIR/tmp/openresty-1.19.3.2/build/nginx-1.11.2/objs/nginx  $MOUNT_DIR/bin/openresty/nginx/sbin/
 
     #添加开机启动项
     #echo "nginx -c $cfgPath" >> /etc/rc.local
@@ -72,6 +69,7 @@ function setup_openresty()
 
     #创建软连接，启动NGINX服务
     ln -sf $TMP_SETUP_OPENRESTY_DIR/nginx/sbin/nginx /usr/bin/nginx
+    ln -sf ${TMP_SETUP_OPENRESTY_DIR}/bin/resty /usr/bin/resty 
     ln -sf $TMP_SETUP_OPENRESTY_DIR/luajit/bin/luajit /usr/bin/luajit
 
     #just for thrift
@@ -99,6 +97,7 @@ function setup_openresty()
     chown project:orsys $TMP_SETUP_OPENRESTY_DIR/tmp/tcmalloc
 
     nginx -v
+    resty -v
     luajit -v
 
 	return $?
@@ -140,7 +139,7 @@ function check_setup_lor()
     path_not_exits_action "$TMP_SETUP_OPENRESTY_DIR/luafws/lor" "print_lor" "Lor was installed"
     lord -v
 
-    exec_yn_action "check_setup_orange" "Orange: Please sure if u want to got a orange server"
+    # exec_yn_action "check_setup_orange" "Orange: Please sure if u want to got a orange server"
 
 	return $?
 }
@@ -161,7 +160,7 @@ function setup_lor()
     cd lor
     sed -i "s@LOR_HOME ?=.*@LOR_HOME = $TMP_SETUP_OPENRESTY_DIR/luafws@g" Makefile
     sed -i "s@LORD_BIN ?=.*@LORD_BIN = $TMP_SETUP_OPENRESTY_DIR/luafws/lor@g" Makefile
-    make install
+    make -j4 install
 
     ln -sf $TMP_SETUP_OPENRESTY_DIR/luafws/lor/lord /usr/bin/lord
 
@@ -315,14 +314,14 @@ EOF
 
 function down_openresty()
 {
-    setup_soft_wget "openresty" "https://openresty.org/download/openresty-1.17.8.2.tar.gz" "setup_openresty"
+    setup_soft_wget "openresty" "https://openresty.org/download/openresty-1.19.3.2.tar.gz" "setup_openresty"
 
 	return $?
 }
 
 function down_luarocks()
 {
-    setup_soft_wget "luarocks" "http://luarocks.github.io/luarocks/releases/luarocks-3.4.0.tar.gz" "setup_luarocks"
+    setup_soft_wget "luarocks" "http://luarocks.github.io/luarocks/releases/luarocks-3.7.0.tar.gz" "setup_luarocks"
 
 	return $?
 }

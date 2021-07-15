@@ -83,11 +83,11 @@ function get_ipv6 () {
 #获取国码
 #参数1：需要设置的变量名
 function get_country_code () {
-	local TMP_LOCAL_IPV4=`curl ip.sb`
-    local TMP_COUNTRY_CODE=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4} | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
+	local TMP_LOCAL_IPV4=`curl -s ip.sb`
+	local TMP_COUNTRY_JSON=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4}`
 
-	if [ -n "${TMP_COUNTRY_CODE}" ]; then
-		eval ${1}=`echo '${TMP_COUNTRY_CODE}'`
+	if [ -n "${TMP_COUNTRY_JSON}" ]; then
+		eval ${1}=`echo "${TMP_COUNTRY_JSON}" | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
 	fi
 
 	return $?
@@ -1773,7 +1773,7 @@ function echo_soft_port()
 
 	local TMP_QUERY_IPTABLES_EXISTS_RESULT=$(eval ${TMP_QUERY_IPTABLES_EXISTS})
 	if [ -n "${TMP_QUERY_IPTABLES_EXISTS_RESULT}" ]; then
-		echo -e "Port ${TMP_ECHO_SOFT_PORT} for '${TMP_ECHO_SOFT_PORT_IP:-"all"}' exists。\nGet data ${red}${TMP_QUERY_IPTABLES_EXISTS_RESULT}${reset}"
+		echo -e "Port ${TMP_ECHO_SOFT_PORT} for '${TMP_ECHO_SOFT_PORT_IP:-"all"}' exists。\nGet data \"${red}${TMP_QUERY_IPTABLES_EXISTS_RESULT}${reset}\""
 		return $?
 	fi
 	

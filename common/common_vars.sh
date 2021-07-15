@@ -57,6 +57,9 @@ function echo_title()
     # Make sure only root can run our script
     [[ $EUID -ne 0 ]] && echo -e "[${red}Error${reset}] This script must be run as root!" && exit 1
 
+    # 路径转化
+    convert_path "NVM_PATH"
+
     # Clear deleted
     kill_deleted
 
