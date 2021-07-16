@@ -1685,13 +1685,21 @@ function echo_startup_config()
 	local TMP_STARTUP_SUPERVISOR_SOURCE=${6}
 	local TMP_STARTUP_SUPERVISOR_USER=${7:-root}
 
+	local TMP_STARTUP_SUPERVISOR_DFT_ENV="/usr/bin:/usr/local/bin:"
     # 设置默认的源环境，并检测是否为NPM启动方式
 	if [ -z "${TMP_STARTUP_SUPERVISOR_SOURCE}" ]; then
 		TMP_STARTUP_SUPERVISOR_SOURCE="/etc/profile"
 
+		# 因konga的关系，此处启动暂时注释自动修改环境的操作（建议可自动修改环境变量至当前的npm版本，并取消原始bin环境）
+		# local TMP_STARTUP_BY_NPM_CHECK=`echo "${TMP_STARTUP_SUPERVISOR_COMMAND}" | sed "s@^sudo@@g" | awk '{sub("^ *","");sub(" *$","");print}' | grep -o "^npm"`
+		# if [ "${TMP_STARTUP_BY_NPM_CHECK}" == "npm" ]; then
+		# 	TMP_STARTUP_SUPERVISOR_SOURCE=`dirname ${NVM_PATH}`
+		# fi
+
+		# 上述调整后，解决环境冲突问题
 		local TMP_STARTUP_BY_NPM_CHECK=`echo "${TMP_STARTUP_SUPERVISOR_COMMAND}" | sed "s@^sudo@@g" | awk '{sub("^ *","");sub(" *$","");print}' | grep -o "^npm"`
 		if [ "${TMP_STARTUP_BY_NPM_CHECK}" == "npm" ]; then
-			TMP_STARTUP_SUPERVISOR_SOURCE="${NVM_PATH}"
+			TMP_STARTUP_SUPERVISOR_DFT_ENV=""
 		fi
 	fi
 
@@ -1704,7 +1712,7 @@ function echo_startup_config()
 	fi
 
 	# 类似的：environment = ANDROID_HOME="/opt/android-sdk-linux",PATH="/usr/bin:/usr/local/bin:%(ENV_ANDROID_HOME)s/tools:%(ENV_ANDROID_HOME)s/tools/bin:%(ENV_ANDROID_HOME)s/platform-tools:%(ENV_PATH)s"
-	TMP_STARTUP_SUPERVISOR_ENV="environment = PATH=\"/usr/bin:/usr/local/bin:${TMP_STARTUP_SUPERVISOR_ENV}%(ENV_PATH)s\"  ; 程序启动的环境变量信息"
+	TMP_STARTUP_SUPERVISOR_ENV="environment = PATH=\"${TMP_STARTUP_SUPERVISOR_DFT_ENV}${TMP_STARTUP_SUPERVISOR_ENV}%(ENV_PATH)s\"  ; 程序启动的环境变量信息"
 
 	TMP_STARTUP_SUPERVISOR_PRIORITY="priority = ${TMP_STARTUP_SUPERVISOR_PRIORITY}"
 	

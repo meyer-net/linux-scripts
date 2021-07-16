@@ -25,6 +25,7 @@ local TMP_SETUP_POSTGRESQL_KONG_USRPWD="dbkng%1it"
 
 #全局变量
 local KONG_LOGS_DIR=${LOGS_DIR}/kong
+local KONG_DASHBOARD_LOGS_DIR=${LOGS_DIR}/konga
 
 function set_environment()
 {
@@ -106,7 +107,7 @@ EOF
     kong restart
 
     local TMP_OPENRESTY_RESTY_PATH=`sudo find / -name resty | grep 'openresty/bin'`
-    echo_startup_config "kong" "/usr/local/bin" "kong start" "" "99" `dirname ${TMP_OPENRESTY_RESTY_PATH}`
+    echo_startup_config "kong" "/usr/local/bin" "kong start" `dirname ${TMP_OPENRESTY_RESTY_PATH}` "99"
 
     echo_soft_port 80
 
@@ -131,12 +132,13 @@ function setup_kong_dashboard()
 	#while_exec "su - root -c 'cd ${TMP_SETUP_KONG_DASHBOARD_DIR} && nvm install 8.11.3 && nvm use 8.11.3 && npm install > $DOWN_DIR/konga_install.log'" "cat $DOWN_DIR/konga_install.log | grep -o \"up to date\" | awk 'END{print NR}' | xargs -I {} [ {} -eq 1 ] && echo 1" "npm uninstall && rm -rf node_modules package-lock.json && rm -rf $NVM_DIR/versions/node/v8.11.3 && rm -rf $NVM_DIR/.cache"
     #国内镜像源无法安装完全，故先切换到官方源，再还原
     npm install -g nrm
-	source ${NVM_PATH}
     local TMP_SOFT_NPM_NRM_REPO_CURRENT=`nrm current`
     nrm use npm
-    sudo npm install
-    nrm use ${TMP_SOFT_NPM_NRM_REPO_CURRENT}
+    npm install
     #npm rebuild node-sass
+
+    mkdir -pv ${KONG_DASHBOARD_LOGS_DIR}
+    ln -sf ${KONG_DASHBOARD_LOGS_DIR} ${TMP_SETUP_KONG_DASHBOARD_DIR}/logs
 
     #配置参数录入
     local TMP_SETUP_KONG_DASHBOARD_LOCAL_PORT="1337"
@@ -182,6 +184,8 @@ EOF
     sed -i "s@_hookTimeout: .*@_hookTimeout: 999999@g" config/pubsub.js
     node ./bin/konga.js prepare  #不能加sudo
 
+    sudo npm run bower-deps
+
 psql -U ${TMP_SETUP_POSTGRESQL_ROOT_USRNAME} -h ${TMP_SETUP_POSTGRESQL_DBADDRESS} -d postgres << EOF
     \c ${TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_DATABASE};
     INSERT INTO konga_kong_nodes (id,"name","type",kong_admin_url,netdata_url,kong_api_key,jwt_algorithm,jwt_key,jwt_secret,kong_version,health_checks,health_check_details,active,"createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'CONNECTION.KONG.LOCAL.$SYS_IP_CONNECT','default','http://localhost:8000',NULL,'','HS256',NULL,NULL,'2.2.0',true,NULL,true,'${LOCAL_TIME}','${LOCAL_TIME}',1,1);
@@ -203,8 +207,8 @@ EOF
 
     kong reload
 
-    sudo npm run bower-deps
-    nohup npm run production > ${KONG_LOGS_DIR}/konga.log 2>&1 &
+    nohup npm run production > ${KONG_DASHBOARD_LOGS_DIR}/boot.log 2>&1 &
+    nrm use ${TMP_SOFT_NPM_NRM_REPO_CURRENT}
 
     #缺少激活面板active命令
     #sleep 5
@@ -212,9 +216,8 @@ EOF
     
     local TMP_KONGA_NPM_PATH=`npm config get prefix`
 
-    # ???实际起作用env，要修复。
-    # environment = PATH="/root/.nvm/versions/node/v12.22.3/bin:%(ENV_PATH)s"  ;
-    echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "nvm use lts/erbium && npm run production" "${TMP_KONGA_NPM_PATH}/bin" "999" "${NVM_PATH}"
+    # echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "nvm use lts/erbium && npm run production" "${TMP_KONGA_NPM_PATH}/bin" "999" "${NVM_PATH}"
+    echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "npm run production" "${TMP_KONGA_NPM_PATH}/bin" "999"
 
     echo_soft_port 1337
 
