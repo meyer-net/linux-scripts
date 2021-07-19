@@ -15,7 +15,7 @@ CURRENT_USER=`whoami`
 #---------- SYS ---------- }
 
 #---------- DIR ---------- {
-DOWN_DIR=/tmp
+DOWN_DIR=/tmp/downloads
 
 # 默认找最大的磁盘  ??? 优化为自动识别是否存在挂载第一个磁盘
 # MOUNT_ROOT=$(df -k | awk '{print $2}' | awk '{if (NR>2) {print}}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} sh -c 'df -k | grep "$1" | awk "{print \$NF}" | cut -c2' -- {})

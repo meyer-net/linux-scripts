@@ -14,7 +14,11 @@
 
 # 1-配置环境
 function set_environment()
-{	
+{
+    cd ${__DIR}
+
+    soft_yum_check_action ""
+
 	return $?
 }
 
@@ -22,11 +26,10 @@ function set_environment()
 function setup_$soft_name()
 {
 	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
-	local TMP_$soft_upper_short_name_CURRENT_DIR=`pwd`
+	local TMP_$soft_upper_short_name_CURRENT_DIR=${2}
 
 	## 直装模式
-
-	cd ..
+	cd `dirname ${TMP_$soft_upper_short_name_CURRENT_DIR}`
 
 	mv ${TMP_$soft_upper_short_name_CURRENT_DIR} ${TMP_$soft_upper_short_name_SETUP_DIR}
 
@@ -47,8 +50,10 @@ function setup_$soft_name()
 
 	# 环境变量或软连接
 	echo "$soft_upper_name_HOME=${TMP_$soft_upper_name_SETUP_DIR}" >> /etc/profile
-	echo 'PATH=$$soft_upper_name/bin:$PATH' >> /etc/profile
+	echo 'PATH=$$soft_upper_name_HOME/bin:$PATH' >> /etc/profile
 	echo "export PATH $soft_upper_name_HOME" >> /etc/profile
+
+    # 重新加载profile文件
 	source /etc/profile
 	# ln -sf ${TMP_$soft_upper_short_name_SETUP_DIR}/bin/$setup_name /usr/bin/$setup_name
 
@@ -105,10 +110,11 @@ function setup_plugin_$soft_name()
 function exec_step_$soft_name()
 {
 	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
+	local TMP_$soft_upper_short_name_CURRENT_DIR=`pwd`
     
 	set_environment "${TMP_$soft_upper_short_name_SETUP_DIR}"
 
-	setup_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
+	setup_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}" "${TMP_$soft_upper_short_name_CURRENT_DIR}"
 
 	conf_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
 
@@ -125,8 +131,10 @@ function down_$soft_name()
 	TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"
 	set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_NEWER" "meyer-net/snake"
 	exec_text_format "TMP_$soft_upper_short_name_SETUP_NEWER" "https://www.xxx.com/downloads/$setup_name-%s.tar.gz"
-	# set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_NEWER" "http://www.xxx.net/projects/releases/" "$setup_name-.*.tar.gz"
-	# exec_text_format "TMP_$soft_upper_short_name_SETUP_NEWER" "http://www.xxx.net/projects/releases/%s"
+	# local TMP_$soft_upper_short_name_DOWN_URL_BASE="http://www.xxx.net/projects/releases/"
+	# set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-.*.tar.gz"
+	# set_url_list_newer_href_link_filename "TMP_$soft_upper_short_name_SETUP_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-().tar.gz"
+	# exec_text_format "TMP_$soft_upper_short_name_SETUP_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}%s"
     setup_soft_wget "$setup_name" "${TMP_$soft_upper_short_name_SETUP_NEWER}" "exec_step_$soft_name"
 
 	return $?

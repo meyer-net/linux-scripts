@@ -14,7 +14,11 @@
 
 # 1-配置环境
 function set_environment()
-{	
+{
+    cd ${__DIR}
+
+    soft_yum_check_action ""
+
 	return $?
 }
 
@@ -22,7 +26,7 @@ function set_environment()
 function setup_$soft_name()
 {
 	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
-	local TMP_$soft_upper_short_name_CURRENT_DIR=`pwd`
+	local TMP_$soft_upper_short_name_CURRENT_DIR=${2}
 
 	## 直装模式
     sudo cat << EOF > /etc/yum.repos.d/$setup_name.repo
@@ -35,9 +39,9 @@ gpgcheck=1
 EOF
 	sudo yum -y install $soft_name
 
-	cd ..
+	# cd ..
 
-	mv ${TMP_$soft_upper_short_name_CURRENT_DIR} ${TMP_$soft_upper_short_name_SETUP_DIR}
+	# mv ${TMP_$soft_upper_short_name_CURRENT_DIR} ${TMP_$soft_upper_short_name_SETUP_DIR}
 
 	# 创建日志软链
 	local TMP_$soft_upper_short_name_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
@@ -56,8 +60,10 @@ EOF
 
 	# 环境变量或软连接
 	echo "$soft_upper_name_HOME=${TMP_$soft_upper_name_SETUP_DIR}" >> /etc/profile
-	echo 'PATH=$$soft_upper_name/bin:$PATH' >> /etc/profile
+	echo 'PATH=$$soft_upper_name_HOME/bin:$PATH' >> /etc/profile
 	echo "export PATH $soft_upper_name_HOME" >> /etc/profile
+
+    # 重新加载profile文件
 	source /etc/profile
 
 	# 授权权限，否则无法写入
@@ -113,10 +119,11 @@ function setup_plugin_$soft_name()
 function exec_step_$soft_name()
 {
 	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
+	local TMP_$soft_upper_short_name_CURRENT_DIR=${2}
     
 	set_environment "${TMP_$soft_upper_short_name_SETUP_DIR}"
 
-	setup_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
+	setup_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}" "${TMP_$soft_upper_short_name_CURRENT_DIR}"
 
 	conf_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
 

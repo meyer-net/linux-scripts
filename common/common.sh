@@ -391,7 +391,7 @@ function setup_soft_basic()
 	echo $TMP_VAR_SPLITER
 	
 	if [ -n "$TMP_SOFT_SETUP_FUNC" ]; then
-		cd $DOWN_DIR
+		cd ${DOWN_DIR}
 		$TMP_SOFT_SETUP_FUNC
 	fi
 
@@ -496,7 +496,7 @@ function soft_yum_check_action()
         echo \"Checking the yum installed repos of '${red}%s${reset}'\"
         echo \${TMP_SPLITER}
 
-        local TMP_YUM_FIND_RESULTS=\`yum list installed | grep %s\`
+        local TMP_YUM_FIND_RESULTS=\`yum list installed | grep '%s'\`
         if [ -z \"\${TMP_YUM_FIND_RESULTS}\" ]; then
             ${TMP_YUM_CHECK_ACTION_SCRIPT}
         else
@@ -570,7 +570,7 @@ function wget_unpack_dist()
 
 	TMP_WGET_UNPACK_FILE_NAME=`echo "$TMP_WGET_UNPACK_DIST_URL" | awk -F'/' '{print $NF}'`
 
-	cd $DOWN_DIR
+	cd ${DOWN_DIR}
 
 	if [ ! -f "$TMP_WGET_UNPACK_FILE_NAME" ]; then
 		wget -c --tries=0 --timeout=60 $TMP_WGET_UNPACK_DIST_URL
@@ -596,7 +596,7 @@ function wget_unpack_dist()
 
 	cp -rf $TMP_WGET_UNPACK_DIST_SOURCE $TMP_WGET_UNPACK_DIST_PATH
 
-	#rm -rf $DOWN_DIR/$TMP_WGET_UNPACK_FILE_NAME
+	#rm -rf ${DOWN_DIR}/$TMP_WGET_UNPACK_FILE_NAME
 	cd $TMP_WGET_UNPACK_DIST_PWD
 
 	return $?
@@ -759,9 +759,9 @@ function setup_soft_wget()
 	if [ $? -ne 0 ]; then
 		TMP_SOFT_WGET_FILE_NAME=`echo "$TMP_SOFT_WGET_URL" | awk -F'/' '{print $NF}'`
 
-		cd $DOWN_DIR
+		cd ${DOWN_DIR}
 		if [ ! -f "$TMP_SOFT_WGET_FILE_NAME" ]; then
-			wget $TMP_SOFT_WGET_URL
+			while_wget $TMP_SOFT_WGET_URL
 		fi
 
 		TMP_SOFT_WGET_UNPACK_FILE_EXT=`echo ${TMP_SOFT_WGET_FILE_NAME##*.}`
@@ -774,7 +774,14 @@ function setup_soft_wget()
 		else
 			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`tar -tf $TMP_SOFT_WGET_FILE_NAME | grep '/' | awk 'NR==1{print}' | sed s@/.*@""@g`
 			if [ ! -d "$TMP_SOFT_WGET_FILE_NAME_NO_EXTS" ]; then
-				tar -zxvf $TMP_SOFT_WGET_FILE_NAME
+				if [ "$TMP_SOFT_WGET_UNPACK_FILE_EXT" = "xz" ]; then
+					xz -d $TMP_SOFT_WGET_FILE_NAME
+					local TMP_SOFT_WGET_FILE_NAME_TAR=${TMP_SOFT_WGET_FILE_NAME%%.xz*}
+					tar -xvf ${TMP_SOFT_WGET_FILE_NAME_TAR}
+					rm -rf ${TMP_SOFT_WGET_FILE_NAME_TAR}
+				else
+					tar -zxvf $TMP_SOFT_WGET_FILE_NAME
+				fi
 			fi
 		fi
 		
@@ -814,7 +821,7 @@ function setup_soft_git()
 	if [ $? -ne 0 ]; then
 		local TMP_SOFT_GIT_FOLDER_NAME=`echo "$TMP_SOFT_GIT_URL" | awk -F'/' '{print $NF}'`
 
-		cd $DOWN_DIR
+		cd ${DOWN_DIR}
 		if [ ! -f "$TMP_SOFT_GIT_FOLDER_NAME" ]; then
 			git clone $TMP_SOFT_GIT_URL ${TMP_SOFT_GIT_URL_PARAMS}
 		fi

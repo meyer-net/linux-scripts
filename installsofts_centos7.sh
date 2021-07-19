@@ -55,6 +55,7 @@ function mkdirs()
     fi
 
     #path_not_exits_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
+    path_not_exits_create "${DOWN_DIR}"
     path_not_exits_create "${SETUP_DIR}"
     path_not_exits_create "${WWW_DIR}"
     path_not_exits_create "${APP_DIR}"
@@ -97,7 +98,7 @@ function from_clean()
 
 function lang()
 {
-    exec_if_choice "CHOICE_LANG" "Please choice which dev lang you want to setup" "...,Python,Java,Scala,Php,NodeJs,Exit" "${TMP_SPLITER}" "scripts/lang"
+    exec_if_choice "CHOICE_LANG" "Please choice which dev lang you want to setup" "...,Python,Java,Scala,ERLang,Php,NodeJs,Exit" "${TMP_SPLITER}" "scripts/lang"
 
 	return $?
 }
@@ -118,7 +119,7 @@ function cluster()
 
 function bi()
 {
-    exec_if_choice "CHOICE_ELK" "Please choice which bi compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Redis,Kafka,ZeroMQ,Flink,Exit" "${TMP_SPLITER}" "scripts/bi"
+    exec_if_choice "CHOICE_ELK" "Please choice which bi compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Redis,RabbitMQ,Kafka,ZeroMQ,Flink,Exit" "${TMP_SPLITER}" "scripts/bi"
 	
     return $?
 }
