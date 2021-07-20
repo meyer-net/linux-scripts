@@ -1073,7 +1073,7 @@ function set_url_list_newer_href_link_filename()
 
 	local TMP_VAR_NAME=$1
 	local TMP_VAR_FIND_URL=$2
-	local TMP_VAR_KEY_WORDS=$(echo ${3} | sed 's@()@.*@g')  #‘gradle-()-bin.zip’ -> 'gradle-.*-bin.zip'
+	local TMP_VAR_KEY_WORDS=$(echo ${3} | sed 's@()@[0-9.-]*@g')  #‘gradle-()-bin.zip’ -> 'gradle-.*-bin.zip'
 	
 	# 零宽断言，参考两篇即明白：https://segmentfault.com/q/1010000009346369，https://blog.csdn.net/iteye_5616/article/details/81855906
 	local TMP_VAR_KEY_WORDS_ZREG_LEFT=$(echo ${3} | grep -o ".*(" | sed 's@(@@g' | xargs -I {} echo '(?<={})')

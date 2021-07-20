@@ -33,18 +33,21 @@ function setup_rabbitmq()
 	cd `dirname ${TMP_RBT_MQ_CURRENT_DIR}`
 
 	mv ${TMP_RBT_MQ_CURRENT_DIR} ${TMP_RBT_MQ_SETUP_DIR}
-
-	# 创建日志软链
+    
+	# 创建日志软链(启动后才能出现日志及数据目录)
 	local TMP_RBT_MQ_LNK_LOGS_DIR=${LOGS_DIR}/rabbitmq
 	local TMP_RBT_MQ_LNK_DATA_DIR=${DATA_DIR}/rabbitmq
 	local TMP_RBT_MQ_LOGS_DIR=${TMP_RBT_MQ_SETUP_DIR}/var/log/rabbitmq
-	local TMP_RBT_MQ_DATA_DIR=${TMP_RBT_MQ_SETUP_DIR}/var/lib/rebbitmq
+	local TMP_RBT_MQ_DATA_DIR=${TMP_RBT_MQ_SETUP_DIR}/var/lib/rabbitmq
 
 	# 先清理文件，再创建文件
 	rm -rf ${TMP_RBT_MQ_LOGS_DIR}
 	rm -rf ${TMP_RBT_MQ_DATA_DIR}
 	mkdir -pv ${TMP_RBT_MQ_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_RBT_MQ_LNK_DATA_DIR}
+
+    mkdir -pv `dirname ${TMP_RBT_MQ_LOGS_DIR}`
+    mkdir -pv `dirname ${TMP_RBT_MQ_DATA_DIR}`
 
 	ln -sf ${TMP_RBT_MQ_LNK_LOGS_DIR} ${TMP_RBT_MQ_LOGS_DIR}
 	ln -sf ${TMP_RBT_MQ_LNK_DATA_DIR} ${TMP_RBT_MQ_DATA_DIR}
@@ -90,12 +93,12 @@ function boot_rabbitmq()
 
 	# 当前启动命令
 	sbin/rabbitmq-server -detached
-
-    # 启动管理界面
-    sbin/rabbitmq-plugins enable rabbitmq_management
 	
 	# 验证安装
     sbin/rabbitmqctl status | grep "RabbitMQ version"
+
+    # 启动管理界面
+    sbin/rabbitmq-plugins enable rabbitmq_management
 
 	# 添加系统启动命令
     echo_startup_config "rabbitmq" "${TMP_RBT_MQ_SETUP_DIR}" "sbin/rabbitmq-server -detached" "" "1"

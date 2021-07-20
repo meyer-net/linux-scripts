@@ -45,6 +45,9 @@ function setup_$soft_name()
 	rm -rf ${TMP_$soft_upper_short_name_DATA_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_LNK_DATA_DIR}
+	
+    mkdir -pv `dirname ${TMP_$soft_upper_short_name_LOGS_DIR}`
+    mkdir -pv `dirname ${TMP_$soft_upper_short_name_DATA_DIR}`
 
 	ln -sf ${TMP_$soft_upper_short_name_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_LOGS_DIR}
 	ln -sf ${TMP_$soft_upper_short_name_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_DATA_DIR}

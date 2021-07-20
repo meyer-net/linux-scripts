@@ -26,8 +26,8 @@ function setup_erlang()
 	local TMP_ERL_SETUP_DIR=${1}
 	local TMP_ERL_CURRENT_DIR=`pwd`
 
-	# 编译模式
-	./configure --prefix=${TMP_ERL_SETUP_DIR} --enable-smp-support --enable-threads --enable-sctp --enable-kernel-poll --enable-hipe --with-ssl --without-javac
+	# 编译模式  --enable-sctp
+	./configure --prefix=${TMP_ERL_SETUP_DIR} --enable-smp-support --enable-threads --enable-kernel-poll --enable-hipe --with-ssl --without-javac
 	make -j4 && make -j4 install
 
 	# 环境变量或软连接
