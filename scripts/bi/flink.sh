@@ -43,7 +43,7 @@ function setup_flink()
     cat conf/slaves
     echo 
 
-    exec_yn_action "start_flink" "Flink: Please Sure You If This Is A Boot Server"
+    exec_yn_action "start_flink" "Flink: Please sure you If This Is A Boot Server"
 
     # cd $FLINK_DIR/resources/python
     # python setup.py install

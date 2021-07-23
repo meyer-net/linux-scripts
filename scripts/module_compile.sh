@@ -46,6 +46,7 @@ function setup_$soft_name()
 	mkdir -pv ${TMP_$soft_upper_short_name_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_LNK_DATA_DIR}
 	
+	# 特殊多层结构下使用
     mkdir -pv `dirname ${TMP_$soft_upper_short_name_LOGS_DIR}`
     mkdir -pv `dirname ${TMP_$soft_upper_short_name_DATA_DIR}`
 

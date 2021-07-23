@@ -1627,7 +1627,7 @@ function exec_while_read_json()
 	TMP_ITEM_LEN=${#arr[@]}
 	for i in $(seq 99);
 	do
-		echo "Please Sure You Will Input Items By '${red}yes(y) or enter key/no(n)${reset}'"
+		echo "Please sure you Will Input Items By '${red}yes(y) or enter key/no(n)${reset}'"
 		read -n 1 Y_N
 		echo ""
 
@@ -1758,10 +1758,6 @@ EOF
 #参数3：ALL/TCP/UDP
 function echo_soft_port()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_ECHO_SOFT_PORT=${1}
 	local TMP_ECHO_SOFT_PORT_IP=${2}
 	local TMP_ECHO_SOFT_PORT_TYPE=${3}

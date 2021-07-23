@@ -140,7 +140,7 @@ EOF
         start_bootstrap
     else
         BOOT_MODE=1
-        exec_if_choice "BOOT_MODE" "Consul: Please Sure This Server Mode" "server,agent" "" "start_"
+        exec_if_choice "BOOT_MODE" "Consul: Please sure This Server Mode" "server,agent" "" "start_"
     fi
 
 	return $?

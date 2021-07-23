@@ -64,6 +64,8 @@ function mkdirs()
     
     path_not_exits_action "${LOGS_DIR}" "link_logs"
 
+    sudo yum makecache fast
+
     return $?
 }
 
@@ -140,7 +142,7 @@ function database()
 
 function web()
 {
-	exec_if_choice "CHOICE_WEB" "Please choice which web compoment you want to setup" "...,OpenResty,Kong,Caddy,Exit" "${TMP_SPLITER}" "scripts/web"
+	exec_if_choice "CHOICE_WEB" "Please choice which web compoment you want to setup" "...,OpenResty,Kong,Caddy,Webhook,Exit" "${TMP_SPLITER}" "scripts/web"
 	
     return $?
 }

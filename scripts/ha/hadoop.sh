@@ -237,7 +237,7 @@ EOF
 
     exec_yn_action "set_hadoop_cluster" "Hadoop: Please sure if this install is cluster mode"
 
-    exec_yn_action "start_hadoop" "Hadoop: Please Sure You If This Is A Boot Server"
+    exec_yn_action "start_hadoop" "Hadoop: Please sure you If This Is A Boot Server"
 
 	return $?
 }

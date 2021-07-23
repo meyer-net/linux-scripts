@@ -334,5 +334,5 @@ local TMP_SETUP_OPENRESTY_NGX_DIR=$TMP_SETUP_OPENRESTY_DIR/nginx/sbin
 set_environment
 setup_soft_basic "Openresty" "down_openresty"
 setup_soft_basic "Luarocks" "down_luarocks"
-exec_yn_action "check_setup_lor" "Please Sure You Want To Need ${red}Lor-Framework${reset}"
+exec_yn_action "check_setup_lor" "Please sure you want to need ${red}Lor-Framework${reset}"
 lsof -n | grep tcmalloc

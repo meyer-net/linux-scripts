@@ -53,9 +53,9 @@ function reset_os()
     input_if_empty "SYS_NAME" "SYS: Please Ender ${green}System Name${reset} Like 'LnxSvr' Or Else"
     sudo hostnamectl set-hostname $SYS_NAME
 
-    exec_yn_action "reset_passwd" "SYS: Please Sure You Want To ${green}Change Password${reset}"
-    exec_yn_action "reset_dns" "SYS: Please Sure You Want To ${green}Change DNS${reset}"
-    exec_yn_action "reset_ip" "SYS: Please Sure You Want To ${green}Change Local Ip${reset}"
+    exec_yn_action "reset_passwd" "SYS: Please sure you want to ${green}Change Password${reset}"
+    exec_yn_action "reset_dns" "SYS: Please sure you want to ${green}Change DNS${reset}"
+    exec_yn_action "reset_ip" "SYS: Please sure you want to ${green}Change Local Ip${reset}"
 
 	return $?
 }
