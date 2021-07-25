@@ -293,21 +293,6 @@ EOF
 	return $?
 }
 
-# ??? 修改为调用kong-api
-function conf_kong_auto_https()
-{
-	input_if_empty "TMP_SETUP_POSTGRESQL_KONG_DATABASE" "Kong.PostgreSql: Please ender ${red}kong database${reset} of '${TMP_SETUP_POSTGRESQL_DBADDRESS}:${TMP_SETUP_POSTGRESQL_DBPORT}'"
-	input_if_empty "TMP_SETUP_POSTGRESQL_KONG_USRNAME" "Kong.PostgreSql: Please ender ${red}kong user name${reset} of '${TMP_SETUP_POSTGRESQL_DBADDRESS}:${TMP_SETUP_POSTGRESQL_DBPORT}'"
-	input_if_empty "TMP_SETUP_POSTGRESQL_KONG_USRPWD" "Kong.PostgreSql: Please ender ${red}kong password${reset} of ${TMP_SETUP_POSTGRESQL_KONG_USRNAME}@${TMP_SETUP_POSTGRESQL_DBADDRESS}:${TMP_SETUP_POSTGRESQL_DBPORT}"
-
-psql -U ${TMP_SETUP_POSTGRESQL_ROOT_USRNAME} -h ${TMP_SETUP_POSTGRESQL_DBADDRESS} -d postgres << EOF
-    \c ${TMP_SETUP_POSTGRESQL_KONG_DASHBOARD_DATABASE};
-
-EOF
-
-	return $?
-}
-
 function rouse_openresty()
 {
     local TMP_OPENRESTY_NGINX_PATH=`sudo find / -name nginx | grep 'openresty/nginx/sbin'`
@@ -349,5 +334,4 @@ function check_setup_kong_dashboard()
 
 set_environment
 setup_soft_basic "Kong" "check_setup_kong"
-exec_yn_action "conf_kong_auto_https" "Please sure you want to need ${red}Configure Auto Https For Kong${reset}"
 exec_yn_action "check_setup_kong_dashboard" "Please sure you want to need ${red}Kong-Dashboard${reset}"

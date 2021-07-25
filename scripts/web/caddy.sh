@@ -52,16 +52,21 @@ function setup_caddy()
 	rm -rf ${TMP_CDY_LOGS_DIR}
 	rm -rf ${TMP_CDY_DATA_DIR}
 	mkdir -pv ${TMP_CDY_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_CDY_LNK_DATA_DIR}
+
+    if [ ! -d "/var/lib/caddy" ]; then
+    	mkdir -pv ${TMP_CDY_LNK_DATA_DIR}
+	    chown -R caddy:caddy ${TMP_CDY_LNK_DATA_DIR}
+    else
+        mv /var/lib/caddy ${TMP_CDY_LNK_DATA_DIR}
+    fi
 
     mv /etc/caddy ${TMP_CDY_LNK_ETC_DIR}
 
+	# 环境变量或软连接
     ln -sf ${TMP_CDY_LNK_ETC_DIR} /etc/caddy
 	ln -sf ${TMP_CDY_LNK_LOGS_DIR} ${TMP_CDY_LOGS_DIR}
 	ln -sf ${TMP_CDY_LNK_DATA_DIR} /var/lib/caddy
 	ln -sf ${TMP_CDY_LNK_DATA_DIR} ${TMP_CDY_DATA_DIR}
-
-	# 环境变量或软连接
 
 	# 授权权限，否则无法写入
 	chown -R caddy:caddy ${TMP_CDY_LNK_LOGS_DIR}
@@ -100,7 +105,7 @@ function conf_caddy()
     }
 }
 
-#:80,:443 {
+#:60080,:60443 {
     # Set this path to your site's directory.
     # root * /usr/share/caddy
 
@@ -110,7 +115,7 @@ function conf_caddy()
     # Another common task is to set up a reverse proxy:
     # reverse_proxy localhost:8080
 
-#    respond "Welcome to my security site!"
+#   respond "Welcome to my security site!"
 
     # Or serve a PHP site through php-fpm:
     # php_fastcgi localhost:9000
@@ -132,8 +137,7 @@ function boot_caddy()
     sudo systemctl daemon-reload
     sudo systemctl enable caddy
     sudo systemctl start caddy
-    systemctl status caddy
-    journalctl -u caddy
+    sudo systemctl status caddy
     #journalctl -u caddy --no-pager | less
     #sudo systemctl reload caddy
 
@@ -161,9 +165,11 @@ function increase_auto_https_conf()
 {
     local TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN=${1:-"localhost"}
 
+    cd ${TMP_CDY_DATA_DIR}
+
 					# "listen": [":60080",":60443"],
     echo "----------------------------------------------------------------"
-sudo tee ${TMP_CDY_DATA_DIR}/${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
+sudo tee ${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 {
 	"apps": {
 		"http": {
@@ -188,7 +194,7 @@ sudo tee ${TMP_CDY_DATA_DIR}/${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 EOF
     echo "----------------------------------------------------------------"
 
-    curl localhost:2019/load -X POST -H "Content-Type: application/json" -d @${TMP_CDY_LNK_ETC_DIR}/${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json
+    curl localhost:2019/load -X POST -H "Content-Type: application/json" -d @${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json
 
     return $?
 }
