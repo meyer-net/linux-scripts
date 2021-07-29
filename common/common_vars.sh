@@ -30,6 +30,7 @@ ATT_DIR=${MOUNT_DIR}/etc
 DATA_DIR=${MOUNT_DIR}/data
 LOGS_DIR=${MOUNT_DIR}/logs
 
+CRTB_LOGS_DIR=${LOGS_DIR}/crontab
 SYNC_DIR=${MOUNT_DIR}/svr_sync
 WWW_DIR=${SYNC_DIR}/wwwroot
 APP_DIR=${SYNC_DIR}/applications

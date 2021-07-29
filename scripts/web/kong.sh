@@ -117,14 +117,14 @@ EOF
     kong migrations bootstrap
 
 	input_if_empty "TMP_SETUP_KONG_AUTO_HTTPS_VLD_HOST" "Kong.AutoHttps: Please ender ${red}auto https valid api host for kong${reset} of 'caddy'"
-    
+        
     # 添加kong-api的配置信息
     # 1：设置统一工作组ID
     # 2：更新初始化的工作组ID为自定义ID
     # 3：添加upstream指针：kong-api
     # 4：绑定upstream指针对应的访问地址：kong-api
     #
-    # 配合autohttps部分，把所有路径规则 /.well-known/acme-challenge/ 都交给caddy
+    # 配合autohttps部分，把所有路径规则 /.well-known 都交给caddy
 # 集成默认安装webhook，由kong的请求触发webhook来异步调用caddy-api执行自动添加及更新https配置
     # 1：添加upstream指针：caddy-api
     # 2：绑定upstream指针对应的访问地址：caddy-api
@@ -149,22 +149,24 @@ psql -U ${TMP_SETUP_POSTGRESQL_ROOT_USRNAME} -h ${TMP_SETUP_POSTGRESQL_DBADDRESS
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('9d68b631-2c02-5506-9e88-53e6d7975ea6','${LOCAL_TIME}','UPS-LCL-COROUTINES.CADDY_HTTPS_VLD','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('a5178e75-f6d7-59cf-bda8-290f892885ed','${LOCAL_TIME}','9d68b631-2c02-5506-9e88-53e6d7975ea6','${TMP_SETUP_KONG_AUTO_HTTPS_VLD_HOST}:${TMP_SETUP_KONG_AUTO_HTTPS_VLD_PORT}',100,NULL, :'kong_workspace_id');
     INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('8253fa0c-e329-5670-9bde-5d63eba6a92c', '${LOCAL_TIME}', '${LOCAL_TIME}', 'SERVICE.CADDY_HTTPS_VLD', 5, 'http', 'UPS-LCL-COROUTINES.CADDY_HTTPS_VLD', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
-    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('bb232280-811e-5c51-9f66-f10089b15565','${LOCAL_TIME}','${LOCAL_TIME}','8253fa0c-e329-5670-9bde-5d63eba6a92c','{http,https}','{}','{}','{/.well-known/acme-challenge}',0,true,false,'ROUTE.SERVICE.CADDY_HTTPS_VLD',NULL,NULL,NULL,NULL, :'kong_workspace_id');
+    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('bb232280-811e-5c51-9f66-f10089b15565','${LOCAL_TIME}','${LOCAL_TIME}','8253fa0c-e329-5670-9bde-5d63eba6a92c','{http,https}','{}','{}','{/.well-known}',0,false,true,'ROUTE.SERVICE.CADDY_HTTPS_VLD',NULL,NULL,NULL,NULL, :'kong_workspace_id');
 
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('0a79e2bc-6fc3-5d59-bbfa-cc733f836935','${LOCAL_TIME}','UPS-LCL-COROUTINES.WEBHOOK','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
-    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('07232e9f-f860-5659-afcd-cafb8580e6f6','${LOCAL_TIME}','0a79e2bc-6fc3-5d59-bbfa-cc733f836935','127.0.0.1:9000',100,NULL, :'kong_workspace_id'); 
-    INSERT INTO consumers (id, created_at, username, custom_id, tags, ws_id) VALUES ('6ace2af0-8c2b-5aef-b18d-ff731507b92d', '${LOCAL_TIME}', 'webhook:async-caddy-cert', NULL, '{}', :'kong_workspace_id');
-    INSERT INTO plugins (id, created_at, name, consumer_id, service_id, route_id, config, enabled, cache_key, protocols, tags, ws_id) VALUES ('58377e23-5dea-5aaa-9c0a-b056a80381dc', '${LOCAL_TIME}', 'http-log', '6ace2af0-8c2b-5aef-b18d-ff731507b92d', NULL, NULL, '{"method": "POST", "headers": null, "timeout": 10000, "keepalive": 60000, "queue_size": 1, "retry_count": 10, "content_type": "application/json", "flush_timeout": 2, "http_endpoint": "http://127.0,0.1:9000", "custom_fields_by_lua": null}', true, 'plugins:http-log:::6ace2af0-8c2b-5aef-b18d-ff731507b92d::e4b9993d-653f-44fd-acc5-338ce807582c', '{grpc,grpcs,http,https}', NULL, :'kong_workspace_id');
+    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('07232e9f-f860-5659-afcd-cafb8580e6f6','${LOCAL_TIME}','0a79e2bc-6fc3-5d59-bbfa-cc733f836935','${TMP_SETUP_KONG_AUTO_HTTPS_VLD_HOST}:9000',100,NULL, :'kong_workspace_id'); 
+    INSERT INTO plugins (id, created_at, name, consumer_id, service_id, route_id, config, enabled, cache_key, protocols, tags, ws_id) VALUES ('58377e23-5dea-5aaa-9c0a-b056a80381dc', '${LOCAL_TIME}', 'http-log', '6ace2af0-8c2b-5aef-b18d-ff731507b92d', NULL, NULL, '{"method": "POST", "headers": null, "timeout": 10000, "keepalive": 60000, "queue_size": 1, "retry_count": 10, "content_type": "application/json", "flush_timeout": 2, "http_endpoint": "http://127.0.0.1:9000/hooks/async-caddy-cert-to-kong", "custom_fields_by_lua": null}', true, 'plugins:http-log:bb232280-811e-5c51-9f66-f10089b15565::::e4b9993d-653f-44fd-acc5-338ce807582c', '{grpc,grpcs,http,https}', NULL, :'kong_workspace_id');
 EOF
 
+    # INSERT INTO consumers (id, created_at, username, custom_id, tags, ws_id) VALUES ('6ace2af0-8c2b-5aef-b18d-ff731507b92d', '${LOCAL_TIME}', 'webhook:async-caddy-cert', NULL, '{}', :'kong_workspace_id');
     kong start
     kong health
-    kong restart
-
+    
     rouse_openresty
 
     echo_soft_port 80
     echo_soft_port 443
+
+    # 重新更新时间，避免VLD优先级受影响
+    LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
 
 	return $?
 }
@@ -204,8 +206,8 @@ function setup_kong_dashboard()
 
     # 不在本机的情况下，需要输入地址
     local TMP_SETUP_IS_KONG_LOCAL=`lsof -i:8000`
-    if [ -z "${TMP_SETUP_IS_KONG_LOCAL}" ]; then    
-    	input_if_empty "TMP_SETUP_KONG_HOST" "Kong.Host: Please ender ${red}kong kong host address${reset}"
+    if [ -z "${TMP_SETUP_IS_KONG_LOCAL}" ]; then
+    	input_if_empty "TMP_SETUP_KONG_HOST" "Kong.Dashboard.Kong.Host: Please ender ${red}your kong host address${reset}"
     fi
 
 	input_if_empty "TMP_SETUP_KONG_DASHBOARD_DOMAIN" "Kong.Dashboard.Web.Domain: Please ender ${red}kong dashboard web domain${reset}"
@@ -269,14 +271,14 @@ psql -U ${TMP_SETUP_POSTGRESQL_ROOT_USRNAME} -h ${TMP_SETUP_POSTGRESQL_DBADDRESS
     INSERT INTO konga_kong_snapshot_schedules (id,"connection",active,cron,"lastRunAt","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,1,true,'* 1 * * *',NULL,'${LOCAL_TIME}','${LOCAL_TIME}',1,1);
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb',1,true,true,NULL,true,NULL,'${LOCAL_TIME}','${LOCAL_TIME}',NULL,NULL);
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (2,'2d929958-f95d-5365-a997-055c26fd122d',1,true,true,NULL,false,NULL,'${LOCAL_TIME}','${LOCAL_TIME}',NULL,NULL);
-    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (2,'c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',1,true,true,NULL,true,NULL,'${LOCAL_TIME}','${LOCAL_TIME}',NULL,NULL);
+    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (3,'c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',1,true,true,NULL,true,NULL,'${LOCAL_TIME}','${LOCAL_TIME}',NULL,NULL);
     
     \c ${TMP_SETUP_POSTGRESQL_KONG_DATABASE};
     \set kong_workspace_id '${TMP_SETUP_KONG_WORKSPACE_ID}'
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','${LOCAL_TIME}','UPS-LCL-GATEWAY.KONGA','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('941a9b3e-72a0-4b32-854d-a3e282b33711','${LOCAL_TIME}','c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','127.0.0.1:${TMP_SETUP_KONG_DASHBOARD_LOCAL_PORT}',100,NULL, :'kong_workspace_id');
     INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('a45c36b6-ab85-47ad-ad20-022d03ff6996', '${LOCAL_TIME}', '${LOCAL_TIME}', 'SERVICE.KONGA', 5, 'http', 'UPS-LCL-GATEWAY.KONGA', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
-    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441','${LOCAL_TIME}','${LOCAL_TIME}','a45c36b6-ab85-47ad-ad20-022d03ff6996','{http,https}','{}','{${TMP_SETUP_KONG_DASHBOARD_DOMAIN}}','{/}',0,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL, :'kong_workspace_id');
+    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441','${LOCAL_TIME}','${LOCAL_TIME}','a45c36b6-ab85-47ad-ad20-022d03ff6996','{http,https}','{}','{${TMP_SETUP_KONG_DASHBOARD_DOMAIN}}','{/}',1,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL, :'kong_workspace_id');
 EOF
 
     kong reload
@@ -295,21 +297,267 @@ EOF
 
 function rouse_openresty()
 {
-    local TMP_OPENRESTY_NGINX_PATH=`sudo find / -name nginx | grep 'openresty/nginx/sbin'`
+    local TMP_OPENRESTY_NGINX_BIN_PATH=`sudo find / -name nginx | grep 'openresty/nginx/sbin'`
     if [ ! -f "/usr/bin/nginx" ]; then
-        ln -sf ${TMP_OPENRESTY_NGINX_PATH} /usr/bin/nginx 
+        ln -sf ${TMP_OPENRESTY_NGINX_BIN_PATH} /usr/bin/nginx
+        
+        # 修改默认nginx配置性能瓶颈问题
+        local TMP_OPENRESTY_NGINX_CONF_PATH=`dirname ${TMP_OPENRESTY_NGINX_BIN_PATH%/*}`/conf/nginx.conf
+
+sudo tee ${TMP_OPENRESTY_NGINX_CONF_PATH} <<-'EOF'
+#user  nobody;
+worker_processes  auto
+
+#更改Nginx进程的最大打开文件数限制，理论值应该是最多打开文件数（ulimit -n）与nginx进程数相除，该值控制 “too many open files” 的问题
+worker_rlimit_nofile 65535;  #此处为65535/4
+
+#进程文件
+pid        tmp/nginx.pid;
+
+#工作模式与连接数上限
+events {
+    #参考事件模型，use [ kqueue | rtsig | epoll | /dev/poll | select | poll ]; epoll模型是Linux 2.6以上版本内核中的高性能网络I/O模型，如果跑在FreeBSD上面，就用kqueue模型。
+    use epoll;
+    multi_accept on; #告诉nginx收到一个新连接通知后接受尽可能多的连接。
+    accept_mutex off;
+    worker_connections  65535; #单个进程最大连接数（最大连接数=连接数*进程数），1核默认配8000。
+}
+
+http {
+    #文件扩展名与文件类型映射表
+    include mime.types;
+
+    #默认文件类型
+    default_type  text/html;
+
+    #默认编码
+    charset utf-8;
+
+    #日志格式设定
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    log_format  json  '{"@timestamp":"$time_iso8601",'
+                      '"slb_user":"$remote_user",'
+                      '"slb_ip":"$remote_addr",'
+                      '"client_ip":"$http_x_forwarded_for",'
+                      '"server_ip":"$server_addr",'
+                      '"size":$body_bytes_sent,'
+                      '"response_time":$request_time,'
+                      '"domain":"$host",'
+                      '"method":"$request_method",'
+                      '"request_uri":"$request_uri",'
+                      '"url":"$uri",'
+                      '"app_version":"$HTTP_APP_VERSION",'
+                      '"referer":"$http_referer",'
+                      '"agent":"$http_user_agent",'
+                      '"status":"$status",'
+                      '"device_code":"$HTTP_HA",'
+                      '"upstream_response_time":$upstream_response_time,'
+                      '"upstream_addr":"$upstream_addr",'
+                      '"upstream_status":"$upstream_status",'
+                      '"upstream_cache_status":"$upstream_cache_status"}';
+
+    #是否开启重写日志
+    rewrite_log on;
+
+
+    #日志文件缓存
+    #   max:设置缓存中的最大文件描述符数量，如果缓存被占满，采用LRU算法将描述符关闭。
+    #   inactive:设置存活时间，默认是10s
+    #   min_uses:设置在inactive时间段内，日志文件最少使用多少次后，该日志文件描述符记入缓存中，默认是1次
+    #   valid:设置检查频率，默认60s
+    #   off：禁用缓存
+    #open_log_file_cache max=1000 inactive=20s valid=1m min_uses=2;
+
+    #关闭在错误页面中的nginx版本数字
+    server_tokens off;
+
+    #服务器名字的hash表大小
+    server_names_hash_bucket_size 128; 
+
+    #上传文件大小限制，一般一个请求的头部大小不会超过1k
+    client_header_buffer_size 4k; 
+
+    #设定请求缓存
+    large_client_header_buffers 4 64k; 
+
+    #设定请求缓存
+    client_max_body_size 8m; 
+
+    #开启目录列表访问，合适下载服务器，默认关闭。
+    autoindex off; 
+
+    #开启高效文件传输模式，sendfile指令指定nginx是否调用sendfile函数来输出文件。
+    #对于普通应用设为 on，如果用来进行下载等应用磁盘IO重负载应用，可设置为off，以平衡磁盘与网络I/O处理速度，降低系统的负载。
+    #注意：如果图片显示不正常把这个改成off。
+    sendfile        on;
+    sendfile_max_chunk 512k;  #该指令可以减少阻塞方法 sendfile() 调用的所花费的最大时间，每次无需发送整个文件，只发送 512KB 的块数据
+
+    #通用代理设置
+    proxy_headers_hash_max_size 51200; #设置头部哈希表的最大值，不能小于你后端服务器设置的头部总数
+    proxy_headers_hash_bucket_size 6400; #设置头部哈希表大小
+
+    tcp_nopush on; #防止网络阻塞(告诉nginx在一个数据包里发送所有头文件，而不一个接一个的发送)
+    tcp_nodelay on; #防止网络阻塞(告诉nginx不要缓存数据，而是一段一段的发送，当需要及时发送数据时，就应该给应用设置这个属性)
+
+    #长连接超时时间，单位是秒
+    keepalive_timeout 15; 
+
+    #设置请求头的超时时间
+    client_header_timeout 5;
+
+    #设置请求体的超时时间
+    client_body_timeout 10;
+
+    #关闭不响应的客户端连接。这将会释放那个客户端所占有的内存空间。
+    reset_timedout_connection on;
+
+    #指定客户端的响应超时时间。这个设置不会用于整个转发器，而是在两次客户端读取操作之间。如果在这段时间内，客户端没有读取任何数据，nginx就会关闭连接。
+    send_timeout 10; 
+
+    #为FastCGI缓存指定一个路径，目录结构等级，关键字区域存储时间和非活动删除时间。
+    #fastcgi_cache_path /clouddisk/attach/openresty/fastcgi_cache levels=1:2 keys_zone=cache_php:64m inactive=5m max_size=10g;  
+
+    #gzip模块设置
+    gzip on; #开启gzip压缩输出
+    gzip_disable 'msie6'; #为指定的客户端禁用gzip功能。我们设置成IE6或者更低版本以使我们的方案能够广泛兼容。
+    gzip_proxied any; #允许或者禁止压缩基于请求和响应的响应流。我们设置为any，意味着将会压缩所有的请求。
+    gzip_min_length 1k; #最小压缩文件大小
+    gzip_buffers 16 8k; #压缩缓冲区
+    gzip_http_version 1.0; #压缩版本（默认1.1，前端如果是squid2.5请使用1.0）
+    gzip_comp_level 6; #压缩等级
+    gzip_types text/plain 
+               text/css 
+               text/xml 
+               text/javascript 
+               application/json 
+               application/javascript
+               application/x-httpd-php 
+               application/x-javascript 
+               application/xml 
+               application/xml+rss 
+               image/jpeg 
+               image/gif 
+               image/png
+               image/svg+xml;
+
+    #设置需要压缩的数据格式
+    gzip_vary on;
+
+    #limit_conn_zone $binary_remote_addr zone=addr:10m; #开启限制IP连接数的时候需要使用
+    #limit_conn_log_level info;
+
+    #指定DNS服务器的地址
+    resolver 223.5.5.5 223.6.6.6;
+
+    #定义一个名为 default 的线程池，拥有 32 个工作线程，任务队列容纳的最大请求数为 65536。一旦任务队列过载，NGINX日志会报错并拒绝这一请求
+    #thread_pool default threads=32 max_queue=65536;
+
+    # cache informations about file descriptors, frequently accessed files 
+    # can boost performance, but you need to test those values 
+    open_file_cache max=65536 inactive=10s; # 打开缓存的同时也指定了缓存最大数目，以及缓存的时间
+    open_file_cache_valid 30s; #在open_file_cache中指定检测正确信息的间隔时间
+    open_file_cache_min_uses 1; #定义了open_file_cache中指令参数不活动时间期间里最小的文件数
+    open_file_cache_errors on; #指定了当搜索一个文件时是否缓存错误信息，也包括再次给配置中添加文件
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        #charset koi8-r;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            root   html;
+            index  index.html index.htm;
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+
+        # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+        #
+        #location ~ \.php$ {
+        #    proxy_pass   http://127.0.0.1;
+        #}
+
+        # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+        #
+        #location ~ \.php$ {
+        #    root           html;
+        #    fastcgi_pass   127.0.0.1:9000;
+        #    fastcgi_index  index.php;
+        #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+        #    include        fastcgi_params;
+        #}
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        #location ~ /\.ht {
+        #    deny  all;
+        #}
+    }
+
+
+    # another virtual host using mix of IP-, name-, and port-based configuration
+    #
+    #server {
+    #    listen       8000;
+    #    listen       somename:8080;
+    #    server_name  somename  alias  another.alias;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+
+    # HTTPS server
+    #
+    #server {
+    #    listen       443 ssl;
+    #    server_name  localhost;
+
+    #    ssl_certificate      cert.pem;
+    #    ssl_certificate_key  cert.key;
+
+    #    ssl_session_cache    shared:SSL:1m;
+    #    ssl_session_timeout  5m;
+
+    #    ssl_ciphers  HIGH:!aNULL:!MD5;
+    #    ssl_prefer_server_ciphers  on;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+}
+
+EOF
     fi
     nginx -v
     
-    local TMP_OPENRESTY_RESTY_PATH=`sudo find / -name resty | grep 'openresty/bin'`
+    local TMP_OPENRESTY_RESTY_BIN_PATH=`sudo find / -name resty | grep 'openresty/bin'`
     if [ ! -f "/usr/bin/resty" ]; then
-        ln -sf ${TMP_OPENRESTY_RESTY_PATH} /usr/bin/resty 
+        ln -sf ${TMP_OPENRESTY_RESTY_BIN_PATH} /usr/bin/resty 
     fi
     resty -v
 
-    local TMP_OPENRESTY_LUAJIT_PATH=`sudo find / -name luajit | grep 'openresty/luajit/bin'`
+    local TMP_OPENRESTY_LUAJIT_BIN_PATH=`sudo find / -name luajit | grep 'openresty/luajit/bin'`
     if [ ! -f "/usr/bin/luajit" ]; then
-        ln -sf ${TMP_OPENRESTY_LUAJIT_PATH} /usr/bin/luajit 
+        ln -sf ${TMP_OPENRESTY_LUAJIT_BIN_PATH} /usr/bin/luajit 
     fi
     luajit -v
 
@@ -321,6 +569,9 @@ function rouse_openresty()
 function check_setup_kong()
 {
     path_not_exits_action "${TMP_SETUP_KONG_DIR}" "setup_kong" "Kong was installed"
+    
+    # 绑定证书同步，需装
+    source scripts/web/webhook.sh
 
 	return $?
 }

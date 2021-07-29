@@ -232,6 +232,7 @@ function resolve_unmount_disk () {
 
 	local TMP_FUNC_TITLE="MountDisk"
 	local TMP_ARR_MOUNT_PATH_PREFIX_STR=${1:-}
+	# http://wxnacy.com/2018/05/26/shell-split/
 	local TMP_ARR_MOUNT_PATH_PREFIX=(${TMP_ARR_MOUNT_PATH_PREFIX_STR//,/ })
 	
 	# 获取当前磁盘的格式，例如sd,vd

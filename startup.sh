@@ -27,6 +27,9 @@ function bootstrap() {
     chmod +x -R special/*.sh
 	source special/slack.sh
 
+    #https://www.cnblogs.com/wu-wu/p/11214503.html
+    path_not_exits_create "${CRTB_LOGS_DIR}"
+
 	choice_type
 }
 
@@ -34,7 +37,7 @@ function choice_type()
 {
 	echo_title
 
-	exec_if_choice "CHOICE_CTX" "Please choice your startup type" "Svn.Updater,Svn.Packager,Kong.Api,Exit" "$TMP_SPLITER" "special"
+	exec_if_choice "CHOICE_CTX" "Please choice your startup type" "Svn.Updater,Svn.Packager,Kong.Api,Auto.Cert,Exit" "$TMP_SPLITER" "special"
 
 	return $?
 }

@@ -53,7 +53,7 @@ function setup_$soft_name()
 	ln -sf ${TMP_$soft_upper_short_name_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_DATA_DIR}
 
 	# 环境变量或软连接
-	echo "$soft_upper_name_HOME=${TMP_$soft_upper_name_SETUP_DIR}" >> /etc/profile
+	echo "$soft_upper_name_HOME=${TMP_$soft_upper_short_name_SETUP_DIR}" >> /etc/profile
 	echo 'PATH=$$soft_upper_name_HOME/bin:$PATH' >> /etc/profile
 	echo "export PATH $soft_upper_name_HOME" >> /etc/profile
 

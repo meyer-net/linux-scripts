@@ -11,7 +11,7 @@ function check_config()
 {
     convert_path "TMP_CURRENT_RC_FILE_PATH"
     local TMP_RC_FILE_CONFIG_DIR=`dirname $TMP_CURRENT_RC_FILE_PATH`
-    path_not_exits_action "$TMP_RC_FILE_CONFIG_DIR" "mkdir -pv $TMP_RC_FILE_CONFIG_DIR"
+    path_not_exits_create "$TMP_RC_FILE_CONFIG_DIR"
     path_not_exits_action "$TMP_CURRENT_RC_FILE_PATH" "fill_config"
     
     #路径转换

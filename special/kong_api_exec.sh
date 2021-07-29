@@ -4,7 +4,7 @@
 ####################################################################################
 
 #配置RC文件
-TMP_CURRENT_RC_FILE_NAME=".kong-apirc"
+TMP_CURRENT_RC_FILE_NAME="~/.kong-apirc"
 
 set -o pipefail
 set -o errexit

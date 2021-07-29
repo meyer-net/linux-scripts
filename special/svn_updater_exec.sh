@@ -146,11 +146,11 @@ function init_params() {
     # must defined，you may declare ENV vars in /etc/profile.d/template.sh
     if [ -z "${SVN_UPDATE_LOCAL_ROOT_DIR:-}" ]; then
         echo 'error: Please configure environment variable: ' > /dev/stderr
-        echo '  SVN_UPDATE_LOCAL_ROOT_DIR' > /dev/stderr
+        echo '  $ SVN_UPDATE_LOCAL_ROOT_DIR' > /dev/stderr
         exit 2
     fi
 
-    # 最终确认版参数
+    # 最终确认版参数（遇到指定了参数得情况，则忽略环境变量中得赋值）
     local SVN_UPDATE_IGNORE_CUSTOM_DIRS=`echo "${@}" | sed "s@ @|@g"`
     SVN_UPDATE_IGNORE_FINAL_DIRS=${SVN_UPDATE_IGNORE_CUSTOM_DIRS:-${SVN_UPDATE_IGNORE_DIRS}}
 
@@ -180,7 +180,7 @@ function bootstrap() {
         # 变更slack附加环境变量
         sed -i "s@^TMP_COVER_RC_FILE_NAME=.*@TMP_COVER_RC_FILE_NAME=\"$TMP_CURRENT_RC_FILE_NAME\"@g" $SLACK_PATH
 
-        # 填写地址变量加载
+        # 没加载到则重新从加载后得环境变量中读取
         SVN_UPDATE_IGNORE_DIRS=${SVN_UPDATE_IGNORE_SOURCE_DIRS:-${SVN_UPDATE_IGNORE_DIRS}}
     fi
 

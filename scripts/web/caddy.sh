@@ -11,6 +11,8 @@
 # 软件安装名称：caddy
 # 软件授权用户名称&组：caddy/caddy_group
 #------------------------------------------------
+# 备注：
+#      本caddy安装，全程辅助kong做自动https证书使用，不独立占用80,443
 # 相关：
 #      curl -s https://getcaddy.com | bash -s personal
 
@@ -167,7 +169,6 @@ function increase_auto_https_conf()
 
     cd ${TMP_CDY_DATA_DIR}
 
-					# "listen": [":60080",":60443"],
     echo "----------------------------------------------------------------"
 sudo tee ${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 {
@@ -175,6 +176,7 @@ sudo tee ${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 		"http": {
 			"servers": {
 				"${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}": {
+					"listen": [":60080",":60443"],
 					"routes": [
 						{
 							"match": [{
@@ -186,6 +188,19 @@ sudo tee ${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 							}]
 						}
 					]
+				}
+			}
+		}
+	},
+	"logging": {
+		"logs": {
+			"default": {
+				"writer": {
+					"filename": "${TMP_CDY_LOGS_DIR}/${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.log",
+					"output": "file",
+					"roll_keep": 90,
+					"roll_keep_days": 1,
+					"roll_size_mb": 123
 				}
 			}
 		}
@@ -225,6 +240,8 @@ function exec_step_caddy()
 
 	boot_caddy
 
+    echo_soft_port 2019
+
 	return $?
 }
 
@@ -232,6 +249,9 @@ function exec_step_caddy()
 function check_setup_caddy()
 {
     soft_yum_check_action "caddy" "exec_step_caddy"
+
+	# 开放API出去，必装
+    source scripts/web/webhook.sh
 
 	return $?
 }

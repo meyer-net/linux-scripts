@@ -36,11 +36,6 @@ function init_params() {
 
     # for read all in params, col to row
     dynamic_variables=(${TMP_CURRENT_VARIABLE2:-})
-    if [ "${1::1}" == '#' ] || [ "${1::1}" == '@' ]; then
-        # explode by comma
-        IFS=',' read -r -a dynamic_variables <<< "${1}"
-        shift
-    fi
     
     # get else left
     connect_variables=${@}
@@ -58,11 +53,11 @@ function bootstrap() {
 
     cd ${__dir}
 
-    if [ -f $(cd; pwd)/${TMP_CURRENT_RC_FILE_NAME} ]; then
-        . $(cd; pwd)/${TMP_CURRENT_RC_FILE_NAME}
+    if [ -f ${__conf}/${TMP_CURRENT_RC_FILE_NAME} ]; then
+        . ${__conf}/${TMP_CURRENT_RC_FILE_NAME}
 
-        # 变更slack附加环境变量
-        sed -i "s@^TMP_COVER_RC_FILE_NAME=.*@TMP_COVER_RC_FILE_NAME=\"${TMP_CURRENT_RC_FILE_NAME}\"@g" $SLACK_PATH
+        # 变更slack附加环境变量（用途为了解决当前slack通知得差异性问题，待修改为调用脚本区分）
+        sed -i "s@^TMP_COVER_RC_FILE_NAME=.*@TMP_COVER_RC_FILE_NAME=\"${TMP_CURRENT_RC_FILE_NAME}\"@g" ${SLACK_PATH}
     fi
 
     declare -a dynamic_variables
@@ -71,7 +66,7 @@ function bootstrap() {
     exec_program
     
     # 还原slack附加环境变量
-    sed -i "s@^TMP_COVER_RC_FILE_NAME=.*@TMP_COVER_RC_FILE_NAME=\"\"@g" $SLACK_PATH
+    sed -i "s@^TMP_COVER_RC_FILE_NAME=.*@TMP_COVER_RC_FILE_NAME=\"\"@g" ${SLACK_PATH}
 
     return $?
 }
