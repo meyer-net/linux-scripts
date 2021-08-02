@@ -75,14 +75,16 @@ function conf_webhook()
 	local TMP_WBH_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
     local TMP_WBH_DATA_HOOKS_DIR=${TMP_WBH_DATA_DIR}/hooks
     local TMP_WBH_DATA_SCRIPTS_DIR=${TMP_WBH_DATA_DIR}/scripts
+	local TMP_WBH_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
 
     mkdir -pv ${TMP_WBH_DATA_HOOKS_DIR}
     mkdir -pv ${TMP_WBH_DATA_SCRIPTS_DIR}
+    mkdir -pv ${TMP_WBH_DATA_CACHE_DIR}
 
     # 本机装有caddy
     local TMP_WBH_CDY_HOOKS_JSON="{}"
     local TMP_IS_CDY_LOCAL=`lsof -i:2019`
-    if [ -z "${TMP_IS_CDY_LOCAL}" ]; then    
+    if [ -n "${TMP_IS_CDY_LOCAL}" ]; then    
         TMP_WBH_CDY_HOOKS_JSON="{
             \"id\": \"cor-caddy-api\",  \
             \"execute-command\": \"${TMP_WBH_DATA_SCRIPTS_DIR}/cor-caddy-api.sh\",  \
@@ -95,16 +97,16 @@ function conf_webhook()
             }]  \
         }"
         
-        conf_webhook_cor_caddy_api ${1}
+        conf_webhook_cor_caddy_api "${TMP_WBH_SETUP_DIR}"
     fi
 
     # 本机装有kong
     local TMP_WBH_KONG_HOOKS_JSON="{}"
     local TMP_IS_KONG_LOCAL=`lsof -i:8000`
-    if [ -z "${TMP_IS_KONG_LOCAL}" ]; then    
+    if [ -n "${TMP_IS_KONG_LOCAL}" ]; then    
         TMP_WBH_KONG_HOOKS_JSON="{
             \"id\": \"async-caddy-cert-to-kong\",  \
-            \"execute-command\": \"${TMP_WBH_DATA_SCRIPTS_DIR}/async-caddy-cert-to-kong.sh\",  \
+            \"execute-command\": \"${TMP_WBH_DATA_SCRIPTS_DIR}/buffer_for_request_host.sh\",  \
             \"http-methods\": [\"Post \"],  \
             \"command-working-directory\": \"${TMP_WBH_LOGS_DIR}\",  \
             \"pass-arguments-to-command\": [{  \
@@ -121,16 +123,16 @@ function conf_webhook()
             }  \
         }"
         
-        conf_webhook_async_caddy_cert_to_kong ${1}
+        conf_webhook_async_caddy_cert_to_kong "${TMP_WBH_SETUP_DIR}"
     fi
 
-    local TMP_WBH_BOOT_HOOKS_JSON=`echo "[${TMP_WBH_CDY_HOOKS_JSON},${TMP_WBH_KONG_HOOKS_JSON}]" | sed 's@{},*@@g'`
+    local TMP_WBH_BOOT_HOOKS_JSON=`echo "[${TMP_WBH_CDY_HOOKS_JSON},${TMP_WBH_KONG_HOOKS_JSON}]" | jq | sed 's@{},*@@g'`
     
     echo "##############################################################" 
     # "source": "entire-payload" #通过此打印全部
-sudo tee ${TMP_WBH_DATA_HOOKS_DIR}/async-caddy-cert-to-kong.json <<-EOF
+sudo tee ${TMP_WBH_DATA_HOOKS_DIR}/webhook_boot.json <<-EOF
 ${TMP_WBH_BOOT_HOOKS_JSON}
-EOF    
+EOF
     echo "##############################################################" 
 
     chmod +x ${TMP_WBH_DATA_SCRIPTS_DIR}/*.sh
@@ -138,7 +140,7 @@ EOF
 	return $?
 }
 
-# 配置webhook，辅助caddy未有api
+# 配置webhook，辅助caddy未有api（未寻到）
 # 参数1：安装目录
 function conf_webhook_cor_caddy_api()
 {
@@ -150,58 +152,54 @@ function conf_webhook_cor_caddy_api()
 	local TMP_WBH_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
     local TMP_WBH_DATA_HOOKS_DIR=${TMP_WBH_DATA_DIR}/hooks
     local TMP_WBH_DATA_SCRIPTS_DIR=${TMP_WBH_DATA_DIR}/scripts
+	local TMP_WBH_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
 
-    echo "--------------------------------------------------------------" 
+    echo "+--------------------------------------------------------------+" 
     
 sudo tee ${TMP_WBH_DATA_SCRIPTS_DIR}/cor-caddy-api.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook script for cor caddy api
-# bak：
-# TMP_CERT_DATA_KEY_FROM_CDY_FORMAT=`echo \${TMP_CERT_DATA_KEY_FROM_CDY} | sed ':a;N;$!ba;s@\n@\\\\n@g'`
-# TMP_CERT_DATA_CRT_FROM_CDY_FORMAT=`echo \${TMP_CERT_DATA_CRT_FROM_CDY} | sed ':a;N;$!ba;s@\n@\\\\n@g'`
-#
-#  | jq ".key_fmt=\"\${TMP_CERT_DATA_KEY_FROM_CDY_FORMAT}\""  \
-#  | jq ".crt_fmt=\"\${TMP_CERT_DATA_CRT_FROM_CDY_FORMAT}\""
 #------------------------------------------------
 # 忽略非域名请求（简单的验证，足够用）
-if [ `echo \${1} | tr -cd "." | wc -c` -eq 3 ]; then
+if [ \`echo \${1} | tr -cd "." | wc -c\` -eq 3 ]; then
     return
 fi
 
 function execute() {
     local TMP_COR_CDY_CERT_HOST=\$1 #request.headers.host
+    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@log@g"\`
 
     # 未运行caddy的情况下，不执行脚本
-    local TMP_IS_CDY_LOCAL=`lsof -i:2019`
+    local TMP_IS_CDY_LOCAL=\`lsof -i:2019\`
     if [ -z "\${TMP_IS_CDY_LOCAL}" ]; then    
-        echo "Webhook.Caddy.Cor: When getting cert of '\${TMP_COR_CDY_CERT_HOST}'，Can't find caddy server。request break。" >> ${TMP_WBH_LOGS_DIR}/async-caddy-cert-to-kong.log
+        echo "Webhook.Caddy.Cor: When getting cert of '\${TMP_COR_CDY_CERT_HOST}'，Can't find caddy server。request break。" >> ${TMP_THIS_LOG_PATH}
         echo "{}"
         return
     fi
 
-    local TMP_CERT_DATA_DIR=`find / -name \${TMP_COR_CDY_CERT_HOST}.key -user caddy 2> /dev/null | grep certificates | xargs -I {} dirname {}`
+    local TMP_CERT_DATA_DIR=\`find / -name \${TMP_COR_CDY_CERT_HOST}.key -user caddy 2> /dev/null | grep certificates | xargs -I {} dirname {}\`
     
     # 本机不存在数据的情况下，则不执行脚本
     if [ -z "\${TMP_CERT_DATA_DIR}" ]; then    
-        echo "Webhook.Caddy.Cor: When getting cert of '\${TMP_COR_CDY_CERT_HOST}'，Can't find caddy data dir。request break。" >> ${TMP_WBH_LOGS_DIR}/async-caddy-cert-to-kong.log
+        echo "Webhook.Caddy.Cor: When getting cert of '\${TMP_COR_CDY_CERT_HOST}'，Can't find caddy data dir。request break。" >> ${TMP_THIS_LOG_PATH}
         echo "{}"
         return
     fi
 
-    local TMP_CERT_DATA_KEY_FROM_CDY=`cat \${TMP_CERT_DATA_DIR}/\${TMP_COR_CDY_CERT_HOST}.key`
-    local TMP_CERT_DATA_CRT_FROM_CDY=`cat \${TMP_CERT_DATA_DIR}/\${TMP_COR_CDY_CERT_HOST}.crt`
+    local TMP_CERT_DATA_KEY_FROM_CDY=\`cat \${TMP_CERT_DATA_DIR}/\${TMP_COR_CDY_CERT_HOST}.key\`
+    local TMP_CERT_DATA_CRT_FROM_CDY=\`cat \${TMP_CERT_DATA_DIR}/\${TMP_COR_CDY_CERT_HOST}.crt\`
 
-    echo "{}"  \
-    | jq ".key=\"\${TMP_CERT_DATA_KEY_FROM_CDY}\""  \
+    echo "{}"  \\
+    | jq ".key=\"\${TMP_CERT_DATA_KEY_FROM_CDY}\""  \\
     | jq ".crt=\"\${TMP_CERT_DATA_CRT_FROM_CDY}\""
 }
 
-echo
 execute "\$1"
+echo
 EOF
 
-    echo "--------------------------------------------------------------" 
+    echo "+--------------------------------------------------------------+" 
 
 	return $?
 }
@@ -218,6 +216,7 @@ function conf_webhook_async_caddy_cert_to_kong()
 	local TMP_WBH_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
     local TMP_WBH_DATA_HOOKS_DIR=${TMP_WBH_DATA_DIR}/hooks
     local TMP_WBH_DATA_SCRIPTS_DIR=${TMP_WBH_DATA_DIR}/scripts
+	local TMP_WBH_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
 
     # 不在本机的情况下，需要输入地址
     local TMP_SETUP_IS_KONG_LOCAL=`lsof -i:8000`
@@ -225,11 +224,42 @@ function conf_webhook_async_caddy_cert_to_kong()
     	input_if_empty "TMP_SETUP_KONG_HOST" "Webhook.Kong.Host: Please ender ${red}your kong host address${reset}"
     fi
 
-sudo tee ${TMP_WBH_DATA_SCRIPTS_DIR}/async-caddy-cert-to-kong.sh <<-EOF
+    echo "+--------------------------------------------------------------+" 
+    # 用于记录证书已刷新，记录域名的脚本（接收内容时触发，相当于简单的生产者，buffer）
+    sudo tee ${TMP_WBH_DATA_SCRIPTS_DIR}/buffer_for_request_host.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
-#  Project Web hook Script
+#  Project Web hook Script - for receive request
 #------------------------------------------------
+function execute() {
+    local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
+    local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
+    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@log@g"\`
+    local TMP_THIS_CACHE_PATH=${TMP_WBH_DATA_CACHE_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@cache@g"\`
+
+    # 忽略非域名请求（简单的验证，足够用）
+    if [ \`echo \${TMP_ASYNC_CADDY_CERT_HOST} | tr -cd "." | wc -c\` -eq 3 ]; then
+        echo "This'nt a host for use '\${TMP_ASYNC_CADDY_CERT_HOST}', so will be return" >> \${TMP_THIS_LOG_PATH}
+        return
+    fi
+
+    # 写入请求域名，等待消费者处理
+    echo "\${TMP_ASYNC_CADDY_CERT_HOST}" ${TMP_THIS_CACHE_PATH}
+    echo "Host of '\${TMP_ASYNC_CADDY_CERT_HOST}' buffered" >> \${TMP_THIS_LOG_PATH}
+}
+
+execute "\$1"
+echo
+EOF
+
+    # 用于同步证书内容，删除记录域名的脚本（每天定时3次触发，相当于消费者，消费buffer）
+    sudo tee ${TMP_WBH_DATA_SCRIPTS_DIR}/async-caddy-cert-to-kong.sh <<-EOF
+#!/bin/sh
+#------------------------------------------------
+#  Project Web hook Script - for async cert
+#------------------------------------------------
+TMP_REQUEST_HOST_CACHE_PATH=${TMP_WBH_DATA_CACHE_DIR}/buffer_for_request_host.cache
+
 # 添加/更新 Kong-Certificates
 # 参数1：证书ID
 # 参数2：证书绑定域名
@@ -242,77 +272,108 @@ function put_certificates()
     local tmp_certificates_cert="\${3:-}"
     local tmp_certificates_key="\${4:-}"
 
-    local request_code=`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_SETUP_KONG_HOST}:8000/certificates/\${tmp_certificates_id}  \
-        -F "cert=`echo -e \${tmp_certificates_cert}"`  \
-        -F "key=`echo -e \${tmp_certificates_key}"`  \
-        -F "tags[]=by-webhook-async"  \
-        -F "tags[]=by-caddy-acme"  \
-        -F "tags[]=\${tmp_certificates_snis}"  \
-        -F "snis[]=\${tmp_certificates_snis}"`
+    local request_code=\`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_SETUP_KONG_HOST}:8000/certificates/\${tmp_certificates_id}  \\
+        -F "cert=\`echo -e \${tmp_certificates_cert}\`"  \\
+        -F "key=\`echo -e \${tmp_certificates_key}\`"  \\
+        # -F "tags[]=by-webhook-async"  \\
+        # -F "tags[]=by-caddy-acme"  \\
+        -F "tags[]=\${tmp_certificates_snis}"  \\
+        -F "snis[]=\${tmp_certificates_snis}"\`
         
     if [ "\${request_code::1}" != "2" ]; then
     	echo "Webhook.PutCertificates: Failure, remote response '\${request_code}'."
     	exit 9
     fi
+}
 
-	return $?
+# 添加/更新 Kong-Certificates-att
+# 参数1：证书ID
+# 参数2：证书绑定域名
+function put_certificates_att()
+{
+    local tmp_certificates_id="\${1:-}"
+    local tmp_certificates_snis="\${2:-}"
+
+    local request_code=\`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_SETUP_KONG_HOST}:8000/certificates/\${tmp_certificates_id}  \\
+        -d "tags[]=by-webhook-async"  \\
+        -d "tags[]=by-caddy-acme"  \\
+        -d "tags[]=\${tmp_certificates_snis}"\`
+        
+    if [ "\${request_code::1}" != "2" ]; then
+    	echo "Webhook.PutCertificatesAtt: Failure, remote response '\${request_code}'."
+    	# exit 9
+    fi
 }
 
 function execute() {
-    local LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
+    local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
     local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
+    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@log@g"\`\
 
-    # 忽略非域名请求（简单的验证，足够用）
-    if [ `echo \${TMP_ASYNC_CADDY_CERT_HOST} | tr -cd "." | wc -c` -eq 3 ]; then
-        return
-    fi
+    #获取CADDY证书数据
+    local TMP_CERT_DATA_FROM_CDY=\`curl -s ${TMP_SETUP_CDY_HOST}:9000/hooks/cor-caddy-api?host=\${TMP_ASYNC_CADDY_CERT_HOST}\`
+    local TMP_CERT_DATA_KEY_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key"\`
 
-    #获取CADDY证书数据`
-    TMP_CERT_DATA_FROM_CDY=`curl -s ${TMP_SETUP_CDY_HOST}:9000/hooks/cor-caddy-api?host=\${TMP_ASYNC_CADDY_CERT_HOST}`
-    TMP_CERT_DATA_KEY_FROM_CDY=`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key"`
-
-    # #??? 重新判断
-    # # caddy未生成证书时，保持始终等待，因该web请求只执行了一次。此处待修改为临时缓存，加入定时任务队列(否则一直睡眠可能产生请求超时问题)
-    # while [ ! -f "\${TMP_CERT_DATA_KEY_PATH}" ]; do
-    #     echo "Can't find caddy cert of '\${TMP_ASYNC_CADDY_CERT_HOST}', sleep start" >> \${TMP_WBH_LOGS_DIR}/async-caddy-cert-to-kong.log
-    #     sleep 10
-    # done
-
-    #获取KONG证书数据`
-    TMP_CERT_DATA_FROM_KONG=`curl -s ${TMP_SETUP_KONG_HOST}:8000/certificates?tags=\${TMP_ASYNC_CADDY_CERT_HOST}`
-    TMP_CERT_DATA_KEY_FROM_KONG=`echo "\${TMP_CERT_DATA_FROM_KONG}" | jq ".data[].key"`
+    #获取KONG证书数据
+    TMP_CERT_DATA_FROM_KONG=\`curl -s ${TMP_SETUP_KONG_HOST}:8000/certificates?tags=\${TMP_ASYNC_CADDY_CERT_HOST}\`
+    TMP_CERT_DATA_KEY_FROM_KONG=\`echo "\${TMP_CERT_DATA_FROM_KONG}" | jq ".data[].key"\`
 
     # 对比key文件，判断是否更新
     if [ "\${TMP_CERT_DATA_KEY_FROM_CDY}" != "\${TMP_CERT_DATA_KEY_FROM_KONG}" ]; then
-        TMP_CERT_DATA_KEY_FROM_CDY=`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key" | xargs -I {} echo -e {}`
-        TMP_CERT_DATA_CRT_FROM_CDY=`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".crt" | xargs -I {} echo -e {}`
-        sudo tee \${TMP_WBH_LOGS_DIR}/async-caddy-cert-to-kong.log <<-EOF
+        TMP_CERT_DATA_KEY_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key" | xargs -I {} echo -e {}\`
+        TMP_CERT_DATA_CRT_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".crt" | xargs -I {} echo -e {}\`
 
-    Refresh cert at '\${LOCAL_TIME}'
-    ----------------------------------------------------------------
-    ID：\${TMP_CERT_DATA_ID_FROM_KONG}
-    Host&Tags：\${TMP_ASYNC_CADDY_CERT_HOST}
-    Key：
-    \${TMP_CERT_DATA_KEY_FROM_CDY}
-    Cert：
-    \${TMP_CERT_DATA_CRT_FROM_CDY}
-    ----------------------------------------------------------------
-
-    \EOF
-
-        TMP_CERT_DATA_ID_FROM_KONG=`echo "\${TMP_CERT_DATA_FROM_KONG}" | jq ".data[].id"`
-        TMP_CERT_DATA_ID_FINAL=\${TMP_CERT_DATA_ID_FROM_KONG:-`cat /proc/sys/kernel/random/uuid`}
+        TMP_CERT_DATA_ID_FROM_KONG=\`echo "\${TMP_CERT_DATA_FROM_KONG}" | jq ".data[].id"\`
+        TMP_CERT_DATA_ID_FINAL=\${TMP_CERT_DATA_ID_FROM_KONG:-\`cat /proc/sys/kernel/random/uuid\`}
         
         put_certificates "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
+
+        # 打印日志    
+        sudo tee \${TMP_THIS_LOG_PATH} <<-\EOF
+    Refresh cert at '\${LOCAL_TIME}'
+----------------------------------------------------------------
+|ID：\${TMP_CERT_DATA_ID_FROM_KONG}
+|-
+|Host&Tags：\${TMP_ASYNC_CADDY_CERT_HOST}
+|-
+|Key：
+|\${TMP_CERT_DATA_KEY_FROM_CDY}
+|-
+|Cert：
+|\${TMP_CERT_DATA_CRT_FROM_CDY}
+----------------------------------------------------------------
         
+        # 无关紧要的标记更新
+        put_certificates_att "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}"
+
+\EOF
+
     fi
 }
 
-echo
-execute "\$1"
-EOF
+function execute() {
+    while read line
+    do
+        # 忽略非域名请求（简单的验证，足够用）
+        if [ \`echo \${line} | tr -cd "." | wc -c\` -eq 3 ]; then
+            continue
+        fi
 
-    echo "--------------------------------------------------------------" 
+        async_crt "\${line}"
+                
+        # 如果失败不会执行到此处，脚本会在前面直接退出
+        sed -i "/^\${line}\$/d" \${TMP_REQUEST_HOST_CACHE_PATH}
+    done < \${TMP_REQUEST_HOST_CACHE_PATH}
+}
+
+execute "\$1"
+echo
+EOF
+    
+    # 每天凌晨，12点，18点各执行1次
+    echo "0 0/12/18 * * * ${TMP_WBH_DATA_SCRIPTS_DIR}/async-caddy-cert-to-kong.sh >> ${TMP_WBH_LOGS_DIR}/async-caddy-cert-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
+    systemctl restart crond
+    echo "+--------------------------------------------------------------+" 
 
 	return $?
 }
@@ -328,13 +389,15 @@ function boot_webhook()
     bin/webhook -version
 
 	# 当前启动命令
-	bin/webhook -hooks data/hooks/async-caddy-cert-to-kong.json -verbose -hotreload
+	nohup bin/webhook -hooks data/hooks/webhook_boot.json -verbose -hotreload > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
-    echo_startup_config "webhook" "${TMP_WBH_SETUP_DIR}" "bin/webhook -hooks data/hooks/async-caddy-cert-to-kong.json -verbose -hotreload" "" "1"
+    echo_startup_config "webhook" "${TMP_WBH_SETUP_DIR}" "bin/webhook -hooks data/hooks/webhook_boot.json -verbose" "" "1"
 
     # 开放端口
     echo_soft_port 9000
+
+    cat logs/boot.log
 
 	return $?
 }

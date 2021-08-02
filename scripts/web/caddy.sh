@@ -80,7 +80,7 @@ function setup_caddy()
 function conf_caddy()
 {
     echo "------------------------------------------------------------------"
-    # EOF使用单引号则禁用变量
+    # EOF使用单引号则禁用变量，实际有了json此处就被禁用了
     sudo tee ${TMP_CDY_LNK_ETC_DIR}/Caddyfile <<-EOF
 # The Caddyfile is an easy way to configure your Caddy web server.
 #
@@ -163,6 +163,7 @@ function setup_plugin_caddy()
 }
 
 # 添加自动https配置
+# 参考：https://caddyserver.com/docs/json
 function increase_auto_https_conf()
 {
     local TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN=${1:-"localhost"}
@@ -170,24 +171,19 @@ function increase_auto_https_conf()
     cd ${TMP_CDY_DATA_DIR}
 
     echo "----------------------------------------------------------------"
-sudo tee ${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
+sudo tee Caddyfile.json <<-EOF
 {
 	"apps": {
 		"http": {
+			"http_port": 60080,
+			"https_port": 60443,
 			"servers": {
-				"${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}": {
+				"autohttps": {
 					"listen": [":60080",":60443"],
-					"routes": [
-						{
-							"match": [{
-								"host": ["${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}"]
-							}],
-							"handle": [{
-								"handler": "static_response",
-								"body": "Welcome to my security site of '${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}'!"
-							}]
-						}
-					]
+					"logs": {
+						"default_logger_name": "autohttps.log",
+						"logger_names": {}
+					}
 				}
 			}
 		}
@@ -196,11 +192,11 @@ sudo tee ${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 		"logs": {
 			"default": {
 				"writer": {
-					"filename": "${TMP_CDY_LOGS_DIR}/${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.log",
+					"filename": "${TMP_CDY_LOGS_DIR}/caddy.log",
 					"output": "file",
 					"roll_keep": 90,
 					"roll_keep_days": 1,
-					"roll_size_mb": 123
+					"roll_size_mb": 128
 				}
 			}
 		}
@@ -209,7 +205,30 @@ sudo tee ${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 EOF
     echo "----------------------------------------------------------------"
 
-    curl localhost:2019/load -X POST -H "Content-Type: application/json" -d @${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json
+    curl localhost:2019/load -X POST -H "Content-Type: application/json" -d @Caddyfile.json
+
+    echo "----------------------------------------------------------------"
+sudo tee Caddyroute_for_${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
+	{
+		"match": [
+			{
+				"host": ["${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}"]
+			}
+		],
+		"handle": [
+			{
+				"handler": "static_response",
+				"body": "Welcome to my security site of '${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}'!"
+			}
+		],
+		"terminal": true
+	}
+EOF
+
+    curl localhost:2019/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json
+	curl localhost:2019/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d \'{"${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}": "${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}"}\'
+
+    echo "----------------------------------------------------------------"
 
     return $?
 }
@@ -251,7 +270,8 @@ function check_setup_caddy()
     soft_yum_check_action "caddy" "exec_step_caddy"
 
 	# 开放API出去，必装
-    source scripts/web/webhook.sh
+    # cd ${__DIR}
+    # source scripts/web/webhook.sh
 
 	return $?
 }
