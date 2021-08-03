@@ -180,6 +180,7 @@ sudo tee Caddyfile.json <<-EOF
 			"servers": {
 				"autohttps": {
 					"listen": [":60080",":60443"],
+					"routes": [],
 					"logs": {
 						"default_logger_name": "autohttps.log",
 						"logger_names": {}
