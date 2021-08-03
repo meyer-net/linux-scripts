@@ -279,9 +279,9 @@ EOF
     nohup npm run production > ${KONG_DASHBOARD_LOGS_DIR}/boot.log 2>&1 &
     nrm use ${TMP_SOFT_NPM_NRM_REPO_CURRENT}
     
-    # echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "nvm use lts/erbium && npm run production" "${TMP_KONGA_NPM_PATH}/bin" "999" "${NVM_PATH}"
     local TMP_KONGA_NPM_PATH=`npm config get prefix`
-    echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "npm run production" "${TMP_KONGA_NPM_PATH}/bin" "999"
+    # echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "nvm use lts/erbium && npm run production" "${TMP_KONGA_NPM_PATH}/bin" "999" "${NVM_PATH}"
+    echo_startup_config "konga" "${TMP_SETUP_KONG_DASHBOARD_DIR}" "npm run production" "${TMP_KONGA_NPM_PATH}/bin" "999" "${NVM_PATH}"
 
     echo_soft_port 1337
 

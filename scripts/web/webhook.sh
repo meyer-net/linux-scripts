@@ -168,7 +168,7 @@ fi
 
 function execute() {
     local TMP_COR_CDY_CERT_HOST=\$1 #request.headers.host
-    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@log@g"\`
+    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`
 
     # 未运行caddy的情况下，不执行脚本
     local TMP_IS_CDY_LOCAL=\`lsof -i:2019\`
@@ -234,8 +234,8 @@ function conf_webhook_async_caddy_cert_to_kong()
 function execute() {
     local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
     local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
-    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@log@g"\`
-    local TMP_THIS_CACHE_PATH=${TMP_WBH_DATA_CACHE_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@cache@g"\`
+    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`
+    local TMP_THIS_CACHE_PATH=${TMP_WBH_DATA_CACHE_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@cache@g"\`
 
     # 忽略非域名请求（简单的验证，足够用）
     if [ \`echo \${TMP_ASYNC_CADDY_CERT_HOST} | tr -cd "." | wc -c\` -eq 3 ]; then
@@ -244,7 +244,7 @@ function execute() {
     fi
 
     # 写入请求域名，等待消费者处理
-    echo "\${TMP_ASYNC_CADDY_CERT_HOST}" ${TMP_THIS_CACHE_PATH}
+    echo "\${TMP_ASYNC_CADDY_CERT_HOST}" >> \${TMP_THIS_CACHE_PATH}
     echo "Host of '\${TMP_ASYNC_CADDY_CERT_HOST}' buffered" >> \${TMP_THIS_LOG_PATH}
 }
 
@@ -308,7 +308,7 @@ function put_certificates_att()
 function execute() {
     local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
     local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
-    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`\$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\$@log@g"\`\
+    local TMP_THIS_LOG_PATH=${TMP_WBH_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`\
 
     #获取CADDY证书数据
     local TMP_CERT_DATA_FROM_CDY=\`curl -s ${TMP_SETUP_CDY_HOST}:9000/hooks/cor-caddy-api?host=\${TMP_ASYNC_CADDY_CERT_HOST}\`
