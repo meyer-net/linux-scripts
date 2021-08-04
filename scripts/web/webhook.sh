@@ -4,12 +4,8 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
-# 安装标题：Webhook
-# 软件名称：webhook
-# 软件大写名称：WEBHOOK
-# 软件大写分组与简称：WBH
-# 软件安装名称：webhook
-# 软件授权用户名称&组：webhook/webhook_group
+# 测试：
+#      curl -H "User-Agent: acme.zerossl.com/v2/DV90" http://konga.myvnc.com/.well-known/acme-challenge/aGBNs8KUZP-RGZ6hsgB--S4V_-Om-JEkPZ9-XsUnL7c
 #------------------------------------------------
 local TMP_SETUP_KONG_HOST="127.0.0.1"
 local TMP_SETUP_CDY_HOST="127.0.0.1"
