@@ -5,7 +5,7 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 # 测试：
-#      curl -H "User-Agent: Mozilla/5.0 (compatible; Let's Encrypt validation server; +https://www.letsencrypt.org)"
+#      curl -H "User-Agent: Mozilla/5.0 (compatible; Let's Encrypt validation server; +https://www.letsencrypt.org)" http://konga.myvnc.com/.well-known/acme-challenge/aGBNs8KUZP-RGZ6hsgB--S4V_-Om-JEkPZ9-XsUnL7c
 #      curl -H "User-Agent: acme.zerossl.com/v2/DV90" http://konga.myvnc.com/.well-known/acme-challenge/aGBNs8KUZP-RGZ6hsgB--S4V_-Om-JEkPZ9-XsUnL7c
 #------------------------------------------------
 local TMP_SETUP_KONG_HOST="127.0.0.1"
@@ -297,8 +297,8 @@ function patch_certificates_att()
     local tmp_certificates_snis="\${2:-}"
 
     local request_code=\`curl -o /dev/null -s -w %{http_code} -X PATCH http://${TMP_SETUP_KONG_HOST}:8000/certificates/\${tmp_certificates_id}  \\
-        -d "tags[]=by-webhook-sync"  \\
-        -d "tags[]=by-caddy-acme"  \\
+        #-d "tags[]=by-webhook-sync"  \\
+        -d "tags[]=sync-caddy-acme"  \\
         -d "tags[]=\${tmp_certificates_snis}"\`
         
     if [ "\${request_code::1}" != "2" ]; then
