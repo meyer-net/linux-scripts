@@ -295,11 +295,12 @@ EOF
 function rouse_openresty()
 {
     local TMP_OPENRESTY_NGINX_BIN_PATH=`sudo find / -name nginx | grep 'openresty/nginx/sbin'`
+    local TMP_OPENRESTY_NGINX_DIR=`dirname ${TMP_OPENRESTY_NGINX_BIN_PATH%/*}`
     if [ ! -f "/usr/bin/nginx" ]; then
         ln -sf ${TMP_OPENRESTY_NGINX_BIN_PATH} /usr/bin/nginx
         
         # 修改默认nginx配置性能瓶颈问题
-        local TMP_OPENRESTY_NGINX_CONF_PATH=`dirname ${TMP_OPENRESTY_NGINX_BIN_PATH%/*}`/conf/nginx.conf
+        local TMP_OPENRESTY_NGINX_CONF_PATH=${TMP_OPENRESTY_NGINX_DIR}/conf/nginx.conf
 
 sudo tee ${TMP_OPENRESTY_NGINX_CONF_PATH} <<-'EOF'
 #user  nobody;
@@ -558,7 +559,7 @@ EOF
     fi
     luajit -v
 
-    echo_startup_config "kong" "/usr/local/bin" "kong start" `dirname ${TMP_OPENRESTY_RESTY_PATH}` "99"
+    echo_startup_config "kong" "/usr/local/bin" "kong start" `dirname ${TMP_OPENRESTY_NGINX_DIR}` "99"
 
 	return $?
 }
