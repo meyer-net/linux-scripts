@@ -5,6 +5,7 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 # 测试：
+#      curl -H "User-Agent: Mozilla/5.0 (compatible; Let's Encrypt validation server; +https://www.letsencrypt.org)"
 #      curl -H "User-Agent: acme.zerossl.com/v2/DV90" http://konga.myvnc.com/.well-known/acme-challenge/aGBNs8KUZP-RGZ6hsgB--S4V_-Om-JEkPZ9-XsUnL7c
 #------------------------------------------------
 local TMP_SETUP_KONG_HOST="127.0.0.1"
@@ -101,7 +102,7 @@ function conf_webhook()
     local TMP_IS_KONG_LOCAL=`lsof -i:8000`
     if [ -n "${TMP_IS_KONG_LOCAL}" ]; then    
         TMP_WBH_KONG_HOOKS_JSON="{
-            \"id\": \"sync-caddy-cert-to-kong\",  \
+            \"id\": \"async-caddy-cert-to-kong\",  \
             \"execute-command\": \"${TMP_WBH_DATA_SCRIPTS_DIR}/buffer_for_request_host.sh\",  \
             \"http-methods\": [\"Post \"],  \
             \"command-working-directory\": \"${TMP_WBH_LOGS_DIR}\",  \

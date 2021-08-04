@@ -227,7 +227,7 @@ sudo tee Caddyroute_for_${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 EOF
 
     curl localhost:2019/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json
-	curl localhost:2019/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d \'{"${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}": "${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}"}\'
+	curl localhost:2019/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}": "${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}"}'
 
     echo "----------------------------------------------------------------"
 
