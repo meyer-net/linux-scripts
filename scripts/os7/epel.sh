@@ -6,9 +6,9 @@
 #------------------------------------------------
 
 function setup_epel()
-{
+{	
 	soft_yum_check_setup "wget"
-
+	
 	echo "Checking country code..."
 	local TMP_COUNTRY_CODE="CN"
 	get_country_code "TMP_COUNTRY_CODE"
@@ -18,27 +18,27 @@ function setup_epel()
 		sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
 
 		sudo rpm -e yum
-		
-		echo "Reseting yum rpms..."
-		sudo rpm -ivh http://mirrors.ustc.edu.cn/centos/7/os/x86_64/Packages/yum-3.4.3-168.el7.centos.noarch.rpm
-		sudo rpm -ivh http://mirrors.ustc.edu.cn/centos/7/os/x86_64/Packages/yum-metadata-parser-1.1.4-10.el7.x86_64.rpm
-		sudo rpm -ivh http://mirrors.ustc.edu.cn/centos/7/os/x86_64/Packages/yum-plugin-fastestmirror-1.1.31-54.el7_8.noarch.rpm
 
 		#更改镜像为国内镜像
 		#http://centos.ustc.edu.cn/
 		#http://mirrors.aliyun.com/repo/Centos-7.repo
-		echo "Change repos to CN..."
-		local TMP_SETED_MIRRORS=`cat /etc/yum.repos.d/CentOS-Base.repo | grep 'mirror.centos.org'`
-		if [ -n "$TMP_SETED_MIRRORS" ]; then
-			if [ ! -f "/etc/yum.repos.d/CentOS-Base.repo.backup" ]; then
-				sudo mv /etc/yum.repos.d/CentOS-Base.repo /tmp/CentOS-Base.repo.backup
-				sudo rm -rf /etc/yum.repos.d/*
-				wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
-				sudo mv /tmp/CentOS-Base.repo.backup /etc/yum.repos.d/
-				echo "" >> /etc/yum.repos.d/CentOS-Base.repo
-				echo "# At "`date +%Y%m%d`" init" >> /etc/yum.repos.d/CentOS-Base.repo
-			fi
-		fi
+		# echo "Change repos to CN..."
+		# local TMP_SETED_MIRRORS=`cat /etc/yum.repos.d/CentOS-Base.repo | grep 'mirror.centos.org'`
+		# if [ -n "$TMP_SETED_MIRRORS" ]; then
+		# 	if [ ! -f "/etc/yum.repos.d/CentOS-Base.repo.backup" ]; then
+		# 		sudo mv /etc/yum.repos.d/CentOS-Base.repo /tmp/CentOS-Base.repo.backup
+		# 		sudo rm -rf /etc/yum.repos.d/*
+		# 		wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+		# 		sudo mv /tmp/CentOS-Base.repo.backup /etc/yum.repos.d/
+		# 		echo "" >> /etc/yum.repos.d/CentOS-Base.repo
+		# 		echo "# At "`date +%Y%m%d`" init" >> /etc/yum.repos.d/CentOS-Base.repo
+		# 	fi
+		# fi
+				
+		echo "Reseting yum rpms to CN-ustc.edu..."
+		sudo rpm -ivh http://mirrors.ustc.edu.cn/centos/7/os/x86_64/Packages/yum-3.4.3-168.el7.centos.noarch.rpm
+		sudo rpm -ivh http://mirrors.ustc.edu.cn/centos/7/os/x86_64/Packages/yum-metadata-parser-1.1.4-10.el7.x86_64.rpm
+		sudo rpm -ivh http://mirrors.ustc.edu.cn/centos/7/os/x86_64/Packages/yum-plugin-fastestmirror-1.1.31-54.el7_8.noarch.rpm
 
 		# # 创建docker目录
 		# sudo mkdir -p /etc/docker
@@ -54,18 +54,22 @@ function setup_epel()
 		# sudo systemctl restart docker
 	else
 		sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    	sudo rpm -ivh  http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
+		sudo rpm -ivh  http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
 	fi
+
+	sudo yum -y install epel-release
 
 	echo "Clearing yum cache..."
 	sudo yum clean all
 	sudo yum makecache fast
 
-	sudo yum -y install "epel-release"
 	sudo yum repolist
 	sudo yum -y install yum-priorities
 	sudo yum -y install yum-plugin-fastestmirror
 	
+	#https://github.com/stedolan/jq
+	soft_yum_check_setup "jq"
+	soft_yum_check_setup "jsawk"
 	soft_yum_check_setup "git"
 	
 	return $?

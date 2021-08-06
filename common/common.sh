@@ -768,9 +768,19 @@ function setup_soft_wget()
 		TMP_SOFT_WGET_UNPACK_FILE_EXT=`echo ${TMP_SOFT_WGET_FILE_NAME##*.}`
 		if [ "$TMP_SOFT_WGET_UNPACK_FILE_EXT" = "zip" ]; then
 			TMP_SOFT_WGET_PACK_DIR_LINE=`unzip -v $TMP_SOFT_WGET_FILE_NAME | awk '/----/{print NR}' | awk 'NR==1{print}'`
-			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`unzip -v $TMP_SOFT_WGET_FILE_NAME | awk 'NR==LINE{print $NF}' LINE=$((TMP_SOFT_WGET_PACK_DIR_LINE+1)) | sed s@/.*@""@g`
+			local TMP_SOFT_WGET_FILE_NAME_UNZIP=`unzip -v $TMP_SOFT_WGET_FILE_NAME | awk 'NR==LINE{print $NF}' LINE=$((TMP_SOFT_WGET_PACK_DIR_LINE+1))`
+			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`echo ${TMP_SOFT_WGET_FILE_NAME_UNZIP} | sed s@/.*@""@g`
+
+			# 没有层级的情况
+			local TMP_SOFT_WGET_FILE_NAME_UNZIP_ARGS=""
+			if [ "${TMP_SOFT_WGET_FILE_NAME_UNZIP}" == "${TMP_SOFT_WGET_FILE_NAME_NO_EXTS}" ]; then
+				TMP_SOFT_WGET_FILE_NAME_NO_EXTS="${TMP_SOFT_LOWER_NAME}"
+				TMP_SOFT_WGET_FILE_NAME_UNZIP_ARGS="-d ${TMP_SOFT_LOWER_NAME}"
+			fi
+
+			# 本地是否存在目录
 			if [ ! -d "$TMP_SOFT_WGET_FILE_NAME_NO_EXTS" ]; then
-				unzip -o $TMP_SOFT_WGET_FILE_NAME
+				unzip -o $TMP_SOFT_WGET_FILE_NAME ${TMP_SOFT_WGET_FILE_NAME_UNZIP_ARGS}
 			fi
 		else
 			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`tar -tf $TMP_SOFT_WGET_FILE_NAME | grep '/' | awk 'NR==1{print}' | sed s@/.*@""@g`
@@ -1207,16 +1217,16 @@ function set_if_choice()
 		return $?
 	fi
 
-	TMP_VAR_NAME=$1
-	TMP_NOTICE=$2
-	TMP_CHOICE=$3
+	local TMP_VAR_NAME=$1
+	local TMP_NOTICE=$2
+	local TMP_CHOICE=$3
 
 	#参数4：函数调用
 	#TMP_PREFIX=$4 
 	
-	TMP_CHOICE_SPLITER=$([ -n "$TMP_SPLITER" ] && echo "$TMP_SPLITER" || echo "-------------------------------------------------")
+	local TMP_CHOICE_SPLITER=$([ -n "$TMP_SPLITER" ] && echo "$TMP_SPLITER" || echo "-------------------------------------------------")
 	set_if_empty "TMP_CHOICE_SPLITER" "$4"
-	TMP_CHOICE_SPLITER_LEN=${#TMP_CHOICE_SPLITER}
+	local TMP_CHOICE_SPLITER_LEN=${#TMP_CHOICE_SPLITER}
 	
 	echo $TMP_CHOICE_SPLITER
 	local arr=(${TMP_CHOICE//,/ })
@@ -1263,7 +1273,7 @@ function set_if_choice()
 	echo
 	
 	typeset -l NEW_VAL
-	NEW_VAL=${arr[$((KEY-1))]}
+	local NEW_VAL=${arr[$((KEY-1))]}
 	eval ${1}='$NEW_VAL'
 	echo "Choice of '$NEW_VAL' checked"
 
@@ -1291,7 +1301,7 @@ function exec_if_choice()
 
 	set_if_choice "$1" "$2" "$3" "$4"
 
-	NEW_VAL=`eval echo '$'$1`
+	local NEW_VAL=`eval echo '$'$1`
 	if [ -n "${NEW_VAL}" ]; then
 		if [ "${NEW_VAL}" = "exit" ]; then
 			exit 1
@@ -1533,6 +1543,7 @@ function exec_text_format()
 	# 附加动态参数
 	local TMP_EXEC_TEXT_FORMAT_COUNT=$(echo ${TMP_EXEC_TEXT_FORMAT_VAR_FORMAT} | grep -o "%" | wc -l)
 	local TMP_EXEC_TEXT_FORMATED_VAL=`seq -s "{}" $((TMP_EXEC_TEXT_FORMAT_COUNT+1)) | sed 's@[0-9]@ @g' | sed "s@{}@${TMP_EXEC_TEXT_FORMAT_VAR_VAL}@g"`
+	
 	local TMP_EXEC_TEXT_FORMAT_FORMATED_VAL=`echo "${TMP_EXEC_TEXT_FORMAT_VAR_FORMAT}" | xargs -I {} printf {} ${TMP_EXEC_TEXT_FORMATED_VAL}`
 
 	eval ${1}='${TMP_EXEC_TEXT_FORMAT_FORMATED_VAL:-${TMP_EXEC_TEXT_FORMAT_VAR_VAL}}'
@@ -1557,10 +1568,10 @@ function exec_while_read()
 	TMP_EXEC_WHILE_READ_SCRIPTS=$4
 	TMP_EXEC_WHILE_READ_DFT=`eval echo '$'$TMP_EXEC_WHILE_READ_VAR_NAME`
 
-	I=1
+	local I=1
 	for I in $(seq 99);
 	do
-		local TMP_EXEC_WHILE_READ_CURRENT_NOTICE=`echo "${TMP_EXEC_WHILE_READ_NOTICE}"`
+		local TMP_EXEC_WHILE_READ_CURRENT_NOTICE= `eval echo "${TMP_EXEC_WHILE_READ_NOTICE}"`
 		echo "${TMP_EXEC_WHILE_READ_CURRENT_NOTICE} Or '${red}enter key${reset}' To Quit"
 		read -e CURRENT
 
@@ -1576,6 +1587,7 @@ function exec_while_read()
 		fi
 
 		TMP_EXEC_WHILE_READ_FORMAT_CURRENT="$CURRENT"
+	
 		exec_text_format "TMP_EXEC_WHILE_READ_FORMAT_CURRENT" "$TMP_EXEC_WHILE_READ_FORMAT"
 
 		if [ -n "$CURRENT" ]; then

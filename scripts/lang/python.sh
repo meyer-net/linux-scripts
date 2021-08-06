@@ -30,6 +30,8 @@ function setup_python()
 	make -j4 && make -j4 install
 	
 	ln -sf ${PYTHON_SETUP_DIR}/bin/python3 /usr/bin/python3
+	python3 -m venv pyenv3
+
 	ln -sf ${PYTHON_SETUP_DIR}/bin/pip3 /usr/bin/pip3
 
 	local TMP_PY_NEWER_SETUP_PATH=`pip3 show pip | grep "Location" | awk -F' ' '{print $2}'`
@@ -38,8 +40,6 @@ function setup_python()
 
 	python3 -V
 	pip3 --version
-
-	python3 -m venv pyenv3
 
 	#把系统默认python命令改成python3
 	#mv /usr/bin/python /usr/bin/python2.7.x
@@ -51,6 +51,9 @@ function setup_python()
 	ln -sf ${PYTHON_DEPE_OPENSSL} /usr/local/ssl
 
 	pip3 install --upgrade pip
+	
+	# 重新链接，因为upgrade后不认
+	ln -sf ${PYTHON_SETUP_DIR}/bin/pip3 /usr/bin/pip3
 	pip3 install --upgrade setuptools
 	
 	#virtualenv --distribute $pyDir

@@ -184,4 +184,4 @@ function down_kafka_manager()
 	return $?
 }
 
-exec_if_choice "CHOICE_Kafka" "Please choice which Kafka compoment you want to setup" "...,Kafka,Kafka_Manager,Kafka_Eagle,Exit" "" "print_"
+exec_if_choice "CHOICE_KAFKA" "Please choice which Kafka compoment you want to setup" "...,Kafka,Kafka_Manager,Kafka_Eagle,Exit" "" "print_"

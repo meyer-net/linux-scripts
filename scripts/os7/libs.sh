@@ -96,10 +96,6 @@ function setup_libs()
 	soft_yum_check_setup "screen"
 	soft_yum_check_setup "lrzsz"
 
-	#https://github.com/stedolan/jq
-	soft_yum_check_setup "jq"
-	soft_yum_check_setup "jsawk"
-
 	# gcc 切换：https://www.cnblogs.com/jixiaohua/p/11732225.html
 	soft_yum_check_setup "centos-release-scl"
 

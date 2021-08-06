@@ -4,34 +4,87 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 安装标题：Consul
+# 软件名称：consul
+# 软件大写名称：CONSUL
+# 软件大写分组与简称：CSL
+# 软件安装名称：consul
+# 软件授权用户名称&组：consul/consul_group
+#------------------------------------------------
+local TMP_CSL_SETUP_CLUSTER_LEADER_ADDR="${LOCAL_HOST}"
+local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR="${LOCAL_HOST}"
 
+# 1-配置环境
 function set_environment()
 {
-    # 需要提前安装Java
     cd ${__DIR}
-    # source scripts/lang/java.sh
+
+    soft_yum_check_action ""
 
 	return $?
 }
 
+# 2-安装软件
 function setup_consul()
 {
-    local TMP_SETUP_PATH=$1
-    local TMP_UNZIP_PATH=`pwd`/consul
+	local TMP_CSL_SETUP_DIR=${1}
+	local TMP_CSL_CURRENT_DIR=${2}
 
-    CONSUL_DIR=$TMP_SETUP_PATH
-    CONSUL_ATT_DIR=$ATT_DIR/consul
-    CONSUL_DATA_DIR=$DATA_DIR/consul
+	## 直装模式
+	cd `dirname ${TMP_CSL_CURRENT_DIR}`
+
+	mv ${TMP_CSL_CURRENT_DIR} ${TMP_CSL_SETUP_DIR}
+
+	# 创建日志软链
+	local TMP_CSL_LNK_LOGS_DIR=${LOGS_DIR}/consul
+	local TMP_CSL_LNK_DATA_DIR=${DATA_DIR}/consul
+	local TMP_CSL_LOGS_DIR=${TMP_CSL_SETUP_DIR}/logs
+	local TMP_CSL_DATA_DIR=${TMP_CSL_SETUP_DIR}/data
+
+	# 先清理文件，再创建文件
+	rm -rf ${TMP_CSL_LOGS_DIR}
+	rm -rf ${TMP_CSL_DATA_DIR}
+	mkdir -pv ${TMP_CSL_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_CSL_LNK_DATA_DIR}
+	
+	ln -sf ${TMP_CSL_LNK_LOGS_DIR} ${TMP_CSL_LOGS_DIR}
+	ln -sf ${TMP_CSL_LNK_DATA_DIR} ${TMP_CSL_DATA_DIR}
+
+    cd ${TMP_CSL_SETUP_DIR}
+    mkdir -pv bin
+
+    mv consul bin/
+
+	# 环境变量或软连接
+	echo "CONSUL_HOME=${TMP_CSL_SETUP_DIR}" >> /etc/profile
+	echo 'PATH=$CONSUL_HOME/bin:$PATH' >> /etc/profile
+	echo "export PATH CONSUL_HOME" >> /etc/profile
+
+    # 重新加载profile文件
+	source /etc/profile
+
+	return $?
+}
+
+# 3-设置软件
+function conf_consul()
+{
+	local TMP_CSL_SETUP_DIR=${1}
+	local TMP_CSL_DATA_DIR=${TMP_CSL_SETUP_DIR}/data
+
+	cd ${TMP_CSL_SETUP_DIR}
     
-    mkdir -pv $CONSUL_DIR
-    mkdir -pv $CONSUL_ATT_DIR/bootstrap
-    mkdir -pv $CONSUL_ATT_DIR/server
-    mkdir -pv $CONSUL_ATT_DIR/agent
-    mkdir -pv $CONSUL_DATA_DIR
-    mv $TMP_UNZIP_PATH $CONSUL_DIR
+	local TMP_CSL_LNK_ETC_DIR=${ATT_DIR}/consul
+	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
+	rm -rf ${TMP_CSL_ETC_DIR}
+	mkdir -pv ${TMP_CSL_LNK_ETC_DIR}
+    mkdir -pv ${TMP_CSL_ETC_DIR}/bootstrap
+    mkdir -pv ${TMP_CSL_ETC_DIR}/server
+    mkdir -pv ${TMP_CSL_ETC_DIR}/agent
+    
+	ln -sf ${TMP_CSL_LNK_ETC_DIR} ${TMP_CSL_ETC_DIR}
 
-    cd $CONSUL_DIR
-
+    # 开始配置	    
     #-advertise：通知展现地址用来改变我们给集群中的其他节点展现的地址，一般情况下-bind地址就是展现地址
     #-bootstrap：用来控制一个server是否在bootstrap模式，在一个datacenter中只能有一个server处于bootstrap模式，当一个server处于bootstrap模式时，可以自己选举为raft leader。
     #-bootstrap-expect：在一个datacenter中期望提供的server节点数目，当该值提供的时候，consul一直等到达到指定sever数目的时候才会引导整个集群，该标记不能和bootstrap公用
@@ -54,37 +107,35 @@ function setup_consul()
     #-syslog：开启系统日志功能，只在linux/osx上生效
     #-pid-file:提供一个路径来存放pid文件，可以使用该文件进行SIGINT/SIGHUP(关闭/更新)agent
 
-    KEYGEN=`$CONSUL_DIR/consul keygen`
-    input_if_empty "KEYGEN" "Consul: Please Ender Cluster KeyGen Like '$KEYGEN'"
-    echo "The Keygen Used：'${red}$KEYGEN${reset}', ${red}Please use it for other cluster host${reset}"
+    local TMP_CSL_SETUP_KEYGEN=`bin/consul keygen`
+    input_if_empty "TMP_CSL_SETUP_KEYGEN" "Consul: Please Ender Cluster KeyGen Like '${TMP_CSL_SETUP_KEYGEN}'"
+    echo "The Keygen Used：'${red}${TMP_CSL_SETUP_KEYGEN}${reset}', ${red}Please use it for other cluster host${reset}"
 
-    CLUSTER_LEADER_ADDR=`echo $LOCAL_HOST`
-    input_if_empty "CLUSTER_LEADER_ADDR" "Consul: Please Ender Cluster Of Leader Address"
+    input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_ADDR" "Consul: Please Ender Cluster Of Leader Address"
 
-    CLUSTER_CHILD_ADDRS="$LOCAL_HOST"
-    exec_while_read "CLUSTER_CHILD_ADDRS" "Consul: Please Ender Cluster Child.\$I Address Like '$LOCAL_HOST'" "\"%\"" "
-        echo \"Port of 8300 allowed for '\$CURRENT'\"
-        echo_soft_port 8300 \$CURRENT
-        echo \"Port of 8301 allowed for '\$CURRENT'\"
-        echo_soft_port 8301 \$CURRENT
-        echo \"Port of 8302 allowed for '\$CURRENT'\"
-        echo_soft_port 8302 \$CURRENT
-        echo \"Port of 8400 allowed for '\$CURRENT'\"
-        echo_soft_port 8400 \$CURRENT
-        echo \"Port of 8600 allowed for '\$CURRENT'\"
-        echo_soft_port 8600 \$CURRENT
+    exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR" "Consul: Please Ender Cluster Child.\$I Address Like '${LOCAL_HOST}'" "%s" "
+        echo \"Port of 8300 allowed for '\${CURRENT}'\"
+        echo_soft_port 8300 \${CURRENT}
+        echo \"Port of 8301 allowed for '\${CURRENT}'\"
+        echo_soft_port 8301 \${CURRENT}
+        echo \"Port of 8302 allowed for '\${CURRENT}'\"
+        echo_soft_port 8302 \${CURRENT}
+        echo \"Port of 8400 allowed for '\${CURRENT}'\"
+        echo_soft_port 8400 \${CURRENT}
+        echo \"Port of 8600 allowed for '\${CURRENT}'\"
+        echo_soft_port 8600 \${CURRENT}
     "
-    cat > $CONSUL_ATT_DIR/bootstrap/config.json <<EOF
+    cat > ${TMP_CSL_ETC_DIR}/bootstrap/config.json <<EOF
 {
 	"ui" : true,
 	"bootstrap": true,
 	"server": true,
-	"datacenter": "ost-aws",
-    "node_name": "bootstrap-$LOCAL_ID",
-	"data_dir": "$CONSUL_DATA_DIR",
-	"advertise_addr": "$LOCAL_HOST",
+	"datacenter": "ost-svrs-ha",
+    "node_name": "bootstrap-${LOCAL_ID}",
+	"data_dir": "${TMP_CSL_DATA_DIR}",
+	"advertise_addr": "${LOCAL_HOST}",
 	"log_level": "INFO",
-	"encrypt": "$KEYGEN",
+	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
         "http": "0.0.0.0"
     },
@@ -92,91 +143,159 @@ function setup_consul()
 }
 EOF
 
-    cat > $CONSUL_ATT_DIR/server/config.json <<EOF
+    cat > ${TMP_CSL_ETC_DIR}/server/config.json <<EOF
 {
 	"ui" : true,
 	"bootstrap": false,
 	"server": true,
-	"datacenter": "ost-aws",
-    "node_name": "server-$LOCAL_ID",
-	"data_dir": "$CONSUL_DATA_DIR",
-	"advertise_addr": "$LOCAL_HOST",
+	"datacenter": "ost-svrs-ha",
+    "node_name": "server-${LOCAL_ID}",
+	"data_dir": "${TMP_CSL_DATA_DIR}",
+	"advertise_addr": "${LOCAL_HOST}",
 	"log_level": "INFO",
-	"encrypt": "$KEYGEN",
+	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
         "http": "0.0.0.0"
     },
 	"enable_syslog": true,
-	"start_join": ["$CLUSTER_CHILD_ADDRS"]
+	"start_join": ["$TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR"]
 }
 EOF
 
-    cat > $CONSUL_ATT_DIR/agent/config.json <<EOF
+    cat > ${TMP_CSL_ETC_DIR}/agent/config.json <<EOF
 {
 	"ui" : true,
 	"server": false,
-	"datacenter": "ost-aws",
-    "node_name": "agent-$LOCAL_ID",
-	"data_dir": "$CONSUL_DATA_DIR",
-	"advertise_addr": "$LOCAL_HOST",
+	"datacenter": "ost-svrs-ha",
+    "node_name": "agent-${LOCAL_ID}",
+	"data_dir": "${TMP_CSL_DATA_DIR}",
+	"advertise_addr": "${LOCAL_HOST}",
 	"log_level": "INFO",
-	"encrypt": "$KEYGEN",
+	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
         "http": "0.0.0.0"
     },
 	"enable_syslog": true,
-	"start_join": ["$CLUSTER_LEADER_ADDR"]
+	"start_join": ["${TMP_CSL_SETUP_CLUSTER_LEADER_ADDR}"]
 }
 EOF
 
-    echo "CONSUL_HOME=$CONSUL_DIR" >> /etc/profile
-    echo "CONSUL_BIN=\$CONSUL_HOME" >> /etc/profile
-    echo "PATH=\$CONSUL_BIN:\$PATH" >> /etc/profile
-    source /etc/profile
-    export PATH CONSUL_HOME CONSUL_BIN
+	return $?
+}
 
-    # 判断如果是主节点
-    if [ "$CLUSTER_LEADER_ADDR" = "$LOCAL_HOST" ]; then
+# 4-启动软件
+function boot_consul()
+{
+	local TMP_CSL_SETUP_DIR=${1}
+
+	cd ${TMP_CSL_SETUP_DIR}
+	
+	# 验证安装
+    consul -v
+
+    # 当前启动命令,判断如果是主节点
+    if [ "${TMP_CSL_SETUP_CLUSTER_LEADER_ADDR}" = "${LOCAL_HOST}" ]; then
         start_bootstrap
     else
-        BOOT_MODE=1
-        exec_if_choice "BOOT_MODE" "Consul: Please sure This Server Mode" "server,agent" "" "start_"
+        local TMP_CSL_SETUP_BOOT_MODE=1
+        exec_if_choice "TMP_CSL_SETUP_BOOT_MODE" "Consul: Please sure this server mode" "server,agent" "" "start_"
     fi
+
+    # 添加端口许可
+    echo_soft_port 8500
 
 	return $?
 }
 
 function start_bootstrap()
 {
-    CLUSTER_CHILD_ADDRS_COUNT=`cat $CLUSTER_CHILD_ADDRS | awk -F',' '{for(i=1;i<=NF;i++) if($i==$NF) {print i}}'`
-    screen $CONSUL_DIR/consul agent -config-dir $CONSUL_ATT_DIR/bootstrap -bootstrap-expect=$CLUSTER_CHILD_ADDRS_COUNT
-    echo_startup_config "consul" "$CONSUL_DIR" "consul agent -config-dir $CONSUL_ATT_DIR/bootstrap -bootstrap-expect=$CLUSTER_CHILD_ADDRS_COUNT" "" "1"
+	local TMP_CSL_SETUP_DIR=`pwd`
+	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
+
+    local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT=`echo ${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR} | awk -F',' '{for(i=1;i<=NF;i++) if($i==$NF) {print i}}'`
+    consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT}
+
+	# 添加系统启动命令
+    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "screen bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT}" "" "1"
+
     return $?
 }
 
 function start_server()
 {
-    screen $CONSUL_DIR/consul agent -config-dir $CONSUL_ATT_DIR/server
-    echo_startup_config "consul" "$CONSUL_DIR" "consul agent -config-dir $CONSUL_ATT_DIR/server" "" "1"
+	local TMP_CSL_SETUP_DIR=`pwd`
+	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
+    
+    consul agent -config-dir ${TMP_CSL_ETC_DIR}/server
+
+	# 添加系统启动命令
+    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "screen bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/server" "" "1"
+
     return $?
 }
 
 function start_agent()
 {
-    screen $CONSUL_DIR/consul agent -config-dir $CONSUL_ATT_DIR/agent
-    echo "Port of 8500 allowed from iptables"
-    echo_soft_port 8500 $CURRENT
+	local TMP_CSL_SETUP_DIR=`pwd`
+	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
+    
+    consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent
 
-    echo_startup_config "consul" "$CONSUL_DIR" "consul agent -config-dir $CONSUL_ATT_DIR/agent" "" "1"
+	# 添加系统启动命令
+    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "screen bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent" "" "1"
+    
     return $?
 }
 
-function down_consul()
+##########################################################################################################
+
+# 下载驱动/插件
+function down_plugin_consul()
 {
-    set_environment
-    setup_soft_wget "consul" "https://releases.hashicorp.com/consul/1.10.0+ent/consul_1.10.0+ent_linux_amd64.zip" "setup_consul"
+	return $?
+}
+
+# 安装驱动/插件
+function setup_plugin_consul()
+{
+	return $?
+}
+
+##########################################################################################################
+
+# x2-执行步骤
+function exec_step_consul()
+{
+	local TMP_CSL_SETUP_DIR=${1}
+	local TMP_CSL_CURRENT_DIR=`pwd`
+    
+	set_environment "${TMP_CSL_SETUP_DIR}"
+
+	setup_consul "${TMP_CSL_SETUP_DIR}" "${TMP_CSL_CURRENT_DIR}"
+
+	conf_consul "${TMP_CSL_SETUP_DIR}"
+
+    # down_plugin_consul "${TMP_CSL_SETUP_DIR}"
+
+	boot_consul "${TMP_CSL_SETUP_DIR}"
 
 	return $?
 }
 
+# x1-下载软件
+function down_consul()
+{
+    # https://www.consul.io/downloads
+	local TMP_CSL_SETUP_NEWER="consul_1.10.0"
+	local TMP_CSL_DOWN_URL_BASE="https://releases.hashicorp.com/consul/"
+	set_url_list_newer_href_link_filename "TMP_CSL_SETUP_NEWER" "${TMP_CSL_DOWN_URL_BASE}" "consul_()"
+    
+	local TMP_CSL_SETUP_NEWER_FOLDER=`echo "${TMP_CSL_SETUP_NEWER}" | sed "s@consul_@@g"`
+	exec_text_format "TMP_CSL_SETUP_NEWER" "${TMP_CSL_DOWN_URL_BASE}${TMP_CSL_SETUP_NEWER_FOLDER}/%s_linux_amd64.zip"
+    setup_soft_wget "consul" "${TMP_CSL_SETUP_NEWER}" "exec_step_consul"
+    
+	return $?
+}
+
+#安装主体
 setup_soft_basic "Consul" "down_consul"

@@ -4,55 +4,109 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 参考文献：http://www.jianshu.com/p/b49712bbe044
+#------------------------------------------------
 
+# 1-配置环境
 function set_environment()
 {
-    # 需要提前安装Java
     cd ${__DIR}
-    source scripts/lang/java.sh
 
-	echo "Some Infomation Please See：http://www.jianshu.com/p/b49712bbe044"
+	source scripts/lang/java.sh
 
 	return $?
 }
 
+# 2-安装软件
 function setup_hadoop()
 {
-    cd ..
+	local TMP_HDOP_SETUP_DIR=${1}
+	local TMP_HDOP_CURRENT_DIR=${2}
+
+	## 直装模式
+	cd `dirname ${TMP_HDOP_CURRENT_DIR}`
+
+	mv ${TMP_HDOP_CURRENT_DIR} ${TMP_HDOP_SETUP_DIR}
+
+	# 创建日志软链
+	local TMP_HDOP_LNK_LOGS_DIR=${LOGS_DIR}/hadoop
+	local TMP_HDOP_LNK_DATA_DIR=${DATA_DIR}/hadoop
+	local TMP_HDOP_LOGS_DIR=${TMP_HDOP_SETUP_DIR}/logs
+	local TMP_HDOP_DATA_DIR=${TMP_HDOP_SETUP_DIR}/data
+
+	# 先清理文件，再创建文件
+	rm -rf ${TMP_HDOP_LOGS_DIR}
+	rm -rf ${TMP_HDOP_DATA_DIR}
+	mkdir -pv ${TMP_HDOP_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_HDOP_LNK_DATA_DIR}
+	
+	ln -sf ${TMP_HDOP_LNK_LOGS_DIR} ${TMP_HDOP_LOGS_DIR}
+	ln -sf ${TMP_HDOP_LNK_DATA_DIR} ${TMP_HDOP_DATA_DIR}
+	
+    mkdir -pv ${TMP_HDOP_DATA_DIR}/tmp
+    mkdir -pv ${TMP_HDOP_DATA_DIR}/var
+    mkdir -pv ${TMP_HDOP_DATA_DIR}/dfs
+    mkdir -pv ${TMP_HDOP_DATA_DIR}/dfs/name
+    mkdir -pv ${TMP_HDOP_DATA_DIR}/dfs/data
+
+	# 环境变量或软连接
+	echo "HADOOP_HOME=${TMP_HDOP_SETUP_DIR}" >> /etc/profile
+	echo 'PATH=$HADOOP_HOME/bin:$PATH' >> /etc/profile
+	echo "export PATH HADOOP_HOME" >> /etc/profile
+
+    # 重新加载profile文件
+	source /etc/profile
+	# ln -sf ${TMP_HDOP_SETUP_DIR}/bin/hadoop /usr/bin/hadoop
+
+	# 授权权限，否则无法写入
+	chown -R hadoop:hadoop_group ${TMP_HDOP_SETUP_DIR}
+
+	return $?
+}
+
+# 3-设置软件
+function conf_hadoop()
+{
+	local TMP_HDOP_SETUP_DIR=${1}
+	cd ${TMP_HDOP_SETUP_DIR}
+	
+	local TMP_HDOP_DATA_DIR=${TMP_HDOP_SETUP_DIR}/data
+
+    local TMP_HDOP_MASTER_HOST="${LOCAL_HOST}"
+    input_if_empty "TMP_HDOP_MASTER_HOST" "Hadoop: Please ender your ${red}cluster master host address${reset} like '${LOCAL_HOST}'"
+
+	# 本机转换
+	if [ "${TMP_HDOP_MASTER_HOST}" == "127.0.0.1" ] || [ "${TMP_HDOP_MASTER_HOST}" == "localhost" ]; then
+		TMP_HDOP_MASTER_HOST="${LOCAL_HOST}"
+	fi
     
-    HADOOP_DIR=$SETUP_DIR/hadoop
-    HADOOP_DATA_DIR=$DATA_DIR/hadoop
+	echo "export HDFS_NAMENODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
+	echo "export HDFS_DATANODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
+	echo "export HDFS_SECONDARYNAMENODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
+	echo "export YARN_RESOURCEMANAGER_USER=hadoop" >> etc/hadoop/hadoop-env.sh
+	echo "export YARN_NODEMANAGER_USER=hadoop" >> etc/hadoop/hadoop-env.sh
+	echo "export JAVA_HOME=${JAVA_HOME}" >> etc/hadoop/hadoop-env.sh
 
-	  mv hadoop-2.8.5 $HADOOP_DIR
-
-    mkdir -pv $HADOOP_DATA_DIR/tmp
-    mkdir -pv $HADOOP_DATA_DIR/var
-    mkdir -pv $HADOOP_DATA_DIR/dfs
-    mkdir -pv $HADOOP_DATA_DIR/dfs/name  
-    mkdir -pv $HADOOP_DATA_DIR/dfs/data
-
-    cd $HADOOP_DIR
-
-    HADOOP_MASTER_HOST="$LOCAL_HOST"
-    input_if_empty "HADOOP_MASTER_HOST" "Hadoop: Please ender your ${red}cluster master host address${reset} like '$LOCAL_HOST'"
-    HADOOP_MASTER_ID=`echo \${HADOOP_MASTER_HOST##*.}`
+	# 全局，给后面的函数读取
+	TMP_HDOP_HADOOP_MASTER_ID=`echo ${TMP_HDOP_MASTER_HOST##*.}`
     
-    echo "$LOCAL_HOST lnxsvr.ha$LOCAL_ID" >> /etc/hosts 
+    echo "127.0.0.1 lnxsvr.ha${LOCAL_ID}" >> /etc/hosts 
+    # echo "${LOCAL_HOST} lnxsvr.ha${LOCAL_ID}" >> /etc/hosts 
     cat >etc/hadoop/core-site.xml<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <!--
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+		http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License. See accompanying LICENSE file.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License. See accompanying LICENSE file.
 -->
 
 <!-- Put site-specific property overrides in this file. -->
@@ -60,66 +114,57 @@ function setup_hadoop()
 <configuration>
 <property>
 	<name>hadoop.tmp.dir</name>
-	<value>$HADOOP_DATA_DIR/tmp</value>
+	<value>file:${TMP_HDOP_DATA_DIR}/tmp</value>
 	<description>Abase for other temporary directories.</description>
 </property>
 <property>
-	<name>fs.default.name</name>
-	<value>hdfs://lnxsvr.ha$HADOOP_MASTER_ID:3000</value>
+	<name>fs.defaultFS</name>
+	<value>hdfs://lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:3000</value>
 </property>
 </configuration>
 EOF
 
-    sed -i "s@^export JAVA_HOME=\${JAVA_HOME}@export JAVA_HOME=$JAVA_HOME@g" etc/hadoop/hadoop-env.sh
-
-    echo "HADOOP_HOME=$HADOOP_DIR" >> /etc/profile
-    echo "HADOOP_BIN=\$HADOOP_HOME/bin" >> /etc/profile
-    echo "PATH=\$HADOOP_BIN:\$PATH" >> /etc/profile
-    source /etc/profile
+    # sed -i "s@^export JAVA_HOME=\${JAVA_HOME}@export JAVA_HOME=$JAVA_HOME@g" etc/hadoop/hadoop-env.sh
 
     cat >etc/hadoop/hdfs-site.xml<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <!--
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+		http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License. See accompanying LICENSE file.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License. See accompanying LICENSE file.
 -->
 
 <!-- Put site-specific property overrides in this file. -->
 
 <configuration>
 <property>
-   <name>dfs.name.dir</name>
-   <value>$HADOOP_DATA_DIR/dfs/name</value>
-   <description>Path on the local filesystem where theNameNode stores the namespace and transactions logs persistently.</description>
+	<name>dfs.replication</name>
+	<value>1</value>
+	<description>表示数据块的备份数量，不能大于DataNode的数量</description>
 </property>
 <property>
-  <name>dfs.data.dir</name>
-   <value>$HADOOP_DATA_DIR/dfs/data</value>
-   <description>Comma separated list of paths on the localfilesystem of a DataNode where it should store its blocks.</description>
+	<name>dfs.namenode.name.dir</name>
+	<value>${TMP_HDOP_DATA_DIR}/dfs/name</value>
+	<description>表示 NameNode 需要存储数据的文件目录</description>
 </property>
 <property>
-   <name>dfs.replication</name>
-   <value>2</value>
-</property>
-<property>
-      <name>dfs.permissions</name>
-      <value>false</value>
-      <description>need not permissions</description>
+  <name>dfs.datanode.data.dir</name>
+	<value>${TMP_HDOP_DATA_DIR}/dfs/data</value>
+	<description>表示 DataNode 需要存放数据的文件目录</description>
 </property>
 </configuration>
 EOF
 
-	cp etc/hadoop/mapred-site.xml.template etc/hadoop/mapred-site.xml
+	# cp etc/hadoop/mapred-site.xml.template etc/hadoop/mapred-site.xml
 	cat >etc/hadoop/mapred-site.xml<<EOF
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -142,11 +187,11 @@ EOF
 <configuration>
 <property>
     <name>mapred.job.tracker</name>
-    <value>lnxsvr.ha$HADOOP_MASTER_ID:49001</value>
+    <value>lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:49001</value>
 </property>
 <property>
       <name>mapred.local.dir</name>
-       <value>$HADOOP_DATA_DIR/var</value>
+       <value>${TMP_HDOP_DATA_DIR}/var</value>
 </property>
 <property>
        <name>mapreduce.framework.name</name>
@@ -175,12 +220,14 @@ EOF
 <!-- Site specific YARN configuration properties -->
 <property>
         <name>yarn.resourcemanager.hostname</name>
-        <value>lnxsvr.ha$HADOOP_MASTER_ID</value>
+        <value>lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}</value>
+		<description>表示ResourceManager安装的主机</description>
    </property>
    <property>
         <description>The address of the applications manager interface in the RM.</description>
         <name>yarn.resourcemanager.address</name>
         <value>\${yarn.resourcemanager.hostname}:8032</value>
+		<description>表示ResourceManager监听的端口</description>
    </property>
    <property>
         <description>The address of the scheduler interface.</description>
@@ -221,7 +268,8 @@ EOF
    </property>
    <property>
         <name>yarn.nodemanager.resource.memory-mb</name>
-        <value>2048</value>
+        <value>4096</value>
+		<description>表示这个NodeManager管理的内存大小</description>
    </property>
    <property>
         <name>yarn.nodemanager.vmem-check-enabled</name>
@@ -233,70 +281,43 @@ EOF
     rm -rf share/doc
 
     bin/hadoop namenode -format
-    ls $HADOOP_DATA_DIR/dfs/name/current/
+    ls ${TMP_HDOP_DATA_DIR}/dfs/name/current/
 
-    exec_yn_action "set_hadoop_cluster" "Hadoop: Please sure if this install is cluster mode"
-
-    exec_yn_action "start_hadoop" "Hadoop: Please sure you If This Is A Boot Server"
-
-	return $?
-}
-
-function start_hadoop() {
-	if [ $? -eq 1 ]; then
-        bash sbin/start-all.sh
-    else
-        bash sbin/start-dfs.sh
-	fi
-
-    echo "Hadoop: Start To Test The Hadoop Server Is Ok，please wait a moment when slaves start..."
-
-    sleep 3
-
-    bin/hdfs dfs -ls /
-    echo "test ok" > $MOUNT_DIR/test.log && bin/hdfs dfs -put $MOUNT_DIR/test.log hdfs://lnxsvr.ha$HADOOP_MASTER_ID:3000/ && rm $MOUNT_DIR/test.log
-    bin/hdfs dfs -ls /
-
-    bin/hdfs dfs -get hdfs://lnxsvr.ha$HADOOP_MASTER_ID:3000/test.log
-
-    bin/hdfs dfs -df -h /
-
-    bin/hdfs dfsadmin -report
-
-    echo "Hadoop: Install complete，Then u should start your hadoop server on hadoop boot server"
-    
-    echo_startup_config "hadoop" "$HADOOP_DIR/sbin" "bash start-all.sh" "" "10"
-
-	return $?
-}
-
-function set_hadoop_cluster() 
-{
-    ssh-keygen -t rsa -P ''
+	ssh-keygen -t rsa -P ''
             
     cat ~/.ssh/id_rsa.pub | sed "s@lnxsvr.*@lnxsvr.ha$LOCAL_ID@g" > ~/.ssh/authorized_keys
     cat ~/.ssh/authorized_keys > ~/.ssh/id_rsa.pub
 
-    echo_soft_port 3000 "$HADOOP_MASTER_HOST"
-    echo_soft_port 49001 "$HADOOP_MASTER_HOST"
-    echo_soft_port 8032 "$HADOOP_MASTER_HOST"
-    echo_soft_port 8030 "$HADOOP_MASTER_HOST"
-    echo_soft_port 8088 "$HADOOP_MASTER_HOST"
-    echo_soft_port 8090 "$HADOOP_MASTER_HOST"
-    echo_soft_port 8031 "$HADOOP_MASTER_HOST"
-    echo_soft_port 8033 "$HADOOP_MASTER_HOST"
-    echo_soft_port 50070 "$HADOOP_MASTER_HOST"
-    echo_soft_port 50075 "$HADOOP_MASTER_HOST"
+    echo_soft_port 3000 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 49001 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 8032 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 8030 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 8088 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 8090 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 8031 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 8033 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 50070 "${TMP_HDOP_MASTER_HOST}"
+    echo_soft_port 50075 "${TMP_HDOP_MASTER_HOST}"
+	
+    cat /etc/sysconfig/iptables | sed -n '12,21p' > ssh_sed_hadoop${TMP_HDOP_HADOOP_MASTER_ID}_port.tmp
 
-    cat /etc/sysconfig/iptables | sed -n '12,21p' > ssh_sed_hadoop${HADOOP_MASTER_ID}_port.tmp
+    exec_yn_action "conf_hadoop_cluster" "Hadoop: Please sure if this install is cluster mode"
 
-    CLUSTER_SLAVE_HOSTS="$LOCAL_HOST"
-    exec_while_read "CLUSTER_SLAVE_HOSTS" "Hadoop: Please ender cluster-slaves-host part \$I of address like '$LOCAL_HOST', but except '$LOCAL_HOST'" "" "
-        local CLUSTER_SLAVE_ID=`echo \\\${CURRENT##*.}`
+	return $?
+}
+
+function conf_hadoop_cluster()
+{
+	local TMP_HDOP_SETUP_DIR=`pwd`
+	local TMP_HDOP_DATA_DIR=${TMP_HDOP_SETUP_DIR}/data
+
+    local TMP_HDOP_CLUSTER_SLAVE_HOSTS="${LOCAL_HOST}"
+    exec_while_read "TMP_HDOP_CLUSTER_SLAVE_HOSTS" "Hadoop: Please ender cluster-slaves-host part \$I of address like '${LOCAL_HOST}', but except '${LOCAL_HOST}'" "" "
+        local TMP_HDOP_CLUSTER_SLAVE_ID=\`echo \\\${CURRENT##*.}\`
         if [ "\$I" -eq 1 ]; then
-            echo \"lnxsvr.ha\$CLUSTER_SLAVE_ID\" > etc/hadoop/slaves
+            echo \"lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}\" > etc/hadoop/slaves
         else
-            echo \"lnxsvr.ha\$CLUSTER_SLAVE_ID\" >> etc/hadoop/slaves
+            echo \"lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}\" >> etc/hadoop/slaves
         fi
 
         echo_soft_port 3000 \"\$CURRENT\"
@@ -310,37 +331,115 @@ function set_hadoop_cluster()
         echo_soft_port 50070 \"\$CURRENT\"
         echo_soft_port 50075 \"\$CURRENT\"
 
-        echo \"\$CURRENT lnxsvr.ha\$CLUSTER_SLAVE_ID\" >> /etc/hosts
+        echo \"\$CURRENT lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}\" >> /etc/hosts
 
-        ssh-copy-id -i ~/.ssh/id_rsa.pub lnxsvr.ha\$CLUSTER_SLAVE_ID
+        ssh-copy-id -i ~/.ssh/id_rsa.pub lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}
 
         sleep 1
 
-        scp -r $HADOOP_DIR root@lnxsvr.ha\$CLUSTER_SLAVE_ID:$HADOOP_DIR
-        scp -r $HADOOP_DATA_DIR root@lnxsvr.ha\$CLUSTER_SLAVE_ID:$HADOOP_DATA_DIR
+        scp -r ${TMP_HDOP_SETUP_DIR} root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:${TMP_HDOP_SETUP_DIR}
+        scp -r ${TMP_HDOP_DATA_DIR} root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:${TMP_HDOP_DATA_DIR}
 
-        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed 's@\$CURRENT@\$HADOOP_MASTER_HOST@g' > ssh_sed_hadoop\${CLUSTER_SLAVE_ID}_port.tmp
+        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed 's@\$CURRENT@\${TMP_HDOP_MASTER_HOST}@g' > ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp
 
         echo
-        echo \"Hadoop: File of ssh_sed_hadoop\${CLUSTER_SLAVE_ID}_port.tmp will upload to '\$CURRENT' then append to iptables.service\"
+        echo \"Hadoop: File of ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp will upload to '\$CURRENT' then append to iptables.service\"
         echo
     
-        scp -r ssh_sed_hadoop\${CLUSTER_SLAVE_ID}_port.tmp root@lnxsvr.ha\$CLUSTER_SLAVE_ID:/tmp
-        scp -r ssh_sed_hadoop${HADOOP_MASTER_ID}_port.tmp root@lnxsvr.ha\$CLUSTER_SLAVE_ID:/tmp
+        scp -r ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:/tmp
+        scp -r ssh_sed_hadoop${TMP_HDOP_HADOOP_MASTER_ID}_port.tmp root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:/tmp
         
-        ssh -o \"StrictHostKeyChecking no\" lnxsvr.ha\$CLUSTER_SLAVE_ID \"sed -i '11 r /tmp/ssh_sed_hadoop${HADOOP_MASTER_ID}_port.tmp' /etc/sysconfig/iptables\"
-        ssh -o \"StrictHostKeyChecking no\" lnxsvr.ha\$CLUSTER_SLAVE_ID \"sed -i '11 r /tmp/ssh_sed_hadoop\${CLUSTER_SLAVE_ID}_port.tmp' /etc/sysconfig/iptables\"
+        ssh -o \"StrictHostKeyChecking no\" lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID} \"sed -i '11 r /tmp/ssh_sed_hadoop${TMP_HDOP_HADOOP_MASTER_ID}_port.tmp' /etc/sysconfig/iptables\"
+        ssh -o \"StrictHostKeyChecking no\" lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID} \"sed -i '11 r /tmp/ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp' /etc/sysconfig/iptables\"
     "
 
 	return $?
 }
 
-function down_hadoop()
+# 4-启动软件
+function boot_hadoop()
 {
-    set_environment
-    setup_soft_wget "hadoop" "http://mirrors.hust.edu.cn/apache/hadoop/common/hadoop-2.8.5/hadoop-2.8.5.tar.gz" "setup_hadoop"
+	local TMP_HDOP_SETUP_DIR=${1}
+
+	cd ${TMP_HDOP_SETUP_DIR}
+
+	# 验证安装
+	bin/hadoop version
+
+	# 添加系统启动命令，如果当前机器ID与主机器ID相等
+    # exec_if_choice "CHOICE_HADOOP_BOOT_TYPE" "Please choice which boot type you want to do" "...,Master,Slave,Exit" "${TMP_SPLITER}" "boot_hadoop_"
+	if [ ${TMP_HDOP_HADOOP_MASTER_ID} -eq ${LOCAL_ID} ]; then		
+		# 添加系统启动命令
+		echo_startup_config "hadoop" `pwd` "bash sbin/start-all.sh" "" "10"
+	else
+		# 添加系统启动命令
+		echo_startup_config "hadoop" `pwd` "bash sbin/start-dfs.sh" "" "10"
+	fi
+
+	bash sbin/start-dfs.sh
+
+    sleep 10
+
+	# 测试安装
+    bin/hdfs dfs -ls /
+    echo "test ok" > test.log && bin/hdfs dfs -put test.log hdfs://lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:3000/ && rm -f test.log
+    bin/hdfs dfs -ls /
+
+    bin/hdfs dfs -get hdfs://lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:3000/test.log
+
+    bin/hdfs dfs -df -h /
+
+    bin/hdfs dfsadmin -report
 
 	return $?
 }
 
+##########################################################################################################
+
+# 下载驱动/插件
+function down_plugin_hadoop()
+{
+	return $?
+}
+
+# 安装驱动/插件
+function setup_plugin_hadoop()
+{
+	return $?
+}
+
+##########################################################################################################
+
+# x2-执行步骤
+function exec_step_hadoop()
+{
+	local TMP_HDOP_SETUP_DIR=${1}
+	local TMP_HDOP_CURRENT_DIR=`pwd`
+    
+	set_environment "${TMP_HDOP_SETUP_DIR}"
+
+	setup_hadoop "${TMP_HDOP_SETUP_DIR}" "${TMP_HDOP_CURRENT_DIR}"
+
+	conf_hadoop "${TMP_HDOP_SETUP_DIR}"
+
+    # down_plugin_hadoop "${TMP_HDOP_SETUP_DIR}"
+
+	boot_hadoop "${TMP_HDOP_SETUP_DIR}"
+
+	return $?
+}
+
+# x1-下载软件
+function down_hadoop()
+{
+	TMP_HDOP_SETUP_NEWER="hadoop-3.3.1.tar.gz"
+	local TMP_HDOP_DOWN_URL_BASE="https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/stable/"
+	set_url_list_newer_href_link_filename "TMP_HDOP_SETUP_NEWER" "${TMP_HDOP_DOWN_URL_BASE}" "hadoop-().tar.gz"
+	exec_text_format "TMP_HDOP_SETUP_NEWER" "${TMP_HDOP_DOWN_URL_BASE}%s"
+    setup_soft_wget "hadoop" "${TMP_HDOP_SETUP_NEWER}" "exec_step_hadoop"
+
+	return $?
+}
+
+#安装主体
 setup_soft_basic "Hadoop" "down_hadoop"

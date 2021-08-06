@@ -68,7 +68,7 @@ function down_tool_gradle()
 {
 	TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER="gradle-7.1.1-bin.zip"
 	set_url_list_newer_href_link_filename "TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
-	setup_soft_wget "gradle" "https://services.gradle.org/distributions/${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER}" "setup_gradle"
+	setup_soft_wget "gradle" "https://services.gradle.org/distributions/${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER}" "setup_tool_gradle"
 
 	return $?
 }

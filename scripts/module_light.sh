@@ -46,8 +46,8 @@ function setup_$soft_name()
 	mkdir -pv ${TMP_$soft_upper_short_name_LNK_DATA_DIR}
 	
 	# 特殊多层结构下使用
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_LOGS_DIR}`
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_DATA_DIR}`
+    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_LOGS_DIR}`
+    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_DATA_DIR}`
 
 	ln -sf ${TMP_$soft_upper_short_name_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_LOGS_DIR}
 	ln -sf ${TMP_$soft_upper_short_name_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_DATA_DIR}
@@ -70,7 +70,17 @@ function setup_$soft_name()
 # 3-设置软件
 function conf_$soft_name()
 {
-	cd ${1}
+	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
+
+	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
+	
+	local TMP_$soft_upper_short_name_LNK_ETC_DIR=${ATT_DIR}/$setup_name
+	local TMP_$soft_upper_short_name_ETC_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/etc
+	rm -rf ${TMP_$soft_upper_short_name_ETC_DIR}
+	mkdir -pv ${TMP_$soft_upper_short_name_LNK_ETC_DIR}
+	ln -sf ${TMP_$soft_upper_short_name_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_ETC_DIR}
+
+	# 开始配置
 
 	return $?
 }
@@ -132,7 +142,7 @@ function exec_step_$soft_name()
 # x1-下载软件
 function down_$soft_name()
 {
-	TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"
+	local TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"
 	set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_NEWER" "meyer-net/snake"
 	exec_text_format "TMP_$soft_upper_short_name_SETUP_NEWER" "https://www.xxx.com/downloads/$setup_name-%s.tar.gz"
 	# local TMP_$soft_upper_short_name_DOWN_URL_BASE="http://www.xxx.net/projects/releases/"
