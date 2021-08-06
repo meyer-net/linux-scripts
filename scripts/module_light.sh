@@ -96,7 +96,7 @@ function boot_$soft_name()
     $setup_name -v
 
 	# 当前启动命令
-	bin/$soft_name
+	nohup bin/$soft_name > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
     echo_startup_config "$soft_name" "${TMP_$soft_upper_short_name_SETUP_DIR}" "bin/$soft_name" "" "100"

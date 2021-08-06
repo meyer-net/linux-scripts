@@ -195,6 +195,7 @@ function boot_consul()
 
     # 当前启动命令,判断如果是主节点
     if [ "${TMP_CSL_SETUP_CLUSTER_LEADER_ADDR}" = "${LOCAL_HOST}" ]; then
+        echo "Consul：Exec bootstrap mode"
         start_bootstrap
     else
         local TMP_CSL_SETUP_BOOT_MODE=1
@@ -213,10 +214,10 @@ function start_bootstrap()
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
 
     local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT=`echo ${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR} | awk -F',' '{for(i=1;i<=NF;i++) if($i==$NF) {print i}}'`
-    consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT}
+    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT} > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
-    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "screen bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT}" "" "1"
+    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT}" "" "1"
 
     return $?
 }
@@ -226,10 +227,10 @@ function start_server()
 	local TMP_CSL_SETUP_DIR=`pwd`
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
     
-    consul agent -config-dir ${TMP_CSL_ETC_DIR}/server
+    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/server > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
-    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "screen bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/server" "" "1"
+    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/server" "" "1"
 
     return $?
 }
@@ -239,10 +240,10 @@ function start_agent()
 	local TMP_CSL_SETUP_DIR=`pwd`
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
     
-    consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent
+    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
-    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "screen bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent" "" "1"
+    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent" "" "1"
     
     return $?
 }
