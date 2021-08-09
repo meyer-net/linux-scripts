@@ -136,7 +136,7 @@ function setup_luarocks()
 
 function check_setup_lor()
 {
-    path_not_exits_action "$TMP_SETUP_OPENRESTY_DIR/luafws/lor" "print_lor" "Lor was installed"
+    path_not_exists_action "$TMP_SETUP_OPENRESTY_DIR/luafws/lor" "print_lor" "Lor was installed"
     lord -v
 
     # exec_yn_action "check_setup_orange" "Orange: Please sure if u want to got a orange server"
@@ -182,7 +182,7 @@ function setup_libs()
 function check_setup_orange()
 {
     ORANGE_DIR="$TMP_SETUP_OPENRESTY_DIR/luafws/lor/dependprj/gateway"
-    path_not_exits_action "$ORANGE_DIR" "print_orange" "Orange was installed"
+    path_not_exists_action "$ORANGE_DIR" "print_orange" "Orange was installed"
 	return $?
 }
 

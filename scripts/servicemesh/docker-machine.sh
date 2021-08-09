@@ -16,7 +16,7 @@ function set_environment()
 
 function check_docker_machine()
 {
-    path_not_exits_action "$TMP_SETUP_DOCKER_MACHINE_DIR" "setup_docker_machine" "DockerMachine was installed"
+    path_not_exists_action "$TMP_SETUP_DOCKER_MACHINE_DIR" "setup_docker_machine" "DockerMachine was installed"
 
     return $?
 }

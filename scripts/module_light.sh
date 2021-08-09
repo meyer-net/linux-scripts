@@ -6,6 +6,7 @@
 #------------------------------------------------
 # 安装标题：$title_name
 # 软件名称：$soft_name
+# 软件端口：$soft_port
 # 软件大写名称：$soft_upper_name
 # 软件大写分组与简称：$soft_upper_short_name
 # 软件安装名称：$setup_name
@@ -55,7 +56,7 @@ function setup_$soft_name()
 	# 环境变量或软连接
 	echo "$soft_upper_name_HOME=${TMP_$soft_upper_short_name_SETUP_DIR}" >> /etc/profile
 	echo 'PATH=$$soft_upper_name_HOME/bin:$PATH' >> /etc/profile
-	echo "export PATH $soft_upper_name_HOME" >> /etc/profile
+	echo 'export PATH $soft_upper_name_HOME' >> /etc/profile
 
     # 重新加载profile文件
 	source /etc/profile
@@ -76,8 +77,15 @@ function conf_$soft_name()
 	
 	local TMP_$soft_upper_short_name_LNK_ETC_DIR=${ATT_DIR}/$setup_name
 	local TMP_$soft_upper_short_name_ETC_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/etc
-	rm -rf ${TMP_$soft_upper_short_name_ETC_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_LNK_ETC_DIR}
+
+	# ①-Y：存在配置文件：原路径文件放给真实路径
+	mv ${TMP_$soft_upper_short_name_ETC_DIR} ${TMP_$soft_upper_short_name_LNK_ETC_DIR}
+
+	# ①-N：不存在配置文件：
+	# rm -rf ${TMP_$soft_upper_short_name_ETC_DIR}
+	# mkdir -pv ${TMP_$soft_upper_short_name_LNK_ETC_DIR}
+
+	# 替换原路径链接
 	ln -sf ${TMP_$soft_upper_short_name_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_ETC_DIR}
 
 	# 开始配置
@@ -97,9 +105,19 @@ function boot_$soft_name()
 
 	# 当前启动命令
 	nohup bin/$soft_name > logs/boot.log 2>&1 &
+	
+    # 等待启动
+    echo "Starting $soft_name，Waiting for a moment"
+    sleep 10
+
+	# 启动状态检测
+	bin/$soft_name status  # lsof -i:$soft_port
 
 	# 添加系统启动命令
     echo_startup_config "$soft_name" "${TMP_$soft_upper_short_name_SETUP_DIR}" "bin/$soft_name" "" "100"
+	
+	# 授权iptables端口访问
+	echo_soft_port $soft_port
 
 	return $?
 }

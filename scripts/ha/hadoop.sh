@@ -4,8 +4,11 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
-# 参考文献：http://www.jianshu.com/p/b49712bbe044
+# 参考文献：
+#		   http://www.jianshu.com/p/b49712bbe044
+#          http://dblab.xmu.edu.cn/blog/install-hadoop/
 #------------------------------------------------
+local TMP_HDOP_WAS_SETUPED=0
 
 # 1-配置环境
 function set_environment()
@@ -18,6 +21,7 @@ function set_environment()
 }
 
 # 2-安装软件
+# 因采用主拷贝从的方式安装，所以默认本机为安装的情况均为主节点
 function setup_hadoop()
 {
 	local TMP_HDOP_SETUP_DIR=${1}
@@ -51,7 +55,7 @@ function setup_hadoop()
 
 	# 环境变量或软连接
 	echo "HADOOP_HOME=${TMP_HDOP_SETUP_DIR}" >> /etc/profile
-	echo 'PATH=$HADOOP_HOME/bin:$PATH' >> /etc/profile
+	echo 'PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH' >> /etc/profile
 	echo "export PATH HADOOP_HOME" >> /etc/profile
 
     # 重新加载profile文件
@@ -59,7 +63,7 @@ function setup_hadoop()
 	# ln -sf ${TMP_HDOP_SETUP_DIR}/bin/hadoop /usr/bin/hadoop
 
 	# 授权权限，否则无法写入
-	chown -R hadoop:hadoop_group ${TMP_HDOP_SETUP_DIR}
+	chown -R hadoop:hadoop ${TMP_HDOP_SETUP_DIR}
 
 	return $?
 }
@@ -71,14 +75,15 @@ function conf_hadoop()
 	cd ${TMP_HDOP_SETUP_DIR}
 	
 	local TMP_HDOP_DATA_DIR=${TMP_HDOP_SETUP_DIR}/data
+	local TMP_HDOP_LOGS_DIR=${TMP_HDOP_SETUP_DIR}/logs
 
     local TMP_HDOP_MASTER_HOST="${LOCAL_HOST}"
-    input_if_empty "TMP_HDOP_MASTER_HOST" "Hadoop: Please ender your ${red}cluster master host address${reset} like '${LOCAL_HOST}'"
+    # input_if_empty "TMP_HDOP_MASTER_HOST" "Hadoop: Please ender your ${red}cluster master host address${reset} like '${LOCAL_HOST}'"
 
 	# 本机转换
-	if [ "${TMP_HDOP_MASTER_HOST}" == "127.0.0.1" ] || [ "${TMP_HDOP_MASTER_HOST}" == "localhost" ]; then
-		TMP_HDOP_MASTER_HOST="${LOCAL_HOST}"
-	fi
+	# if [ "${TMP_HDOP_MASTER_HOST}" == "127.0.0.1" ] || [ "${TMP_HDOP_MASTER_HOST}" == "localhost" ]; then
+	# 	TMP_HDOP_MASTER_HOST="${LOCAL_HOST}"
+	# fi
     
 	echo "export HDFS_NAMENODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
 	echo "export HDFS_DATANODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
@@ -88,10 +93,9 @@ function conf_hadoop()
 	echo "export JAVA_HOME=${JAVA_HOME}" >> etc/hadoop/hadoop-env.sh
 
 	# 全局，给后面的函数读取
-	TMP_HDOP_HADOOP_MASTER_ID=`echo ${TMP_HDOP_MASTER_HOST##*.}`
+	# TMP_HDOP_HADOOP_MASTER_NAME=`echo ${TMP_HDOP_MASTER_HOST##*.}`
+	TMP_HDOP_HADOOP_MASTER_NAME=`echo ${TMP_HDOP_MASTER_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
     
-    echo "127.0.0.1 lnxsvr.ha${LOCAL_ID}" >> /etc/hosts 
-    # echo "${LOCAL_HOST} lnxsvr.ha${LOCAL_ID}" >> /etc/hosts 
     cat >etc/hadoop/core-site.xml<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -119,7 +123,7 @@ function conf_hadoop()
 </property>
 <property>
 	<name>fs.defaultFS</name>
-	<value>hdfs://lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:3000</value>
+	<value>hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:3000</value>
 </property>
 </configuration>
 EOF
@@ -187,7 +191,7 @@ EOF
 <configuration>
 <property>
     <name>mapred.job.tracker</name>
-    <value>lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:49001</value>
+    <value>${TMP_HDOP_HADOOP_MASTER_NAME}:49001</value>
 </property>
 <property>
       <name>mapred.local.dir</name>
@@ -220,7 +224,7 @@ EOF
 <!-- Site specific YARN configuration properties -->
 <property>
         <name>yarn.resourcemanager.hostname</name>
-        <value>lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}</value>
+        <value>${TMP_HDOP_HADOOP_MASTER_NAME}</value>
 		<description>表示ResourceManager安装的主机</description>
    </property>
    <property>
@@ -280,78 +284,132 @@ EOF
 
     rm -rf share/doc
 
-    bin/hadoop namenode -format
     ls ${TMP_HDOP_DATA_DIR}/dfs/name/current/
 
-	ssh-keygen -t rsa -P ''
-            
-    cat ~/.ssh/id_rsa.pub | sed "s@lnxsvr.*@lnxsvr.ha$LOCAL_ID@g" > ~/.ssh/authorized_keys
-    cat ~/.ssh/authorized_keys > ~/.ssh/id_rsa.pub
+    # 添加许可密钥给定集群
+	path_not_exists_action '~/.ssh/id_rsa.pub' 'ssh-keygen -t rsa -P ""'
 
-    echo_soft_port 3000 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 49001 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 8032 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 8030 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 8088 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 8090 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 8031 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 8033 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 50070 "${TMP_HDOP_MASTER_HOST}"
-    echo_soft_port 50075 "${TMP_HDOP_MASTER_HOST}"
+	# 添加授权
+    cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys
+
+    # echo_soft_port 3000 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 8030 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 8031 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 8032 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 8033 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 8088 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 8090 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 49001 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 50070 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port 50075 "${TMP_HDOP_MASTER_HOST}"
+
+    # cat /etc/sysconfig/iptables | sed -n '12,21p' > ssh_sed_hadoop_${TMP_HDOP_HADOOP_MASTER_NAME}_port.tmp
+
+	# 添加系统启动命令
+	echo_startup_config "hadoop-dfs" `pwd` "bash sbin/start-dfs.sh" "" "10"
 	
-    cat /etc/sysconfig/iptables | sed -n '12,21p' > ssh_sed_hadoop${TMP_HDOP_HADOOP_MASTER_ID}_port.tmp
-
     exec_yn_action "conf_hadoop_cluster" "Hadoop: Please sure if this install is cluster mode"
 
 	return $?
 }
 
+# Hadoop安装：选定一台主机作为master
+# 远程机器目录必须预先初始化系统目录基础结构
 function conf_hadoop_cluster()
 {
 	local TMP_HDOP_SETUP_DIR=`pwd`
+	local TMP_HDOP_LNK_LOGS_DIR=${LOGS_DIR}/hadoop
+	local TMP_HDOP_LNK_DATA_DIR=${DATA_DIR}/hadoop
+	local TMP_HDOP_LNK_ETC_DIR=${ATT_DIR}/hadoop
+	
+	local TMP_HDOP_LOGS_DIR=${TMP_HDOP_SETUP_DIR}/logs
 	local TMP_HDOP_DATA_DIR=${TMP_HDOP_SETUP_DIR}/data
+	local TMP_HDOP_ETC_DIR=${TMP_HDOP_SETUP_DIR}/etc
 
-    local TMP_HDOP_CLUSTER_SLAVE_HOSTS="${LOCAL_HOST}"
-    exec_while_read "TMP_HDOP_CLUSTER_SLAVE_HOSTS" "Hadoop: Please ender cluster-slaves-host part \$I of address like '${LOCAL_HOST}', but except '${LOCAL_HOST}'" "" "
-        local TMP_HDOP_CLUSTER_SLAVE_ID=\`echo \\\${CURRENT##*.}\`
-        if [ "\$I" -eq 1 ]; then
-            echo \"lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}\" > etc/hadoop/slaves
+	# 启动配置文件
+	local TMP_HDOP_SUP_CONF_PATH=`find / -name hadoop-dfs.conf 2> /dev/null`
+
+	local TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR=(${TMP_EXEC_IF_CHOICE_SCRIPT_PATH})
+    local TMP_HDOP_CLUSTER_SLAVE_DFT="${LOCAL_HOST}"
+    local TMP_HDOP_CLUSTER_SLAVE_HOSTS=()
+    exec_while_read "TMP_HDOP_CLUSTER_SLAVE_DFT" "Hadoop: Please ender cluster-slaves-host part \$I of address like '${LOCAL_HOST}', but except '${LOCAL_HOST}'" "" "
+		if [ \"\${CURRENT}\" == \"${LOCAL_HOST}\" ]; then
+			return \$?
+		fi
+
+        TMP_HDOP_CLUSTER_SLAVE_HOSTS[\${((I-1))}]=\'\${CURRENT}\'\"
+
+		# 添加从属节点配置
+        local TMP_HDOP_CLUSTER_SLAVE_NAME=\`echo \\\${CURRENT} | sed \'s@\.@-@g\' | xargs -I \{\} echo \"\{\}\"\`
+        if [ \"\$I\" -eq 1 ]; then
+            echo \"\${TMP_HDOP_CLUSTER_SLAVE_NAME}\" > etc/hadoop/slaves
         else
-            echo \"lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}\" >> etc/hadoop/slaves
+            echo \"\${TMP_HDOP_CLUSTER_SLAVE_NAME}\" >> etc/hadoop/slaves
         fi
 
+		# 授权本地端口开放给Slaves
         echo_soft_port 3000 \"\$CURRENT\"
-        echo_soft_port 49001 \"\$CURRENT\"
-        echo_soft_port 8032 \"\$CURRENT\"
         echo_soft_port 8030 \"\$CURRENT\"
+        echo_soft_port 8031 \"\$CURRENT\"
+        echo_soft_port 8032 \"\$CURRENT\"
+        echo_soft_port 8033 \"\$CURRENT\"
         echo_soft_port 8088 \"\$CURRENT\"
         echo_soft_port 8090 \"\$CURRENT\"
-        echo_soft_port 8031 \"\$CURRENT\"
-        echo_soft_port 8033 \"\$CURRENT\"
+        echo_soft_port 49001 \"\$CURRENT\"
         echo_soft_port 50070 \"\$CURRENT\"
         echo_soft_port 50075 \"\$CURRENT\"
 
-        echo \"\$CURRENT lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}\" >> /etc/hosts
+		# NameNode映射
+        echo \"\$CURRENT \${TMP_HDOP_CLUSTER_SLAVE_NAME}\" >> /etc/hosts
 
-        ssh-copy-id -i ~/.ssh/id_rsa.pub lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}
+		# 远程机器免登录授权
+        ssh-copy-id -i ~/.ssh/id_rsa.pub \${TMP_HDOP_CLUSTER_SLAVE_NAME}
 
         sleep 1
 
-        scp -r ${TMP_HDOP_SETUP_DIR} root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:${TMP_HDOP_SETUP_DIR}
-        scp -r ${TMP_HDOP_DATA_DIR} root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:${TMP_HDOP_DATA_DIR}
+		# 远程机器识别本地HOST映射
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \"${LOCAL_HOST} ${TMP_HDOP_HADOOP_MASTER_NAME}\" >> /etc/hosts\"
 
-        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed 's@\$CURRENT@\${TMP_HDOP_MASTER_HOST}@g' > ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp
+		# 拷贝本地安装目录给定远程
+        scp -r ${TMP_HDOP_SETUP_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_SETUP_DIR}
+        scp -r ${TMP_HDOP_LNK_DATA_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_LNK_DATA_DIR}
+        scp -r ${TMP_HDOP_LNK_LOGS_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_LNK_LOGS_DIR}
+        scp -r ${TMP_HDOP_LNK_ETC_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_LNK_ETC_DIR}
+        scp -r ${TMP_HDOP_SUP_CONF_PATH} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_SUP_CONF_PATH}
+		
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"mv ${TMP_HDOP_LOGS_DIR} ${TMP_HDOP_LNK_LOGS_DIR} && ln -sf ${TMP_HDOP_LNK_LOGS_DIR} ${TMP_HDOP_LOGS_DIR}\"
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"mv ${TMP_HDOP_DATA_DIR} ${TMP_HDOP_LNK_DATA_DIR} && ln -sf ${TMP_HDOP_LNK_DATA_DIR} ${TMP_HDOP_DATA_DIR}\"
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"mv ${TMP_HDOP_ETC_DIR} ${TMP_HDOP_LNK_ETC_DIR} && ln -sf ${TMP_HDOP_LNK_ETC_DIR} ${TMP_HDOP_ETC_DIR}\"
+
+		# 添加远程环境变量
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \"HADOOP_HOME=${TMP_HDOP_SETUP_DIR}\" >> /etc/profile\"
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \'PATH=\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin:\$PATH\' >> /etc/profile\"
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \'export PATH HADOOP_HOME\' >> /etc/profile\"
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"source /etc/profile && chown -R hadoop:hadoop ${TMP_HDOP_SETUP_DIR}\"
+
+		# 远程启动
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"cd \${HADOOP_HOME} && bin/hadoop version && jps\"
+		# ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"\"
+
+		# 备份iptables授权IP:端口配置
+        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed 's@\$CURRENT@${TMP_HDOP_MASTER_HOST}@g' > ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp
 
         echo
-        echo \"Hadoop: File of ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp will upload to '\$CURRENT' then append to iptables.service\"
+        echo \"Hadoop: File of ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp will upload to '\$CURRENT' then append to iptables.service\"
         echo
     
-        scp -r ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:/tmp
-        scp -r ssh_sed_hadoop${TMP_HDOP_HADOOP_MASTER_ID}_port.tmp root@lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID}:/tmp
+        scp -r ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:/tmp
         
-        ssh -o \"StrictHostKeyChecking no\" lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID} \"sed -i '11 r /tmp/ssh_sed_hadoop${TMP_HDOP_HADOOP_MASTER_ID}_port.tmp' /etc/sysconfig/iptables\"
-        ssh -o \"StrictHostKeyChecking no\" lnxsvr.ha\${TMP_HDOP_CLUSTER_SLAVE_ID} \"sed -i '11 r /tmp/ssh_sed_hadoop\${TMP_HDOP_CLUSTER_SLAVE_ID}_port.tmp' /etc/sysconfig/iptables\"
+        ssh -o \"StrictHostKeyChecking no\" \${TMP_HDOP_CLUSTER_SLAVE_NAME} \"sed -i '11 r /tmp/ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp' /etc/sysconfig/iptables && rm -rf /tmp/ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp\"
     "
+
+	# 因动态设置，所以需要重新修改对应集群数量
+	local TMP_HDOP_CLUSTER_SLAVE_HOSTS_LEN=${#TMP_HDOP_CLUSTER_SLAVE_HOSTS[@]}
+	TMP_HDOP_CLUSTER_SLAVE_HOSTS[$((TMP_HDOP_CLUSTER_SLAVE_HOSTS-1))]="127.0.0.1"
+	
+	for TMP_HDOP_CLUSTER_SLAVE_HOST in ${!TMP_HDOP_CLUSTER_SLAVE_HOSTS[@]}; do
+		ssh -tt root@${TMP_HDOP_CLUSTER_SLAVE_HOST} "sed -i \'s@<value>1</value>@<value>${TMP_HDOP_CLUSTER_SLAVE_HOSTS_LEN}</value>@g\' ${TMP_HDOP_SETUP_DIR}/etc/hadoop/hdfs-site.xml"
+	done
 
 	return $?
 }
@@ -366,26 +424,23 @@ function boot_hadoop()
 	# 验证安装
 	bin/hadoop version
 
-	# 添加系统启动命令，如果当前机器ID与主机器ID相等
-    # exec_if_choice "CHOICE_HADOOP_BOOT_TYPE" "Please choice which boot type you want to do" "...,Master,Slave,Exit" "${TMP_SPLITER}" "boot_hadoop_"
-	if [ ${TMP_HDOP_HADOOP_MASTER_ID} -eq ${LOCAL_ID} ]; then		
-		# 添加系统启动命令
-		echo_startup_config "hadoop" `pwd` "bash sbin/start-all.sh" "" "10"
-	else
-		# 添加系统启动命令
-		echo_startup_config "hadoop" `pwd` "bash sbin/start-dfs.sh" "" "10"
-	fi
+	# NameNode初始化
+    bin/hadoop namenode -format
+	
+	# 添加系统启动命令
+	echo_startup_config "hadoop-yarn" `pwd` "bash sbin/start-yarn.sh" "" "20"
 
 	bash sbin/start-dfs.sh
+	bash sbin/start-yarn.sh
 
     sleep 10
 
 	# 测试安装
     bin/hdfs dfs -ls /
-    echo "test ok" > test.log && bin/hdfs dfs -put test.log hdfs://lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:3000/ && rm -f test.log
+    echo "test ok" > test.log && bin/hdfs dfs -put test.log hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:3000/ && rm -f test.log
     bin/hdfs dfs -ls /
 
-    bin/hdfs dfs -get hdfs://lnxsvr.ha${TMP_HDOP_HADOOP_MASTER_ID}:3000/test.log
+    bin/hdfs dfs -get hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:3000/test.log
 
     bin/hdfs dfs -df -h /
 
@@ -426,6 +481,8 @@ function exec_step_hadoop()
 
 	boot_hadoop "${TMP_HDOP_SETUP_DIR}"
 
+	TMP_HDOP_WAS_SETUPED=1
+
 	return $?
 }
 
@@ -441,5 +498,15 @@ function down_hadoop()
 	return $?
 }
 
-#安装主体
+# 安装主体
 setup_soft_basic "Hadoop" "down_hadoop"
+
+# 判断从属节点的安装
+function check_and_run_slave()
+{
+	if [ ${TMP_HDOP_WAS_SETUPED} -eq 0 ]; then
+		boot_hadoop "${HADOOP_HOME}"
+	fi
+
+	return $?
+}

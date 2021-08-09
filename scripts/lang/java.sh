@@ -23,7 +23,7 @@ function setup_java()
 
 	mv ${TMP_LANG_JAVA_CURRENT_DIR} ${TMP_LANG_JAVA_SETUP_DIR}
 
-    path_not_exits_action "/usr/lib/jvm/java-1.8.0" "mkdir -pv /usr/lib/jvm && ln -sf ${JAVA_HOME} /usr/lib/jvm/java-1.8.0"
+    path_not_exists_action "/usr/lib/jvm/java-1.8.0" "mkdir -pv /usr/lib/jvm && ln -sf ${JAVA_HOME} /usr/lib/jvm/java-1.8.0"
 
 	# 环境变量
 	echo "JAVA_HOME=${JAVA_HOME}" >> /etc/profile

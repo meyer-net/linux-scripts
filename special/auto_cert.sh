@@ -16,7 +16,7 @@ function check_config()
 
     convert_path "AUTO_CERT_CONFIG_PATH"
     path_not_exits_create `dirname ${AUTO_CERT_CONFIG_PATH}`
-    path_not_exits_action "${AUTO_CERT_CONFIG_PATH}" "fill_config"
+    path_not_exists_action "${AUTO_CERT_CONFIG_PATH}" "fill_config"
     
     #路径转换
     cat special/cert_checker_exec.sh > /usr/bin/cert_checker && chmod +x /usr/bin/cert_checker

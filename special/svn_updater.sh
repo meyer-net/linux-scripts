@@ -12,7 +12,7 @@ function check_config()
     convert_path "SVN_UPDATE_CONFIG_PATH"
     local SVN_UPDATE_CONFIG_DIR=`dirname $SVN_UPDATE_CONFIG_PATH`
     path_not_exits_create "${SVN_UPDATE_CONFIG_DIR}"
-    path_not_exits_action "${SVN_UPDATE_CONFIG_PATH}" "fill_config"
+    path_not_exists_action "${SVN_UPDATE_CONFIG_PATH}" "fill_config"
     
     #路径转换
     cat special/svn_updater_exec.sh > /usr/bin/svn_updater && chmod +x /usr/bin/svn_updater

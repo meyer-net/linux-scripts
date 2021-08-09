@@ -566,7 +566,7 @@ EOF
 
 function check_setup_kong()
 {
-    path_not_exits_action "${TMP_SETUP_KONG_DIR}" "setup_kong" "Kong was installed"
+    path_not_exists_action "${TMP_SETUP_KONG_DIR}" "setup_kong" "Kong was installed"
     
     # 绑定证书同步，需装
     # cd ${__DIR}

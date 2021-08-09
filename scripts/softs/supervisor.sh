@@ -27,10 +27,10 @@ function setup_supervisor()
 function set_supervisor()
 {
 	local TMP_SFT_SUPERVISOR_CONF_PATH=${SUPERVISOR_ATT_DIR}/supervisor.conf
-    path_not_exits_action "${TMP_SFT_SUPERVISOR_CONF_PATH}" "set_supervisor_conf"
+    path_not_exists_action "${TMP_SFT_SUPERVISOR_CONF_PATH}" "set_supervisor_conf"
 
     local TMP_SFT_SUPERVISOR_VTL_BIN_PATH=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/supervisor
-    path_not_exits_action "${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}" "set_supervisor_bin"
+    path_not_exists_action "${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}" "set_supervisor_bin"
 
 	return $?
 }

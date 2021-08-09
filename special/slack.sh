@@ -13,7 +13,7 @@ function check_config()
     convert_path "SLACK_CONFIG_PATH"
 
     path_not_exits_create `dirname ${SLACK_CONFIG_PATH}`
-    path_not_exits_action "${SLACK_CONFIG_PATH}" "fill_config"
+    path_not_exists_action "${SLACK_CONFIG_PATH}" "fill_config"
 
     #路径转换
     # sed -i "s@$SLACK_CONFIG_SOURCE_PATH@$SLACK_CONFIG_PATH@g" special/slack_exec.sh

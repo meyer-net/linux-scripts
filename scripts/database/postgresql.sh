@@ -25,7 +25,7 @@ function switch_setup_postgresql_version()
 
 function check_setup_postgresql()
 {
-    path_not_exits_action "$DATA_DIR/postgresql" "setup_postgresql" "PostgreSql was installed"
+    path_not_exists_action "$DATA_DIR/postgresql" "setup_postgresql" "PostgreSql was installed"
 
 	return $?
 }
@@ -104,8 +104,8 @@ function set_db_master()
 	echo "Start Config PostgreSql-Master"
     
     #获取从库信息
-    local TMP_SET_DB_MASTER_SLAVER=$LOCAL_HOST
-    input_if_empty "TMP_SET_DB_MASTER_SLAVER" "PostgreSql: Please ender ${red}postgresql slaver address in internal${reset}"
+    local TMP_SET_DB_MASTER_SLAVE=$LOCAL_HOST
+    input_if_empty "TMP_SET_DB_MASTER_SLAVE" "PostgreSql: Please ender ${red}postgresql slave address in internal${reset}"
 
     #修改最大同步用户
     sed -i "s@^#max_wal_senders =.*@max_wal_senders = 5@g" $POSTGRESQL_CONF_PATH
@@ -132,7 +132,7 @@ function set_db_master()
     sed -i "s@^#wal_log_hints =.*@wal_log_hints = on@g" $POSTGRESQL_CONF_PATH
 
     #修改认证
-    echo "host    replication     rep_user        $TMP_SET_DB_MASTER_SLAVER/32        md5" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
+    echo "host    replication     rep_user        $TMP_SET_DB_MASTER_SLAVE/32        md5" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
     
     #创建同步用户
 psql -U postgres -h localhost -d postgres << EOF
@@ -149,13 +149,13 @@ EOF
     sed -i "s@^#standby_mode =.*@standby_mode = on@g" $POSTGRESQL_DATA_DIR/recovery.done
     
     #
-    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_MASTER_SLAVER port=5432 user=rep_user password=reppsql%1475963\&m'@g" $POSTGRESQL_DATA_DIR/recovery.done
+    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_MASTER_SLAVE port=5432 user=rep_user password=reppsql%1475963\&m'@g" $POSTGRESQL_DATA_DIR/recovery.done
     
     #
     sed -i "s@^#trigger_file =.*@trigger_file = '$POSTGRESQL_DATA_DIR/trigger_file'@g" $POSTGRESQL_DATA_DIR/recovery.done
 
     #输出pgpass
-    echo "$TMP_SET_DB_MASTER_SLAVER:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
+    echo "$TMP_SET_DB_MASTER_SLAVE:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
     systemctl restart postgresql-${POSTGRESQL_STP_VER}.service
@@ -171,8 +171,8 @@ function set_db_slave()
 	echo "Start Config PostgreSql-Slave"
     
     #获取从库信息
-    local TMP_SET_DB_SLAVER_MASTER=$LOCAL_HOST
-    input_if_empty "TMP_SET_DB_SLAVER_MASTER" "PostgreSql: Please ender ${red}postgresql master address in internal${reset}"
+    local TMP_SET_DB_SLAVE_MASTER=$LOCAL_HOST
+    input_if_empty "TMP_SET_DB_SLAVE_MASTER" "PostgreSql: Please ender ${red}postgresql master address in internal${reset}"
 
     #复制样例
     cp /usr/pgsql-${POSTGRESQL_STP_VER}/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
@@ -184,20 +184,20 @@ function set_db_slave()
     sed -i "s@^#standby_mode =.*@standby_mode = on@g" $POSTGRESQL_DATA_DIR/recovery.conf
     
     #
-    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_SLAVER_MASTER port=5432 user=rep_user password=reppsql%1475963\&m'@g" $POSTGRESQL_DATA_DIR/recovery.conf
+    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_SLAVE_MASTER port=5432 user=rep_user password=reppsql%1475963\&m'@g" $POSTGRESQL_DATA_DIR/recovery.conf
     
     #
     sed -i "s@^#trigger_file =.*@trigger_file = '$POSTGRESQL_DATA_DIR/trigger_file'@g" $POSTGRESQL_DATA_DIR/recovery.conf
     
     #输出pgpass
-    echo "$TMP_SET_DB_SLAVER_MASTER:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
+    echo "$TMP_SET_DB_SLAVE_MASTER:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
     #修改认证
-    echo "host    replication     rep_user        $TMP_SET_DB_SLAVER_MASTER/32       md5" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
+    echo "host    replication     rep_user        $TMP_SET_DB_SLAVE_MASTER/32       md5" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
 
     #创建备库
-    pg_basebackup -D ${POSTGRESQL_DATA_DIR}_replicate -Fp -Xs -v -P -h $TMP_SET_DB_SLAVER_MASTER -p 5432 -U rep_user
+    pg_basebackup -D ${POSTGRESQL_DATA_DIR}_replicate -Fp -Xs -v -P -h $TMP_SET_DB_SLAVE_MASTER -p 5432 -U rep_user
     rsync -av ${POSTGRESQL_DATA_DIR}_replicate/* ${POSTGRESQL_DATA_DIR} --exclude '*.conf *.done *.pots'
 
     #重新授权
@@ -206,7 +206,7 @@ function set_db_slave()
     rm -rf ${POSTGRESQL_DATA_DIR}_replicate
 
     systemctl restart postgresql-${POSTGRESQL_STP_VER}.service
-	echo "Config PostgreSql-Slaver Over。"
+	echo "Config PostgreSql-Slave Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"
 

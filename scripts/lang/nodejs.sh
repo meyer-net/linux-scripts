@@ -7,7 +7,7 @@
 
 function check_setup_nodejs()
 {
-    path_not_exits_action "${NVM_PATH}" "print_nodejs" "Nodejs was installed"
+    path_not_exists_action "${NVM_PATH}" "print_nodejs" "Nodejs was installed"
 
 	source ${NVM_PATH}
 
@@ -15,11 +15,11 @@ function check_setup_nodejs()
 	local NODE_PATH=`which node`
 
 	# 部分程序是识别 /usr/bin or /usr/local/bin 目录的，所以在此创建适配其需要的软连接
-    path_not_exits_action "/usr/bin/npm" "ln -sf ${NPM_PATH} /usr/bin/npm" "Npm at '/usr/bin/npm' was linked"
-    path_not_exits_action "/usr/local/bin/npm" "ln -sf ${NPM_PATH} /usr/local/bin/npm" "Npm at '/usr/local/bin/npm' was linked"
+    path_not_exists_action "/usr/bin/npm" "ln -sf ${NPM_PATH} /usr/bin/npm" "Npm at '/usr/bin/npm' was linked"
+    path_not_exists_action "/usr/local/bin/npm" "ln -sf ${NPM_PATH} /usr/local/bin/npm" "Npm at '/usr/local/bin/npm' was linked"
 
-    path_not_exits_action "/usr/bin/node" "ln -sf ${NODE_PATH} /usr/bin/node" "Node at '/usr/bin/node' was linked"
-    path_not_exits_action "/usr/local/bin/node" "ln -sf ${NODE_PATH} /usr/bin/node" "Node at '/usr/local/bin/node' was linked"
+    path_not_exists_action "/usr/bin/node" "ln -sf ${NODE_PATH} /usr/bin/node" "Node at '/usr/bin/node' was linked"
+    path_not_exists_action "/usr/local/bin/node" "ln -sf ${NODE_PATH} /usr/bin/node" "Node at '/usr/local/bin/node' was linked"
 	
 	return $?
 }

@@ -7,7 +7,7 @@
 
 function check_sets()
 {
-	path_not_exits_action "${SETUP_DIR}/sys_seted" "optimize_system"
+	path_not_exists_action "${SETUP_DIR}/sys_seted" "optimize_system"
 
 	return $?
 }

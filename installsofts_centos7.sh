@@ -54,7 +54,7 @@ function mkdirs()
         source common/common_vars.sh
     fi
 
-    #path_not_exits_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
+    #path_not_exists_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
     path_not_exits_create "${DOWN_DIR}"
     path_not_exits_create "${SETUP_DIR}"
     path_not_exits_create "${WWW_DIR}"
@@ -62,7 +62,7 @@ function mkdirs()
     path_not_exits_create "${BOOT_DIR}"
     path_not_exits_create "${HTML_DIR}"
     
-    path_not_exits_action "${LOGS_DIR}" "link_logs"
+    path_not_exists_action "${LOGS_DIR}" "link_logs"
 
     sudo yum makecache fast
 

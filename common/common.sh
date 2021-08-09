@@ -409,7 +409,7 @@ function setup_soft_basic()
 #参数1：检测路径
 #参数2：执行函数或脚本
 #参数3：路径存在时输出信息
-function path_not_exits_action() 
+function path_not_exists_action() 
 {
 	local _TMP_NOT_EXITS_PATH="$1"
 	local _TMP_NOT_EXITS_PATH_SCRIPT="$2"
@@ -447,7 +447,7 @@ function path_not_exits_create()
 	local _TMP_NOT_EXITS_PATH="$1"
 	local _TMP_NOT_EXITS_PATH_ECHO="$2"
 
-    path_not_exits_action "${_TMP_NOT_EXITS_PATH}" "mkdir -pv ${_TMP_NOT_EXITS_PATH}" "${_TMP_NOT_EXITS_PATH_ECHO}"
+    path_not_exists_action "${_TMP_NOT_EXITS_PATH}" "mkdir -pv ${_TMP_NOT_EXITS_PATH}" "${_TMP_NOT_EXITS_PATH_ECHO}"
 
 	return $?
 }
@@ -1775,13 +1775,32 @@ function echo_soft_port()
 	local TMP_ECHO_SOFT_PORT_IP=${2}
 	local TMP_ECHO_SOFT_PORT_TYPE=${3}
 
-	# 非VmWare产品的情况下，不安装iptables
-	if [ "${SYSTEMD_DETECT_VIRT}" != "vmware" ]; then
-		return $?
-	fi
+	# 非VmWare产品的情况下，不安装iptables，给个假iptables文件
+	if [ "${SYSTEMD_DETECT_VIRT}" != "vmware" ]; then	
+		if [ ! -f "/etc/sysconfig/iptables" ]; then
+			cat >/etc/sysconfig/iptables<<EOF
+# sample configuration for iptables service
+# you can edit this manually or use system-config-firewall
+# please do not ask us to add additional ports/services to this default configuration
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+# [[[[[[[[[[[A EMPTY FILE]]]]]]]]]]
 
-	if [ ! -f "/etc/sysconfig/iptables" ]; then
-		soft_yum_check_setup "iptables-services"
+# [[[[[[[[[[[A EMPTY FILE]]]]]]]]]]
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+EOF
+		fi
+	else
+		if [ ! -f "/etc/sysconfig/iptables" ]; then
+			soft_yum_check_setup "iptables-services"
+		fi
 	fi
 
 	# 判断是否加端口类型
@@ -1806,7 +1825,9 @@ function echo_soft_port()
 	sed -i "11a-A INPUT $TMP_ECHO_SOFT_PORT_IP-p tcp -m state --state NEW -m tcp --dport $TMP_ECHO_SOFT_PORT -j ACCEPT" /etc/sysconfig/iptables
 
 	# firewall-cmd --reload  # 重新载入规则
-	service iptables restart
+	if [ "${SYSTEMD_DETECT_VIRT}" == "vmware" ]; then	
+		service iptables restart
+	fi
 
 	# local TMP_FIREWALL_STATE=`firewall-cmd --state`
 	

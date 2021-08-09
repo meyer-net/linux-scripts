@@ -43,7 +43,7 @@ function set_environment()
 
     soft_yum_check_action "privoxy" "setup_privoxy"
 
-    path_not_exits_action "$SETUP_DIR/privoxy_pac" "setup_privoxy_pac"
+    path_not_exists_action "$SETUP_DIR/privoxy_pac" "setup_privoxy_pac"
 
 	return $?
 }

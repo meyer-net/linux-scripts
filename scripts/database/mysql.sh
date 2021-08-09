@@ -13,13 +13,13 @@ function set_environment()
 
 function check_setup_mysql()
 {
-    path_not_exits_action "$DATA_DIR/mysql" "print_mysql" "MySql was installed"
+    path_not_exists_action "$DATA_DIR/mysql" "print_mysql" "MySql was installed"
 	return $?
 }
 
 function check_setup_mariadb()
 {
-    path_not_exits_action "$DATA_DIR/mariadb" "print_mariadb" "MariaDB was installed"
+    path_not_exists_action "$DATA_DIR/mariadb" "print_mariadb" "MariaDB was installed"
 	return $?
 }
 
@@ -211,12 +211,12 @@ function set_db_master()
 	echo "------------------------------------------"
 	echo "Start Grant Permission Mysql To Slave"
     input_if_empty "TMP_SET_DB_MASTER_PASSWORD" "Mysql: Please ender ${red}mysql localhost password of root${reset}"
-    input_if_empty "TMP_SET_DB_MASTER_SLAVER" "Mysql: Please ender ${red}mysql slaver address in internal${reset}"
+    input_if_empty "TMP_SET_DB_MASTER_SLAVE" "Mysql: Please ender ${red}mysql slave address in internal${reset}"
 	
 	#在主服务器新建一个用户赋予“REPLICATION SLAVE”的权限。
 	mysql -uroot -p$TMP_SET_DB_MASTER_PASSWORD -e"
-	GRANT FILE ON *.* TO 'backup'@'$TMP_SET_DB_MASTER_SLAVER' IDENTIFIED BY 'backup#1475963&m';
-	GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* to 'backup'@'$TMP_SET_DB_MASTER_SLAVER' identified by 'backup#1475963&m';
+	GRANT FILE ON *.* TO 'backup'@'$TMP_SET_DB_MASTER_SLAVE' IDENTIFIED BY 'backup#1475963&m';
+	GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* to 'backup'@'$TMP_SET_DB_MASTER_SLAVE' identified by 'backup#1475963&m';
 	FLUSH PRIVILEGES;
 	select user,host,password from mysql.user;
 	show master status;
@@ -231,7 +231,7 @@ function set_db_master()
 function set_db_slave()
 {
 	echo "Start Config Mysql-Slave"
-    input_if_empty "TMP_SET_DB_SLAVER_MASTER" "Mysql: Please ender ${red}mysql master address in internal${reset}"
+    input_if_empty "TMP_SET_DB_SLAVE_MASTER" "Mysql: Please ender ${red}mysql master address in internal${reset}"
 
 	#不加binlog-do-db和binlog_ignore_db，那就表示备份全部数据库。
 	#echo "Mysql: Please Ender Mysql-Slave All DB To Bak And Use Character ',' To Split Like 'db_a,db_b' In Network"
@@ -250,12 +250,12 @@ function set_db_slave()
 	echo "Config Mysql-Slave Over。"
 	echo "------------------------------------------"
 	echo "Start Set And Test To Login Mysql-Master"    
-    input_if_empty "TMP_SET_DB_SLAVER_PASSWORD" "Mysql: Please ender ${red}mysql localhost password of root${reset}"
+    input_if_empty "TMP_SET_DB_SLAVE_PASSWORD" "Mysql: Please ender ${red}mysql localhost password of root${reset}"
 	
 	#在主服务器新建一个用户赋予“REPLICATION SLAVE”的权限。
-	mysql -uroot -p$TMP_SET_DB_SLAVER_PASSWORD -e"
+	mysql -uroot -p$TMP_SET_DB_SLAVE_PASSWORD -e"
 	stop slave;
-	change master to master_host='$TMP_SET_DB_SLAVER_MASTER', master_user='backup', master_password='backup#1475963&m';
+	change master to master_host='$TMP_SET_DB_SLAVE_MASTER', master_user='backup', master_password='backup#1475963&m';
 	start slave;
 	show slave status\G;
 	FLUSH PRIVILEGES;
