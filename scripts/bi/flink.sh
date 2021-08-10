@@ -11,10 +11,7 @@
 # 1-配置环境
 function set_environment()
 {
-    cd ${__DIR}
-
-    source scripts/lang/java.sh
-    source scripts/ha/hadoop.sh
+    cd ${__DIR} && source scripts/lang/java.sh
 
 	return $?
 }
@@ -65,29 +62,30 @@ function conf_flink()
 {
 	cd ${1}
 
-    sed -i "s@web\.port:.*@web\.port: 9010@g" conf/flink-conf.yaml
+    sed -i "s@jobmanager\.memory\.process\.size:.*@jobmanager\.memory\.process\.size: $((MEMORY_GB_FREE*1024))m@g" conf/flink-conf.yaml
+    sed -i "s@taskmanager\.memory\.process\.size:.*@taskmanager\.memory\.process\.size: $((MEMORY_GB_FREE*1024))m@g" conf/flink-conf.yaml
+    sed -i "s@taskmanager\.numberOfTaskSlots:.*@taskmanager\.numberOfTaskSlots: ${PROCESSOR_COUNT}@g" conf/flink-conf.yaml
+    sed -i "s@^#historyserver\.web\.address@historyserver\.web\.address@g" conf/flink-conf.yaml
+    sed -i "s@^#historyserver\.web\.port:.*@historyserver\.web\.port: 9010@g" conf/flink-conf.yaml
 
-    local TMP_FLK_HDOP_CLUSTER_MASTER_HOSTS="${LOCAL_HOST}"
-    exec_while_read "TMP_FLK_HDOP_CLUSTER_MASTER_HOSTS" "Hadoop: Please ender cluster-master-host part \$I of address like '${LOCAL_HOST}'"
-    echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOSTS}" | sed "s@,@\n@g" | awk -F'.' '{print "lnxsvr.ha"$4}' > conf/masters
+    local TMP_FLK_HDOP_CLUSTER_MASTER_HOST="${LOCAL_HOST}"
+    input_if_empty "TMP_FLK_HDOP_CLUSTER_MASTER_HOST" "Flink.Hadoop: Please ender cluster-master-host like '${LOCAL_HOST}'"
+    echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}" | sed "s@\.@-@g" | awk '{print "ip-"$1}' > conf/masters
+    echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}" | sed 's@,@\n@g' | awk '{print $1" ip-"$1}' | sed 's@\.@-@4g' > /etc/hosts
     cat conf/masters
     echo 
 
-    sed -i "s@jobmanager\.rpc\.address:.*@jobmanager\.rpc\.address: ${TMP_FLK_HDOP_CLUSTER_MASTER_HOSTS}@g" conf/flink-conf.yaml
-    sed -i "s@taskmanager\.numberOfTaskSlots:.*@taskmanager\.numberOfTaskSlots: $PROCESSOR_COUNT@g" conf/flink-conf.yaml
+    sed -i "s@jobmanager\.rpc\.address:.*@jobmanager\.rpc\.address: ${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}@g" conf/flink-conf.yaml
 
-    local TMP_FLNK_HDOP_CLUSTER_SLAVE_HOSTS="${LOCAL_HOST}"
-    exec_while_read "TMP_FLNK_HDOP_CLUSTER_SLAVE_HOSTS" "Hadoop: Please ender cluster-slave-host part \$I of address like '${LOCAL_HOST}'"
-    echo "$TMP_FLNK_HDOP_CLUSTER_SLAVE_HOSTS" | sed "s@,@\n@g" | awk -F'.' '{print "lnxsvr.ha"$4}' > conf/slaves
+    local TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS="${LOCAL_HOST}"
+    exec_while_read "TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS" "Flink.Hadoop: Please ender cluster-slave-host part \${I} of address like '${LOCAL_HOST}'"
+    echo "${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS}" | sed "s@\.@-@g" | sed 's@,@\n@g' | awk '{print "ip-"$1}' > conf/slaves
+    echo "${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS}" | sed 's@,@\n@g' | awk '{print $1" ip-"$1}' | sed 's@\.@-@4g' > /etc/hosts
     cat conf/slaves
     echo 
 
     # cd $FLINK_DIR/resources/python
     # python setup.py install
-    
-    echo_soft_port 9010
-
-    echo_startup_config "flink" "$FLINK_DIR" "bash bin/start-cluster.sh" "" "100"
 
 	return $?
 }
@@ -98,20 +96,28 @@ function boot_flink()
 	local TMP_FLK_SETUP_DIR=${1}
 
 	cd ${TMP_FLK_SETUP_DIR}
+    
+    echo_soft_port 6123
+    echo_soft_port 8081
+    echo_soft_port 9010
 	
 	# 当前启动命令
-    exec_yn_action "start_flink" "Flink-Cluster: Please sure you if this is a boot server of master"
+    exec_yn_action "boot_flink_master" "Flink.Cluster.Master: Please sure if this is a boot server of master"
 	
 	return $?
 }
 
-function boot_flink_realy()
+function boot_flink_master()
 {
     # 集群模式下，只需要主服务启动
     bash bin/start-cluster.sh
+    bash bin/historyserver.sh start
 
 	# 验证安装
     jps
+    lsof -i:6123
+    lsof -i:8081
+    lsof -i:9010
 
 	# 添加系统启动命令
     echo_startup_config "flink" "${TMP_FLK_SETUP_DIR}" "bash bin/start-cluster.sh" "" "100"
@@ -158,6 +164,7 @@ function down_flink()
 	local TMP_OFFICIAL_STABLE_VERSION=`curl -s https://flink.apache.org/downloads.html | egrep "Apache Flink® .+ is our latest stable release" | awk -F' ' '{print $3}'`
 	echo "Flink: The newer stable version is ${TMP_OFFICIAL_STABLE_VERSION}"
     
+    local TMP_FLK_SETUP_NEWER=${TMP_OFFICIAL_STABLE_VERSION}
 	exec_text_format "TMP_FLK_SETUP_NEWER" "https://archive.apache.org/dist/flink/flink-%s/flink-%s-bin-scala_2.12.tgz"
     setup_soft_wget "flink" "${TMP_FLK_SETUP_NEWER}" "exec_step_flink"
 

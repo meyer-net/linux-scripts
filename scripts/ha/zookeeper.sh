@@ -85,15 +85,12 @@ function conf_zookeeper()
     sed -i "s@dataDir=.*@dataDir=${TMP_ZK_DATA_DIR}@g" conf/zoo.cfg
     sed -i "s@clientPort=2181@clientPort=2233@g" conf/zoo.cfg
 
-    # 添加许可密钥给定集群
-	path_not_exists_action "~/.ssh/id_rsa.pub" "ssh-keygen -t rsa -P \'\'"
-    
     local TMP_ZK_CLUSTER_LOCAL_ID="${LOCAL_ID}"
     # input_if_empty "TMP_ZK_CLUSTER_LOCAL_ID" "ZooKeeper: Please Ender This Server Of Index In Cluster"
     echo ${TMP_ZK_CLUSTER_LOCAL_ID} > ${TMP_ZK_DATA_DIR}/myid
 
-    local TMP_ZK_CLUSTER_INDEX_DFT="${LOCAL_HOST}"
-    exec_while_read "TMP_ZK_CLUSTER_INDEX_DFT" "ZooKeeper: Please Ender Cluster Index.\${I} Address Like '${LOCAL_HOST}'" "" "
+    local TMP_ZK_CLUSTER_INDEX_HOSTS="${LOCAL_HOST}"
+    exec_while_read "TMP_ZK_CLUSTER_INDEX_HOSTS" "ZooKeeper: Please Ender Cluster Index.\${I} Address Like '${LOCAL_HOST}'" "" "
         local TMP_ZK_CLUSTER_INDEX_ID=\`echo \\\${CURRENT##*.}\`
         echo \"Port of 4001 allowed for \'\${CURRENT}\'\"
         echo_soft_port 4001 \${CURRENT}
@@ -102,11 +99,11 @@ function conf_zookeeper()
         
         # 本机则开放全部授权
         if [ \${TMP_ZK_CLUSTER_INDEX_ID} == \${TMP_ZK_CLUSTER_LOCAL_ID} ]; then
-            CURRENT='0.0.0.0'
+            CURRENT=\'0.0.0.0\'
         fi
 
         echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:4001:4002\" >> conf/zoo.cfg
-        echo \"Cluster INDEX-\$I Of 'server.\${TMP_ZK_CLUSTER_INDEX_ID} -> \${CURRENT}' Was Added To conf/zoo.cfg\"
+        echo \"Cluster INDEX-\$I Of \'server.\${TMP_ZK_CLUSTER_INDEX_ID} -> \${CURRENT}\' Was Added To conf/zoo.cfg\"
     "
 
 	return $?

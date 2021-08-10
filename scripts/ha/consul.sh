@@ -213,7 +213,7 @@ function start_bootstrap()
 	local TMP_CSL_SETUP_DIR=`pwd`
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
 
-    local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT=`echo ${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR} | awk -F',' '{for(i=1;i<=NF;i++) if($i==$NF) {print i}}'`
+    local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT=`echo ${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR} | grep -o "," | wc -l`
     nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT} > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
