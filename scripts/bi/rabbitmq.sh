@@ -52,9 +52,6 @@ function setup_rabbitmq()
 	ln -sf ${TMP_RBT_MQ_LNK_LOGS_DIR} ${TMP_RBT_MQ_LOGS_DIR}
 	ln -sf ${TMP_RBT_MQ_LNK_DATA_DIR} ${TMP_RBT_MQ_DATA_DIR}
 
-	# 授权权限，否则无法写入
-	# chown -R rabbitmq:rabbitmq_group ${TMP_RBT_MQ_SETUP_DIR}
-
 	return $?
 }
 

@@ -12,6 +12,18 @@
 function set_environment()
 {
     cd ${__DIR} && source scripts/lang/java.sh
+    
+    if [ -z "${TMP_IS_HDOP_LOCAL}" ]; then 
+        exec_yn_action "setup_hadoop" "Flink.Hadoop: Please sure if u want hadoop local?"
+    fi
+
+	return $?
+}
+
+function setup_hadoop()
+{
+    TMP_IS_FLK_HDOP_LOCAL=1
+    cd ${__DIR} && source scripts/ha/hadoop.sh
 
 	return $?
 }
@@ -51,9 +63,6 @@ function setup_flink()
 	source /etc/profile
 	# ln -sf ${TMP_FLK_SETUP_DIR}/bin/flink /usr/bin/flink
 
-	# 授权权限，否则无法写入
-	# chown -R flink:flink_group ${TMP_FLK_SETUP_DIR}
-
 	return $?
 }
 
@@ -62,30 +71,53 @@ function conf_flink()
 {
 	cd ${1}
 
+    # 相关配置参考：https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/deployment/config/
     sed -i "s@jobmanager\.memory\.process\.size:.*@jobmanager\.memory\.process\.size: $((MEMORY_GB_FREE*1024))m@g" conf/flink-conf.yaml
     sed -i "s@taskmanager\.memory\.process\.size:.*@taskmanager\.memory\.process\.size: $((MEMORY_GB_FREE*1024))m@g" conf/flink-conf.yaml
+
+    # 每一台机器上能使用的 CPU 个数
     sed -i "s@taskmanager\.numberOfTaskSlots:.*@taskmanager\.numberOfTaskSlots: ${PROCESSOR_COUNT}@g" conf/flink-conf.yaml
+    
+    # Flink web UI默认端口与Spark的端口8081冲突,更改为8085
+    sed -i "s@^# rest\.port:.*@rest\.port: 8085@g" conf/flink-conf.yaml
+
     sed -i "s@^#historyserver\.web\.address@historyserver\.web\.address@g" conf/flink-conf.yaml
     sed -i "s@^#historyserver\.web\.port:.*@historyserver\.web\.port: 9010@g" conf/flink-conf.yaml
 
-    local TMP_FLK_HDOP_CLUSTER_MASTER_HOST="${LOCAL_HOST}"
-    input_if_empty "TMP_FLK_HDOP_CLUSTER_MASTER_HOST" "Flink.Hadoop: Please ender cluster-master-host like '${LOCAL_HOST}'"
-    echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}" | sed "s@\.@-@g" | awk '{print "ip-"$1}' > conf/masters
-    echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}" | sed 's@,@\n@g' | awk '{print $1" ip-"$1}' | sed 's@\.@-@4g' > /etc/hosts
-    cat conf/masters
-    echo 
-
-    sed -i "s@jobmanager\.rpc\.address:.*@jobmanager\.rpc\.address: ${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}@g" conf/flink-conf.yaml
-
-    local TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS="${LOCAL_HOST}"
-    exec_while_read "TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS" "Flink.Hadoop: Please ender cluster-slave-host part \${I} of address like '${LOCAL_HOST}'"
-    echo "${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS}" | sed "s@\.@-@g" | sed 's@,@\n@g' | awk '{print "ip-"$1}' > conf/slaves
-    echo "${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS}" | sed 's@,@\n@g' | awk '{print $1" ip-"$1}' | sed 's@\.@-@4g' > /etc/hosts
-    cat conf/slaves
-    echo 
+    exec_yn_action "conf_flink_cluster" "Flink.Cluster: Please sure if this install is ${green}cluster mode${reset}"
 
     # cd $FLINK_DIR/resources/python
     # python setup.py install
+
+	return $?
+}
+
+# 集群模式yarn管理下需安装hadoop，此处暂时略
+function conf_flink_cluster()
+{
+    local TMP_FLK_HDOP_CLUSTER_MASTER_HOST="${LOCAL_HOST}"
+    local TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS="${LOCAL_HOST}"
+
+    input_if_empty "TMP_FLK_HDOP_CLUSTER_MASTER_HOST" "Flink.Hadoop: Please ender cluster-master-host like '${LOCAL_HOST}'"
+    echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}" | sed "s@\.@-@g" | awk '{print "ip-"$1}' > conf/masters
+    # echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}" | sed "s@\.@-@g" | awk '{print "ip-"$1}' > conf/masters
+    # echo "${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}" | sed 's@,@\n@g' | awk '{print $1" ip-"$1}' | sed 's@\.@-@4g' > /etc/hosts
+    cat conf/masters
+    echo 
+
+    # 这里定于rpc地址，可以认为是master地址，jobmanager所在节点
+    sed -i "s@jobmanager\.rpc\.address:.*@jobmanager\.rpc\.address: ${TMP_FLK_HDOP_CLUSTER_MASTER_HOST}@g" conf/flink-conf.yaml
+
+    exec_while_read "TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS" "Flink.Hadoop: Please ender cluster-slave-host part \${I} of address like '${LOCAL_HOST}'"
+    echo "${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS}" | sed 's@,@\n@g' > conf/slaves
+    # echo "${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS}" | sed "s@\.@-@g" | sed 's@,@\n@g' | awk '{print "ip-"$1}' > conf/slaves
+    # echo "${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS}" | sed 's@,@\n@g' | awk '{print $1" ip-"$1}' | sed 's@\.@-@4g' > /etc/hosts
+    cat conf/slaves
+    echo 
+    
+    # 启动应用的默认并行度（该应用所使用总的CPU数，即集群中的总 CPU个数）
+    local TMP_FLK_CLUSTER_COUNT=`echo ${TMP_FLK_HDOP_CLUSTER_SLAVE_HOSTS} | grep -o "," | echo $((\`wc -l\`+1))`
+    sed -i "s@parallelism\.default:.*@parallelism\.default: $((TMP_FLK_CLUSTER_COUNT*PROCESSOR_COUNT))@g" conf/flink-conf.yaml
 
 	return $?
 }
@@ -98,7 +130,7 @@ function boot_flink()
 	cd ${TMP_FLK_SETUP_DIR}
     
     echo_soft_port 6123
-    echo_soft_port 8081
+    echo_soft_port 8085
     echo_soft_port 9010
 	
 	# 当前启动命令
@@ -116,7 +148,7 @@ function boot_flink_master()
 	# 验证安装
     jps
     lsof -i:6123
-    lsof -i:8081
+    lsof -i:8085
     lsof -i:9010
 
 	# 添加系统启动命令

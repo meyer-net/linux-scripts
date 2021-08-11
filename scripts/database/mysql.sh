@@ -88,6 +88,7 @@ function set_mysql()
         read -e TMP
     fi
     
+    create_user_if_not_exists mysql mysql
     chgrp -R mysql $mysqlDbDir
     chown -R mysql:mysql $mysqlDbDir
     service mysqld start

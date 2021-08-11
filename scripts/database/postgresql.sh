@@ -50,6 +50,7 @@ function set_postgresql()
 {    
     #初始化db
     mkdir -pv $POSTGRESQL_LOGS_DIR
+    create_user_if_not_exists postgres postgres
     chown -R postgres:postgres $POSTGRESQL_LOGS_DIR
 
     mkdir -pv $POSTGRESQL_DATA_DIR

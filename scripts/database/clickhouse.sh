@@ -92,6 +92,7 @@ function setup_clickhouse()
 
     mv /var/lib/clickhouse ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
     ln -sf ${CLICKHOUSE_SERVER_DATA_ETC_DIR} /var/lib/clickhouse
+    create_user_if_not_exists clickhouse clickhouse
     chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_DATA_DIR}
 
     mv /var/log/clickhouse-server ${CLICKHOUSE_SERVER_LOGS_DIR}

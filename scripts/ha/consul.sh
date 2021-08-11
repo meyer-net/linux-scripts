@@ -78,12 +78,12 @@ function conf_consul()
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
 	rm -rf ${TMP_CSL_ETC_DIR}
 	mkdir -pv ${TMP_CSL_LNK_ETC_DIR}
+	ln -sf ${TMP_CSL_LNK_ETC_DIR} ${TMP_CSL_ETC_DIR}
+
     mkdir -pv ${TMP_CSL_ETC_DIR}/bootstrap
     mkdir -pv ${TMP_CSL_ETC_DIR}/server
     mkdir -pv ${TMP_CSL_ETC_DIR}/agent
     
-	ln -sf ${TMP_CSL_LNK_ETC_DIR} ${TMP_CSL_ETC_DIR}
-
     # 开始配置	    
     #-advertise：通知展现地址用来改变我们给集群中的其他节点展现的地址，一般情况下-bind地址就是展现地址
     #-bootstrap：用来控制一个server是否在bootstrap模式，在一个datacenter中只能有一个server处于bootstrap模式，当一个server处于bootstrap模式时，可以自己选举为raft leader。
@@ -109,11 +109,12 @@ function conf_consul()
 
     local TMP_CSL_SETUP_KEYGEN=`bin/consul keygen`
     input_if_empty "TMP_CSL_SETUP_KEYGEN" "Consul: Please Ender Cluster KeyGen Like '${TMP_CSL_SETUP_KEYGEN}'"
-    echo "The Keygen Used：'${red}${TMP_CSL_SETUP_KEYGEN}${reset}', ${red}Please use it for other cluster host${reset}"
+    echo "The Keygen Used：'${red}${TMP_CSL_SETUP_KEYGEN}${reset}', Please ${green}copy${reset} it use for other cluster host"
+    echo 
 
-    input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_ADDR" "Consul: Please Ender Cluster Of Leader Address"
+    input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_ADDR" "Consul.Cluster: Please ender cluster of ${green}leader host${reset}"
 
-    exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR" "Consul: Please Ender Cluster Child.\$I Address Like '${LOCAL_HOST}'" "%s" "
+    exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR" "Consul.Cluster: Please ender cluster child.\$I host like '${LOCAL_HOST}'" "%s" "
         echo \"Port of 8300 allowed for '\${CURRENT}'\"
         echo_soft_port 8300 \${CURRENT}
         echo \"Port of 8301 allowed for '\${CURRENT}'\"
@@ -201,6 +202,9 @@ function boot_consul()
         local TMP_CSL_SETUP_BOOT_MODE=1
         exec_if_choice "TMP_CSL_SETUP_BOOT_MODE" "Consul: Please sure this server mode" "server,agent" "" "start_"
     fi
+
+    # 验证启动
+    lsof -i:8500
 
     # 添加端口许可
     echo_soft_port 8500

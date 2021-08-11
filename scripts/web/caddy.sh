@@ -55,6 +55,7 @@ function setup_caddy()
 	rm -rf ${TMP_CDY_DATA_DIR}
 	mkdir -pv ${TMP_CDY_LNK_LOGS_DIR}
 
+	create_user_if_not_exists caddy caddy
     if [ ! -d "/var/lib/caddy" ]; then
     	mkdir -pv ${TMP_CDY_LNK_DATA_DIR}
 	    chown -R caddy:caddy ${TMP_CDY_LNK_DATA_DIR}

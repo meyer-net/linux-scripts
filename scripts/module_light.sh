@@ -63,6 +63,7 @@ function setup_$soft_name()
 	# ln -sf ${TMP_$soft_upper_short_name_SETUP_DIR}/bin/$setup_name /usr/bin/$setup_name
 
 	# 授权权限，否则无法写入
+	# create_user_if_not_exists $setup_owner $setup_owner_group
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}
 
 	return $?

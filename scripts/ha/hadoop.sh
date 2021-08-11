@@ -60,10 +60,6 @@ function setup_hadoop()
 
     # 重新加载profile文件
 	source /etc/profile
-	# ln -sf ${TMP_HDOP_SETUP_DIR}/bin/hadoop /usr/bin/hadoop
-
-	# 授权权限，否则无法写入
-	chown -R hadoop:hadoop ${TMP_HDOP_SETUP_DIR}
 
 	return $?
 }
@@ -87,16 +83,18 @@ function conf_hadoop()
 
     local TMP_HDOP_MASTER_HOST="${LOCAL_HOST}"
     
-	echo "export HDFS_NAMENODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
-	echo "export HDFS_DATANODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
-	echo "export HDFS_SECONDARYNAMENODE_USER=hadoop" >> etc/hadoop/hadoop-env.sh
-	echo "export YARN_RESOURCEMANAGER_USER=hadoop" >> etc/hadoop/hadoop-env.sh
-	echo "export YARN_NODEMANAGER_USER=hadoop" >> etc/hadoop/hadoop-env.sh
+	echo "export HDFS_NAMENODE_USER=root" >> etc/hadoop/hadoop-env.sh
+	echo "export HDFS_DATANODE_USER=root" >> etc/hadoop/hadoop-env.sh
+	echo "export HDFS_SECONDARYNAMENODE_USER=root" >> etc/hadoop/hadoop-env.sh
+	echo "export YARN_RESOURCEMANAGER_USER=root" >> etc/hadoop/hadoop-env.sh
+	echo "export YARN_NODEMANAGER_USER=root" >> etc/hadoop/hadoop-env.sh
 	echo "export JAVA_HOME=${JAVA_HOME}" >> etc/hadoop/hadoop-env.sh
 
 	# 全局，给后面的函数读取
 	# TMP_HDOP_HADOOP_MASTER_NAME=`echo ${TMP_HDOP_MASTER_HOST##*.}`
-	TMP_HDOP_HADOOP_MASTER_NAME=`echo ${TMP_HDOP_MASTER_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
+	TMP_HDOP_HADOOP_MASTER_NAME=`echo ${TMP_HDOP_MASTER_HOST} | sed 's@\.@-@g' | xargs -I {} echo "ip-{}"`
+	
+	echo "${TMP_HDOP_MASTER_HOST} ${TMP_HDOP_CLUSTER_MASTER_NAME}" >> /etc/hosts
     
     cat >etc/hadoop/core-site.xml<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -286,8 +284,6 @@ EOF
 
     rm -rf share/doc
 
-    ls ${TMP_HDOP_DATA_DIR}/dfs/name/current/
-
     # 添加许可密钥给定集群
 	path_not_exists_action '~/.ssh/id_rsa.pub' 'ssh-keygen -t rsa -P ""'
 
@@ -384,7 +380,7 @@ function conf_hadoop_cluster()
 		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \"HADOOP_HOME=${TMP_HDOP_SETUP_DIR}\" >> /etc/profile\"
 		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \'PATH=\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin:\$PATH\' >> /etc/profile\"
 		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \'export PATH HADOOP_HOME\' >> /etc/profile\"
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"source /etc/profile && chown -R hadoop:hadoop ${TMP_HDOP_SETUP_DIR}\"
+		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"source /etc/profile\"
 
 		# ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"\"
 
@@ -431,6 +427,8 @@ function boot_hadoop()
 	bash sbin/start-yarn.sh
 
     sleep 10
+
+    ls data/dfs/name/current/
 
 	# 测试安装
     bin/hdfs dfs -ls /
