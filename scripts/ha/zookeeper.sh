@@ -97,11 +97,11 @@ function conf_zookeeper()
         echo \"Port of 4002 allowed for '\${CURRENT}'\"
         echo_soft_port 4002 \${CURRENT}
         
-        echo \"Cluster INDEX-\$I Of \'server.\${TMP_ZK_CLUSTER_INDEX_ID} -> \${CURRENT}\' Was Added To conf/zoo.cfg\"
+        echo \"Cluster INDEX-\$I Of 'server.\${TMP_ZK_CLUSTER_INDEX_ID} -> \${CURRENT}' Was Added To conf/zoo.cfg\"
 		
         # 本机则开放全部授权
         if [ \${TMP_ZK_CLUSTER_INDEX_ID} == \${TMP_ZK_CLUSTER_LOCAL_ID} ]; then
-            CURRENT=\'0.0.0.0\'
+            CURRENT='0.0.0.0'
         fi
 
         echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:4001:4002\" >> conf/zoo.cfg

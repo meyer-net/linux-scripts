@@ -57,7 +57,7 @@ function setup_flink()
 	# 环境变量或软连接
 	echo "FLINK_HOME=${TMP_FLK_SETUP_DIR}" >> /etc/profile
 	echo 'PATH=$FLINK_HOME/bin:$PATH' >> /etc/profile
-	echo "export PATH FLINK_HOME" >> /etc/profile
+	echo 'export PATH FLINK_HOME' >> /etc/profile
 
     # 重新加载profile文件
 	source /etc/profile

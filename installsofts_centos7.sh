@@ -216,7 +216,7 @@ function bootstrap() {
     yes | cp packages/* ${DOWN_DIR}
     #}
 
-    yum versionlock clear
+    bash -c "yum versionlock clear"
     #---------- CHANGE ---------- {
     SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
     SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"

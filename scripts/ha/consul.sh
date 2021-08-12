@@ -19,8 +19,6 @@ function set_environment()
 {
     cd ${__DIR}
 
-    soft_yum_check_action ""
-
 	return $?
 }
 
