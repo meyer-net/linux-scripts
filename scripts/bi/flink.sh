@@ -79,7 +79,7 @@ function conf_flink()
     sed -i "s@taskmanager\.numberOfTaskSlots:.*@taskmanager\.numberOfTaskSlots: ${PROCESSOR_COUNT}@g" conf/flink-conf.yaml
     
     # Flink web UI默认端口与Spark的端口8081冲突,更改为8085
-    sed -i "s@^# rest\.port:.*@rest\.port: 8085@g" conf/flink-conf.yaml
+    sed -i "s@^#rest\.port:.*@rest\.port: 8085@g" conf/flink-conf.yaml
 
     sed -i "s@^#historyserver\.web\.address@historyserver\.web\.address@g" conf/flink-conf.yaml
     sed -i "s@^#historyserver\.web\.port:.*@historyserver\.web\.port: 9010@g" conf/flink-conf.yaml

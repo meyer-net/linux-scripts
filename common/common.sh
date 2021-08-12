@@ -1408,10 +1408,6 @@ function exec_split_action()
 #参数2：提示信息
 function exec_yn_action()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	TMP_FUNCS_ON_Y=$1
 	TMP_NOTICE=$2
 	echo "$TMP_NOTICE, by follow key ('${red}yes(y) or enter key/no(n) or else${reset}')?"
