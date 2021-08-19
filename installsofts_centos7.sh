@@ -62,6 +62,7 @@ function mkdirs()
     path_not_exits_create "${BOOT_DIR}"
     path_not_exits_create "${HTML_DIR}"
     
+    path_not_exits_create "${DATA_DIR}"
     path_not_exists_action "${LOGS_DIR}" "link_logs"
 
     sudo yum makecache fast

@@ -88,6 +88,7 @@ function conf_$soft_name()
 
 	# 替换原路径链接
 	ln -sf ${TMP_$soft_upper_short_name_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_ETC_DIR}
+    ln -sf ${TMP_$soft_upper_short_name_LNK_ETC_DIR} /etc/$soft_name
 
 	# 开始配置
 
@@ -102,7 +103,7 @@ function boot_$soft_name()
 	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
 	
 	# 验证安装
-    $setup_name -v
+    bin/$soft_name -v
 
 	# 当前启动命令
 	nohup bin/$soft_name > logs/boot.log 2>&1 &
@@ -116,6 +117,34 @@ function boot_$soft_name()
 
 	# 添加系统启动命令
     echo_startup_config "$soft_name" "${TMP_$soft_upper_short_name_SETUP_DIR}" "bin/$soft_name" "" "100"
+	
+# 	# 启动配置加载
+# 	sudo tee /usr/lib/systemd/system/$soft_name.service <<-EOF
+# [Unit]
+# Description=$soft_upper_name Server Service
+# After=network.target
+
+# [Service]
+# Type=simple
+# User=$setup_owner
+# Restart=on-failure
+# RestartSec=5s
+# ExecStart=/usr/bin/$soft_name -c /etc/$soft_name/$soft_name.ini
+# LimitNOFILE=infinity
+# LimitNPROC=infinity
+# LimitCORE=infinity
+
+# [Install]
+# WantedBy=multi-user.target
+# EOF
+
+#     systemctl daemon-reload
+
+# 	# 设定启动运行
+#     chkconfig $soft_name on
+#     chkconfig --list | grep $soft_name
+#     systemctl enable $soft_name.service
+#     systemctl start $soft_name.service
 	
 	# 授权iptables端口访问
 	echo_soft_port $soft_port

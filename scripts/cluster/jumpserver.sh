@@ -4,276 +4,260 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 参考：https://docs.jumpserver.org/zh/master/install/setup_by_fast/
+#------------------------------------------------
 
-local TMP_PY3_JMS_ENV=$SETUP_DIR/pyenv3.jms
-function set_env()
+# 1-配置环境
+function set_environment()
 {
-    # 需要提前安装Python
     cd ${__DIR}
-    source scripts/lang/python.sh
-    #source scripts/softs/redis.sh
-    #source scripts/softs/mysql.sh
-    yum -y install xz automake sqlite-devel gcc gcc-devel zlib-devel openssl-devel epel-release python-devel --skip-broken
-    yum -y install pysqlite3 mariadb-devel
-
-    setenforce 0
-    sed -i "s/enforcing/disabled/g" `grep enforcing -rl /etc/selinux/config`
-
-    # 修改字符集,否则可能报 input/output error的问题,因为日志里打印了中文
-    localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8
-    export LC_ALL=zh_CN.UTF-8
-    echo 'LANG="zh_CN.UTF-8"' > /etc/locale.conf
-    echo 'LANG=zh_CN.UTF-8' > /etc/sysconfig/i18n
-
-    if [ ! -f "$TMP_PY3_JMS_ENV" ]; then
-	    python3 -m venv $TMP_PY3_JMS_ENV
-    fi
-
-    # 安装 Python 库依赖
-    source $TMP_PY3_JMS_ENV/bin/activate
-    echo "----------------------------"
-    echo "Current python version is： "
-    python --version
-    echo "----------------------------"
 
 	return $?
 }
 
-function setup_jumpserver()
+# 2-1预配置
+function conf_jumpserver_pre()
 {
-    # 转入主分支，并调整虚拟环境
-    git checkout master
-
-    # 生成数据库表结构和初始化数据
-    local TMP_SETUP_DBADDRESS="127.0.0.1"
-    local TMP_SETUP_DBUNAME="root"
-    local TMP_SETUP_DBPWD="123456"
-    local TMP_SETUP_JMS_DBNAME="jumpserver"
-    local TMP_SETUP_JMS_DBUNAME="jumpserver"
-
-    # 不能用&，否则会被识别成读取前一个值
-    local TMP_SETUP_JMS_DBPWD="jms%local!m_"
-    input_if_empty "TMP_SETUP_DBADDRESS" "JumpServer.Mysql: Please ender ${red}mysql host address${reset}"
-	input_if_empty "TMP_SETUP_DBUNAME" "JumpServer.Mysql: Please ender ${red}mysql user name${reset} of '$TMP_SETUP_DBADDRESS'"
-	input_if_empty "TMP_SETUP_DBPWD" "JumpServer.Mysql: Please ender ${red}mysql password${reset} of $TMP_SETUP_DBUNAME@$TMP_SETUP_DBADDRESS"
-	input_if_empty "TMP_SETUP_JMS_DBNAME" "JumpServer.Mysql: Please ender ${red}mysql database name${reset} of jumpserver($TMP_SETUP_DBADDRESS)"
+	local TMP_JMS_SETUP_DIR=${1}
+	local TMP_JMS_CURRENT_DIR=${2}
+	local TMP_JMS_DATA_DIR=${TMP_JMS_SETUP_DIR}/volume
     
-    local TMP_SETUP_JMS_SCRIPTS="CREATE DATABASE $TMP_SETUP_JMS_DBNAME DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;
-GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'%' identified by '$TMP_SETUP_JMS_DBPWD';
-GRANT ALL PRIVILEGES ON jumpserver.* to 'jumpserver'@'localhost' identified by '$TMP_SETUP_JMS_DBPWD';
-FLUSH PRIVILEGES;
-    "
-
-    if [ "$TMP_SETUP_JMS_DBPWD" == "127.0.0.1" ]; then
-        mysql -h $TMP_SETUP_DBADDRESS -u$TMP_SETUP_DBUNAME -p"$TMP_SETUP_DBPWD" -e"
-        $TMP_SETUP_JMS_SCRIPTS
-        exit"
-    else
-        echo "JumpServer.Mysql: Please execute ${red}mysql scripts${reset} By Follow"
-        echo "$TMP_SETUP_JMS_SCRIPTS"
-    fi
+    cd ${TMP_JMS_CURRENT_DIR}
 
     # 修改 Jumpserver 配置文件
-    mv config_example.yml config.yml
+    cp config-example.txt config-example.txt.bak
+
+    ## 手动配置
+    # 安装配置
+    sed -i "s@VOLUME_DIR=.*@VOLUME_DIR=${TMP_JMS_DATA_DIR}@g" config-example.txt
+    sed -i "s@DOCKER_DIR=.*@DOCKER_DIR=${SETUP_DIR}/docker_jms@g" config-example.txt
     
-    sed -i "s@SECRET_KEY:.*@SECRET_KEY: $TMP_JMS_SECRET_KEY@g" config.yml
-    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JMS_TOKEN@g" config.yml
-    sed -i "s@DB_HOST:.*@DB_HOST: $TMP_SETUP_DBADDRESS@g" config.yml
-    sed -i "s@DB_USER:.*@DB_USER: $TMP_SETUP_JMS_DBUNAME@g" config.yml
-    sed -i "s@DB_PASSWORD:.*@DB_PASSWORD: '$TMP_SETUP_JMS_DBPWD'@g" config.yml
-    sed -i "s@DB_NAME:.*@DB_NAME: $TMP_SETUP_JMS_DBNAME@g" config.yml
+    # 密钥配置
+    local TMP_JMS_SETUP_SECRET_KEY=""
+    local TMP_JMS_SETUP_TOKEN=`cat /proc/sys/kernel/random/uuid`
 
-    local TMP_CMD_LINE=`awk '/cmd = / {print NR}' jms | awk 'NR==1{print}'`
-    sed -i "$((TMP_CMD_LINE+1))a '--timeout', '60'," jms
+    rand_str "TMP_JMS_SETUP_SECRET_KEY" 32
+    sed -i "s@SECRET_KEY=.*@SECRET_KEY=${TMP_JMS_SETUP_SECRET_KEY}@g" config-example.txt
+    sed -i "s@BOOTSTRAP_TOKEN=.*@BOOTSTRAP_TOKEN=${TMP_JMS_SETUP_TOKEN}@g" config-example.txt
 
-    # 缓存
-    local TMP_SETUP_REDIS_ADDRESS="127.0.0.1"
-    input_if_empty "TMP_SETUP_REDIS_ADDRESS" "JumpServer.Redis: Please ender ${red}redis host address${reset}"
+    # # 生成数据库表结构和初始化数据
+    # local TMP_JMS_SETUP_DBADDRESS=""
 
-    if [ "$TMP_SETUP_REDIS_ADDRESS" == "127.0.0.1" ]; then
-        redis-cli config set stop-writes-on-bgsave-error no
-    else
-        sed -i "s@REDIS_HOST:.*@REDIS_HOST: $TMP_SETUP_REDIS_ADDRESS@g" config.yml
-    fi
+    # input_if_empty "TMP_JMS_SETUP_DBADDRESS" "JumpServer.Mysql: Please ender ${red}mysql host address${reset}，or type enter to setup docker-image"
+
+    # if [ "${TMP_JMS_SETUP_DBADDRESS}" == "" ] ; then
+    #     echo "JumpServer.Mysql: Jumpserver typed local docker-image mode"
+    # else
+    #     local TMP_JMS_SETUP_DBNAME="jumpserver"
+    #     local TMP_JMS_SETUP_DBUNAME="jumpserver"
+    #     # 不能用&，否则会被识别成读取前一个值
+    #     local TMP_JMS_SETUP_DBPWD="jms%SVR!m${LOCAL_ID}_"
+
+    #     input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql: Please ender ${red}mysql user name${reset} of '${TMP_JMS_SETUP_DBADDRESS}' for jumpserver"
+    #     input_if_empty "TMP_JMS_SETUP_DBPWD" "JumpServer.Mysql: Please ender ${red}mysql password${reset} of '${TMP_JMS_SETUP_DBUNAME}@${TMP_JMS_SETUP_DBADDRESS}' for jumpserver"
+    #     input_if_empty "TMP_JMS_SETUP_DBNAME" "JumpServer.Mysql: Please ender ${red}mysql database name${reset} of jumpserver(${TMP_JMS_SETUP_DBADDRESS})"
+            
+    #     local TMP_JMS_SETUP_SCRIPTS="CREATE DATABASE ${TMP_JMS_SETUP_DBNAME} DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;  \
+    #     GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'%' identified by '${TMP_JMS_SETUP_DBPWD}';  \
+    #     GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'localhost' identified by '${TMP_JMS_SETUP_DBPWD}';  \
+    #     FLUSH PRIVILEGES;"
+
+    #     if [ "${TMP_JMS_SETUP_DBADDRESS}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DBADDRESS}" == "localhost" ] || [ "${TMP_JMS_SETUP_DBADDRESS}" == "${LOCAL_HOST}" ] ; then
+    #         echo "JumpServer.Mysql: Start to init jumpserver database by root user of mysql"
+    #         mysql -h ${TMP_JMS_SETUP_DBADDRESS} -uroot -e"
+    #         ${TMP_JMS_SETUP_SCRIPTS}
+    #         exit"
+    #     else
+    #         echo "JumpServer.Mysql: Please execute ${red}mysql scripts${reset} By Follow"
+    #         echo "${TMP_JMS_SETUP_SCRIPTS}"
+    #     fi
+        
+    #     sed -i "s@USE_EXTERNAL_REDIS=0@USE_EXTERNAL_REDIS=1@g" config-example.txt
+    #     sed -i "s@DB_HOST=.*@DB_HOST=${TMP_JMS_SETUP_DBADDRESS}@g" config-example.txt
+    #     sed -i "s@DB_USER=.*@DB_USER=${TMP_JMS_SETUP_DBUNAME}@g" config-example.txt
+    #     sed -i "s@DB_PASSWORD=.*@DB_PASSWORD='${TMP_JMS_SETUP_DBPWD}'@g" config-example.txt
+    #     sed -i "s@DB_NAME=.*@DB_NAME=${TMP_JMS_SETUP_DBNAME}@g" config-example.txt
+    # fi
+
+    # # 缓存Redis
+    # local TMP_JMS_SETUP_REDIS_ADDRESS=""
+    # input_if_empty "TMP_JMS_SETUP_REDIS_ADDRESS" "JumpServer.Redis: Please ender ${red}redis host address${reset}，or type enter to setup docker-image"
+
     
-    cd ..
-    mkdir -pv $DATA_DIR/jumpserver
-    mv jumpserver $SETUP_DIR/
+    # if [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "" ] ; then
+    #     echo "JumpServer.Redis: Jumpserver typed local docker-image mode"
+    # else
+    #     if [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "localhost" ] || [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "${LOCAL_HOST}" ] ; then
+    #         redis-cli config set stop-writes-on-bgsave-error no
+    #     fi
+
+    #     sed -i "s@USE_EXTERNAL_REDIS=0@USE_EXTERNAL_REDIS=1@g" config-example.txt
+    #     sed -i "s@REDIS_HOST=.*@REDIS_HOST=${TMP_JMS_SETUP_REDIS_ADDRESS}@g" config-example.txt
+        
+    #     local TMP_JMS_SETUP_REDIS_PWD="rds%SVR!m${LOCAL_ID}_"
+    #     input_if_empty "TMP_JMS_SETUP_REDIS_PWD" "JumpServer.Redis: Please ender ${red}redis password${reset} of host address '${green}${TMP_JMS_SETUP_REDIS_ADDRESS}${reset}'"
+    #     sed -i "s@REDIS_PASSWORD=.*@REDIS_PASSWORD=${TMP_JMS_SETUP_REDIS_PWD}@g" config-example.txt
+    # fi
     
-    local TMP_JMS_DIR=$SETUP_DIR/jumpserver
+    # Nginx配置
+    sed -i "s@SSH_PORT=.*@SSH_PORT=22222@g" config-example.txt
+    sed -i "s@RDP_PORT=.*@RDP_PORT=33389@g" config-example.txt
 
-    # 进入 jumpserver 目录时将自动载入 python 虚拟环境
-    echo "source $TMP_PY3_JMS_ENV/bin/activate" > $TMP_JMS_DIR/.env
-    
-    cd $TMP_JMS_DIR
-
-    #安装依赖 RPM 包
-    yum -y install $(cat requirements/rpm_requirements.txt) --skip-broken
-
-    pip install --upgrade pip setuptools
-    pip install -r requirements/requirements.txt
-
-    #生成数据库表结构和初始化数据
-    # sed -i "s@pysqlite2@from pysqlite3@g" $SETUP_DIR/pyenv3/lib/python3.6/site-packages/django/db/backends/sqlite3/base.py
-    
-    ./jms start all -d
-
-    echo_startup_config "jumpserver" "$TMP_JMS_DIR" "./jms start all" "" "10" "$TMP_PY3_JMS_ENV"
-
+    # Koko Lion XRDP 组件配置
+    # sed -i "s@CORE_HOST=.*@CORE_HOST=http://127.0.0.1:8080@g" config-example.txt
+	
 	return $?
 }
 
-function setup_coco()
+# 3-安装软件
+function setup_jumpserver()
 {
-    git checkout master
+	local TMP_JMS_SETUP_DIR=${1}
+	local TMP_JMS_CURRENT_DIR=${2}
 
-    mkdir -pv /tmp/uploads
+	## 直装模式
+	cd `dirname ${TMP_JMS_CURRENT_DIR}`
+
+	mv ${TMP_JMS_CURRENT_DIR} ${TMP_JMS_SETUP_DIR}
+
+    cd ${TMP_JMS_SETUP_DIR}
     
-    cd ..
-    mv coco $SETUP_DIR/
-    
-    local TMP_COCO_DIR=$SETUP_DIR/coco
+	# 创建日志软链
+	local TMP_JMS_LOGS_DIR=${TMP_JMS_SETUP_DIR}/logs
+	local TMP_JMS_LOGS_NGINX_DIR=${TMP_JMS_SETUP_DIR}/volume/nginx/log
+	local TMP_JMS_LOGS_CORE_DIR=${TMP_JMS_SETUP_DIR}/volume/core/logs
+	local TMP_JMS_DATA_DIR=${TMP_JMS_SETUP_DIR}/volume
 
-    # 进入 jumpserver 目录时将自动载入 python 虚拟环境
-    echo "source $TMP_PY3_JMS_ENV/bin/activate" > $TMP_COCO_DIR/.env
+	# 先清理文件，再创建文件
+	rm -rf ${TMP_JMS_LOGS_NGINX_DIR}
+	rm -rf ${TMP_JMS_LOGS_CORE_DIR}
+	rm -rf ${TMP_JMS_DATA_DIR}
 
-    cd $TMP_COCO_DIR
+    # 开始安装
+    bash jmsctl.sh install
 
-    local TMP_REQUIREMENTS_LIST=`cat requirements/rpm_requirements.txt`
-    yum -y install $TMP_REQUIREMENTS_LIST --skip-broken
-    
-    source $TMP_PY3_JMS_ENV/bin/activate
-    pip install -r requirements/requirements.txt -i https://pypi.python.org/simple
+    local TMP_JMS_LNK_LOGS_DIR=${LOGS_DIR}/jumpserver
+	local TMP_JMS_LNK_LOGS_NGINX_DIR=${LOGS_DIR}/jumpserver/nginx
+	local TMP_JMS_LNK_LOGS_CORE_DIR=${LOGS_DIR}/jumpserver/core
+	local TMP_JMS_LNK_DATA_DIR=${DATA_DIR}/jumpserver
 
-    mv config_example.yml config.yml
-    
-    sed -i "s@NAME:.*@NAME: 'coco-localhost'@g" config.yml
-    sed -i "s@CORE_HOST:.*@CORE_HOST: http://127.0.0.1:8080@g" config.yml
+    mkdir -pv ${TMP_JMS_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_JMS_LNK_LOGS_NGINX_DIR}
+	mkdir -pv ${TMP_JMS_LNK_LOGS_CORE_DIR}
+    mkdir -pv `dirname ${TMP_JMS_LOGS_NGINX_DIR}`
+    mkdir -pv `dirname ${TMP_JMS_LOGS_CORE_DIR}`
+	mv ${TMP_JMS_DATA_DIR} ${TMP_JMS_LNK_DATA_DIR}
 
-    sed -i "s@BOOTSTRAP_TOKEN:.*@BOOTSTRAP_TOKEN: $TMP_JMS_TOKEN@g" config.yml
-    sed -i "s@# SECRET_KEY:.*@SECRET_KEY: '$TMP_JMS_SECRET_KEY'@g" config.yml
-    sed -i "s@# LOG_LEVEL:.*@LOG_LEVEL: 'ERROR'@g" config.yml
-    
-    ./cocod start -d
-
-    echo_startup_config "coco" "$TMP_COCO_DIR" "./cocod start" "" "100" "$TMP_PY3_JMS_ENV"
-
-    echo "Please entry 'http://localhost:8080/terminal/terminal/' to accept regist request。"
+    ln -sf ${TMP_JMS_LNK_LOGS_DIR} ${TMP_JMS_LOGS_DIR}
+	ln -sf ${TMP_JMS_LNK_LOGS_NGINX_DIR} ${TMP_JMS_LOGS_NGINX_DIR}
+	ln -sf ${TMP_JMS_LNK_LOGS_CORE_DIR} ${TMP_JMS_LOGS_CORE_DIR}
+	ln -sf ${TMP_JMS_LNK_DATA_DIR} ${TMP_JMS_DATA_DIR}
 
 	return $?
 }
 
-function setup_luna()
+# 3-设置软件
+function conf_jumpserver()
 {
-    cd ..
-    mv luna $HTML_DIR/
+	local TMP_JMS_SETUP_DIR=${1}
+	local TMP_JMS_LNK_ETC_DIR=${ATT_DIR}/jumpserver
+	local TMP_JMS_DATA_DIR=${TMP_JMS_SETUP_DIR}/volume
+	local TMP_JMS_ETC_DIR=${TMP_JMS_SETUP_DIR}/config
 
-    local TMP_NGX_APP_PORT=""
-	rand_val "TMP_NGX_APP_PORT" 1024 2048
-	cp_nginx_starter "luna" "$HTML_DIR/luna" "$TMP_NGX_APP_PORT"
+	# ①-Y：存在配置文件：原路径文件放给真实路径
+	mv ${TMP_JMS_ETC_DIR} ${TMP_JMS_LNK_ETC_DIR}
 
-	cat >$NGINX_DIR/luna_$TMP_NGX_APP_PORT/conf/vhosts/luna.conf<<EOF
-server {
-    #代理端口,以后将通过此端口进行访问,不再通过8080端口
-    listen $TMP_NGX_APP_PORT;  
+	# 替换原路径链接
+	ln -sf ${TMP_JMS_LNK_ETC_DIR} ${TMP_JMS_ETC_DIR}
 
-    #域名可以有多个，用空格隔开
-    server_name 127.0.0.1;
-
-    #编码
-    charset   utf-8;
-
-    #默认访问类型
-    default_type text/html;
-
-    #开启目录浏览功能
-    autoindex on;
-
-    #文件大小从KB开始显示
-    autoindex_exact_size off;
-
-    #显示文件修改时间为服务器本地时间
-    autoindex_localtime on;
-
-    #录像及文件上传大小限制
-    client_max_body_size 100m;  
-
-    #定义本虚拟主机的访问日志
-    access_log logs/luna_access.log combined buffer=1k;
-    error_log logs/luna_error.log;
-
-    location /luna/ {
-        try_files \$uri / /index.html;
-        alias $HTML_DIR/luna/;  # luna 路径,如果修改安装目录,此处需要修改
-    }
-
-    location /media/ {
-        add_header Content-Encoding gzip;
-        root $DATA_DIR/jumpserver/;  # 录像位置,如果修改安装目录,此处需要修改
-    }
-
-    location /static/ {
-        root $DATA_DIR/jumpserver/;  # 静态资源,如果修改安装目录,此处需要修改
-    }
-
-    location /socket.io/ {
-        proxy_pass       http://localhost:5000/socket.io/;  # 如果coco安装在别的服务器,请填写它的ip
-        proxy_buffering off;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        access_log off;
-    }
-
-    location /coco/ {
-        proxy_pass       http://localhost:5000/coco/;  # 如果coco安装在别的服务器,请填写它的ip
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        access_log off;
-    }
-
-    location /guacamole/ {
-        proxy_pass       http://localhost:8081/;  # 如果guacamole安装在别的服务器,请填写它的ip
-        proxy_buffering off;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$http_connection;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        access_log off;
-    }
-
-    location / {
-        proxy_pass http://localhost:8080;  # 如果jumpserver安装在别的服务器,请填写它的ip
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    }
-}
-EOF
-    echo "The nginx conf output at '$NGINX_DIR/luna_$TMP_NGX_APP_PORT/conf/vhosts/luna.conf'"
-
-    cd $NGINX_DIR/luna_$TMP_NGX_APP_PORT && bash start.sh master
+	# 开始配置
 
 	return $?
 }
 
+# 4-启动软件
+function boot_jumpserver()
+{
+	local TMP_JMS_SETUP_DIR=${1}
+
+	cd ${TMP_JMS_SETUP_DIR}
+
+    # 重启docker
+    systemctl restart docker.service
+	
+	# 验证安装
+    echo "Checking jumpserver，Waiting for a moment"
+    bash jmsctl.sh check_update
+
+	# 当前启动命令
+	nohup bash jmsctl.sh start > logs/boot.log 2>&1 &
+	
+    # 等待启动
+    echo "Starting jumpserver，Waiting for a moment"
+    sleep 60
+
+	# 启动状态检测
+	bash jmsctl.sh status
+
+	# 添加系统启动命令
+    echo_startup_config "jumpserver" "${TMP_JMS_SETUP_DIR}" "bash jmsctl.sh start" "" "100"
+	
+	# 授权iptables端口访问
+	echo_soft_port 80
+	echo_soft_port 22222
+	echo_soft_port 33389
+
+	return $?
+}
+
+##########################################################################################################
+
+# 下载驱动/插件
+function down_plugin_jumpserver()
+{
+	return $?
+}
+
+# 安装驱动/插件
+function setup_plugin_jumpserver()
+{
+	return $?
+}
+
+##########################################################################################################
+
+# x2-执行步骤
+function exec_step_jumpserver()
+{
+	local TMP_JMS_SETUP_DIR=${1}
+	local TMP_JMS_CURRENT_DIR=`pwd`
+    
+	set_environment "${TMP_JMS_SETUP_DIR}"
+
+    # jumpserver 属于先配置再安装，故此处反转
+	conf_jumpserver_pre "${TMP_JMS_SETUP_DIR}" "${TMP_JMS_CURRENT_DIR}"
+
+	setup_jumpserver "${TMP_JMS_SETUP_DIR}" "${TMP_JMS_CURRENT_DIR}"
+    
+	conf_jumpserver "${TMP_JMS_SETUP_DIR}"
+
+    # down_plugin_jumpserver "${TMP_JMS_SETUP_DIR}"
+
+	boot_jumpserver "${TMP_JMS_SETUP_DIR}"
+
+	return $?
+}
+
+# x1-下载软件
 function down_jumpserver()
 {
-    set_env
-    #http://docs.jumpserver.org/zh/latest/step_by_step.html
-    setup_soft_git "JumpServer" "https://github.com/jumpserver/jumpserver" "setup_jumpserver"
-    setup_soft_git "Coco" "https://github.com/jumpserver/coco" "setup_coco"
-    setup_soft_wget "Luna" "https://github.com/jumpserver/luna/releases/download/1.5.2/luna.tar.gz" "setup_luna"
+	local TMP_JMS_SETUP_NEWER="2.12.2"
+	set_github_soft_releases_newer_version "TMP_JMS_SETUP_NEWER" "jumpserver/jumpserver"
+	exec_text_format "TMP_JMS_SETUP_NEWER" "https://github.com/jumpserver/installer/releases/download/v%s/jumpserver-installer-v%s.tar.gz"
+    setup_soft_wget "jumpserver" "${TMP_JMS_SETUP_NEWER}" "exec_step_jumpserver"
 
 	return $?
 }
 
-rand_str "TMP_JMS_SECRET_KEY" 32
-local TMP_JMS_TOKEN=`cat /proc/sys/kernel/random/uuid`
-setup_soft_basic "JumpServer" "down_jumpserver"
+#安装主体
+setup_soft_basic "Jumpserver" "down_jumpserver"
