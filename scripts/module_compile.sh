@@ -6,11 +6,13 @@
 #------------------------------------------------
 # 安装标题：$title_name
 # 软件名称：$soft_name
+# 软件端口：$soft_port
 # 软件大写名称：$soft_upper_name
 # 软件大写分组与简称：$soft_upper_short_name
 # 软件安装名称：$setup_name
 # 软件授权用户名称&组：$setup_owner/$setup_owner_group
 #------------------------------------------------
+local TMP_$soft_upper_short_name_SETUP_PORT=1$soft_port
 
 # 1-配置环境
 function set_environment()
@@ -35,34 +37,42 @@ function setup_$soft_name()
 	make -j4 && make -j4 install
 
 	# 创建日志软链
-	local TMP_$soft_upper_short_name_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
-	local TMP_$soft_upper_short_name_LNK_DATA_DIR=${DATA_DIR}/$setup_name
-	local TMP_$soft_upper_short_name_LOGS_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/logs
-	local TMP_$soft_upper_short_name_DATA_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/data
+	local TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
+	local TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR=${DATA_DIR}/$setup_name
+	local TMP_$soft_upper_short_name_SETUP_LOGS_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/logs
+	local TMP_$soft_upper_short_name_SETUP_DATA_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
-	rm -rf ${TMP_$soft_upper_short_name_LOGS_DIR}
-	rm -rf ${TMP_$soft_upper_short_name_DATA_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_LNK_DATA_DIR}
+	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
+	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
+	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	
 	# 特殊多层结构下使用
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_LOGS_DIR}`
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_DATA_DIR}`
+    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}`
+    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}`
 
-	ln -sf ${TMP_$soft_upper_short_name_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_LOGS_DIR}
-	ln -sf ${TMP_$soft_upper_short_name_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_DATA_DIR}
+	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
+	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 	
 	# 环境变量或软连接
-	echo "$soft_upper_name_HOME=${TMP_$soft_upper_name_SETUP_DIR}" >> /etc/profile
+	echo "$soft_upper_name_HOME=${TMP_$soft_upper_short_name_SETUP_DIR}" >> /etc/profile
 	echo 'PATH=$$soft_upper_name_HOME/bin:$PATH' >> /etc/profile
-	echo "export PATH $soft_upper_name_HOME" >> /etc/profile
+	echo 'export PATH $soft_upper_name_HOME' >> /etc/profile
 
     # 重新加载profile文件
 	source /etc/profile
 	# ln -sf ${TMP_$soft_upper_short_name_SETUP_DIR}/bin/$setup_name /usr/bin/$setup_name
 
+	# 授权权限，否则无法写入
+	# create_user_if_not_exists $setup_owner $setup_owner_group
+	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}
+
+	# 移动编译目录所需文件
+	# mv $setup_name.conf ${TMP_$soft_upper_name_SETUP_DIR}/
+
 	# 移除源文件
+	cd `dirname ${TMP_$soft_upper_short_name_CURRENT_DIR}`
 	rm -rf ${TMP_$soft_upper_name_CURRENT_DIR}
 
 	return $?
@@ -87,10 +97,17 @@ function boot_$soft_name()
     $setup_name -v
 
 	# 当前启动命令
-	bin/$soft_name
+	nohup bin/$setup_name > logs/boot.log 2>&1 &
+	
+    # 等待启动
+    echo "Starting $soft_name，Waiting for a moment"
+    sleep 10
+
+	# 启动状态检测
+	bin/$setup_name status  # lsof -i:$TMP_$soft_upper_short_name_SETUP_PORT
 
 	# 添加系统启动命令
-    echo_startup_config "$soft_name" "${TMP_$soft_upper_short_name_SETUP_DIR}" "bin/$soft_name" "" "100"
+    echo_startup_config "$soft_name" "${TMP_$soft_upper_short_name_SETUP_DIR}" "bin/$setup_name" "" "100"
 
 	return $?
 }

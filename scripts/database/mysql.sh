@@ -67,14 +67,14 @@ function set_mysql()
 	input_if_empty "TMP_SETUP_MYSQL_PWD" "Mysql: Please ender ${red}mysql password${reset} of User(Root)"
 
     mysql -uroot -p$password -e"
-    SET password=PASSWORD('${TMP_SETUP_MYSQL_PWD}');
-    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_SETUP_MYSQL_PWD}';
+    SET password FOR 'root'@'localhost'=PASSWORD('${TMP_SETUP_MYSQL_PWD}');
+    GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '${TMP_SETUP_MYSQL_PWD}' WITH GRANT OPTION;
     USE mysql;
     DELETE FROM user WHERE user='' OR password='';
     SET GLOBAL MAX_CONNECT_ERRORS=1000;
     FLUSH HOSTS;
     FLUSH PRIVILEGES;
-    exit"
+    exit" --connect-expired-password
 
     echo "Mysql: Password（'${TMP_SETUP_MYSQL_PWD}'） Set Success！"
 
@@ -168,7 +168,7 @@ function set_mariadb()
     mysql -e"
     use mysql;
     UPDATE user SET password=PASSWORD('${TMP_SETUP_MYSQL_PWD}') WHERE user='root';
-    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_SETUP_MYSQL_PWD}';
+    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_SETUP_MYSQL_PWD}' WITH GRANT OPTION;
     DELETE FROM user WHERE user='' OR password='';
     FLUSH PRIVILEGES;
     exit"

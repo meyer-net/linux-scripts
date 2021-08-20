@@ -214,7 +214,9 @@ function bootstrap() {
 
     #---------- BASE ---------- {
     # 迁移packages
-    yes | cp packages/* ${DOWN_DIR}
+    if [ -d packages ]; then
+        yes | cp packages/* ${DOWN_DIR}
+    fi
     #}
 
     bash -c "yum versionlock clear"

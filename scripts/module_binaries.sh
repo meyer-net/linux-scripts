@@ -11,6 +11,7 @@
 # 软件安装名称：$setup_name
 # 软件授权用户名称&组：$setup_owner/$setup_owner_group
 #------------------------------------------------
+local TMP_$soft_upper_short_name_SETUP_PORT=1$soft_port
 
 # 1-配置环境
 function set_environment()
@@ -39,23 +40,23 @@ EOF
 	sudo yum -y install $soft_name
 
 	# 创建日志软链
-	local TMP_$soft_upper_short_name_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
-	local TMP_$soft_upper_short_name_LNK_DATA_DIR=${DATA_DIR}/$setup_name
-	local TMP_$soft_upper_short_name_LOGS_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/logs
-	local TMP_$soft_upper_short_name_DATA_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/data
+	local TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
+	local TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR=${DATA_DIR}/$setup_name
+	local TMP_$soft_upper_short_name_SETUP_LOGS_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/logs
+	local TMP_$soft_upper_short_name_SETUP_DATA_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
-	rm -rf ${TMP_$soft_upper_short_name_LOGS_DIR}/*
-	rm -rf ${TMP_$soft_upper_short_name_DATA_DIR}/*
-	mkdir -pv ${TMP_$soft_upper_short_name_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_LNK_DATA_DIR}
+	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}/*
+	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}/*
+	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	
 	# 特殊多层结构下使用
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_LOGS_DIR}`
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_DATA_DIR}`
+    mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}`
+    mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}`
 
-	ln -sf ${TMP_$soft_upper_short_name_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_LOGS_DIR}
-	ln -sf ${TMP_$soft_upper_short_name_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_DATA_DIR}
+	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
+	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 
 	# 授权权限，否则无法写入
 	chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}

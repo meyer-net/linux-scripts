@@ -1132,7 +1132,7 @@ function set_github_soft_releases_newer_version()
 
     echo $TMP_SPLITER
     echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}', default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL}${reset}'"
-	local TMP_GITHUB_SOFT_NEWER_VERSION=`curl -s $TMP_GITHUB_SOFT_HTTPS_PATH | grep "$TMP_GITHUB_SOFT_TAG_PATH" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.+", "");print}' | awk NR==1`
+	local TMP_GITHUB_SOFT_NEWER_VERSION=`curl -s $TMP_GITHUB_SOFT_HTTPS_PATH | grep "$TMP_GITHUB_SOFT_TAG_PATH" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.*", "");print}' | awk NR==1`
 
 	if [ -n "$TMP_GITHUB_SOFT_NEWER_VERSION" ]; then
 		echo "Upgrade the soft in github repos of '${red}$TMP_GITHUB_SOFT_PATH${reset}' releases newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERSION}${reset}'"
