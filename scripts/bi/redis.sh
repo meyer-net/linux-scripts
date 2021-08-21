@@ -87,7 +87,6 @@ function conf_redis()
 	local TMP_RDS_SETUP_LNK_ETC_DIR=${ATT_DIR}/redis
 	local TMP_RDS_SETUP_LNK_ETC_PATH=${TMP_RDS_SETUP_LNK_ETC_DIR}/redis.conf
 	local TMP_RDS_SETUP_ETC_DIR=${TMP_RDS_SETUP_DIR}/etc
-	local TMP_RDS_SETUP_ETC_PATH=${TMP_RDS_SETUP_ETC_DIR}/redis.conf
 
 	# ①-Y：存在配置文件：原路径文件放给真实路径
 	mkdir -pv ${TMP_RDS_SETUP_LNK_ETC_DIR}
@@ -135,7 +134,7 @@ function boot_redis()
     redis-cli -v
 
 	# 当前启动命令
-	nohup cd ${TMP_RDS_SETUP_DATA_DIR} && redis-cli /etc/redis.conf > logs/boot.log 2>&1 &
+	nohup redis-cli /etc/redis.conf > logs/boot.log 2>&1 &
 	
     # 等待启动
     echo "Starting redis，Waiting for a moment"

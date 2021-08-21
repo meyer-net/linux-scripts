@@ -6,7 +6,6 @@
 #------------------------------------------------
 # 安装标题：$title_name
 # 软件名称：$soft_name
-# 软件大写名称：$soft_upper_name
 # 软件大写分组与简称：$soft_upper_short_name
 # 软件安装名称：$setup_name
 # 软件授权用户名称&组：$setup_owner/$setup_owner_group
@@ -28,8 +27,8 @@ function setup_$soft_name()
 {
 	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
 
-	## 直装模式
-    sudo cat << EOF > /etc/yum.repos.d/$setup_name.repo
+	## 源模式
+	sudo tee /etc/yum.repos.d/$setup_name.repo <<-'EOF'
 [$setup_name]
 name=$setup_name
 enabled=1
@@ -37,7 +36,11 @@ baseurl=
 gpgkey=
 gpgcheck=1
 EOF
-	sudo yum -y install $soft_name
+
+	soft_yum_check_setup "$soft_name"
+
+	# local TMP_$soft_upper_short_name_SETUP_RPM_NAME=""
+    # while_wget "--content-disposition http://dev.mysql.com/get/${TMP_$soft_upper_short_name_SETUP_RPM_NAME}" "rpm -ivh ${TMP_$soft_upper_short_name_SETUP_RPM_NAME}"
 
 	# 创建日志软链
 	local TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
@@ -46,8 +49,9 @@ EOF
 	local TMP_$soft_upper_short_name_SETUP_DATA_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
-	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}/*
-	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}/*
+	path_not_exits_create ${TMP_$soft_upper_short_name_SETUP_DIR}
+	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
+	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	
@@ -59,7 +63,13 @@ EOF
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 
 	# 授权权限，否则无法写入
-	chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}
+	# create_user_if_not_exists $setup_owner $setup_owner_group
+	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_DIR}
+	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}
+
+	# rm -rf /etc/yum.repos.d/$setup_name.repo
+	
+    # sudo yum clean all && sudo yum makecache fast
 
 	return $?
 }
@@ -67,7 +77,25 @@ EOF
 # 3-设置软件
 function conf_$soft_name()
 {
-	cd ${1}
+	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
+
+	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
+	
+	local TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR=${ATT_DIR}/$setup_name
+	local TMP_$soft_upper_short_name_SETUP_ETC_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/etc
+
+	# ①-Y：存在配置文件：原路径文件放给真实路径
+	mv ${TMP_$soft_upper_short_name_SETUP_ETC_DIR} ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
+
+	# ①-N：不存在配置文件：
+	# rm -rf ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
+	# mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
+
+	# 替换原路径链接
+	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
+    ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} /etc/$soft_name
+	
+    # 开始配置
 
 	return $?
 }
@@ -80,15 +108,18 @@ function boot_$soft_name()
 	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
 	
 	# 验证安装
-    $setup_name -v
+    $setup_name -v  # lsof -i:${TMP_$soft_upper_short_name_SETUP_PORT}
 
 	# 当前启动命令
     sudo systemctl daemon-reload
-    sudo systemctl enable $setup_name
-    sudo systemctl start $setup_name
-    systemctl status $setup_name
+    sudo systemctl enable $setup_name.service
+    sudo systemctl start $setup_name.service
+    systemctl status $setup_name.service
     # journalctl -u $setup_name --no-pager | less
-    # sudo systemctl reload $setup_name
+    # sudo systemctl reload $setup_name.service
+
+	# 授权iptables端口访问
+	echo_soft_port ${TMP_$soft_upper_short_name_SETUP_PORT}
 
 	return $?
 }
@@ -130,7 +161,7 @@ function exec_step_$soft_name()
 # x1-下载软件
 function check_setup_$soft_name()
 {
-    soft_yum_check_action "$soft_name" "exec_step_$soft_name"
+    soft_yum_check_action "$setup_name" "exec_step_$soft_name"
 
 	return $?
 }

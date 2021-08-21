@@ -65,6 +65,7 @@ function setup_$soft_name()
 
 	# 授权权限，否则无法写入
 	# create_user_if_not_exists $setup_owner $setup_owner_group
+	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_DIR}
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}
 
 	return $?
@@ -114,7 +115,7 @@ function boot_$soft_name()
     sleep 10
 
 	# 启动状态检测
-	bin/$setup_name status  # lsof -i:$TMP_$soft_upper_short_name_SETUP_PORT
+	bin/$setup_name status  # lsof -i:${TMP_$soft_upper_short_name_SETUP_PORT}
 
 	# 添加系统启动命令
     echo_startup_config "$setup_name" "${TMP_$soft_upper_short_name_SETUP_DIR}" "bin/$setup_name" "" "100"
@@ -148,7 +149,7 @@ function boot_$soft_name()
 #     systemctl start $soft_name.service
 	
 	# 授权iptables端口访问
-	echo_soft_port $TMP_$soft_upper_short_name_SETUP_PORT
+	echo_soft_port ${TMP_$soft_upper_short_name_SETUP_PORT}
 
 	return $?
 }
