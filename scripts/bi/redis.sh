@@ -6,6 +6,7 @@
 #------------------------------------------------
 # 安装标题：Redis
 #------------------------------------------------
+local TMP_RDS_SETUP_PORT=16379
 
 # 1-配置环境
 function set_environment()
@@ -90,11 +91,10 @@ function conf_redis()
 
 	# ①-Y：存在配置文件：原路径文件放给真实路径
 	mkdir -pv ${TMP_RDS_SETUP_LNK_ETC_DIR}
-    mv redis.conf ${TMP_RDS_SETUP_LNK_ETC_PATH}
 
 	# 替换原路径链接
 	ln -sf ${TMP_RDS_SETUP_LNK_ETC_DIR} ${TMP_RDS_SETUP_ETC_DIR}
-    ln -sf ${TMP_RDS_SETUP_LNK_ETC_PATH} /etc/redis.conf
+    ln -sf /etc/redis.conf ${TMP_RDS_SETUP_LNK_ETC_PATH} 
 
 	# 开始配置
     # Set Init Script.
@@ -110,7 +110,7 @@ function conf_redis()
     sed -i "s@^appendonly.*@appendonly yes@g" etc/redis.conf
     sed -i "s@^daemonize no@daemonize yes@g" etc/redis.conf
     sed -i "s@^bind 127.0.0.1.*@bind * -::*@g" etc/redis.conf
-    sed -i "s@^port.*@port 16379@g" etc/redis.conf
+    sed -i "s@^port.*@port ${TMP_RDS_SETUP_PORT}@g" etc/redis.conf
 
 	local TMP_RDS_SETUP_AUTH_PWD=""
     rand_str "TMP_RDS_SETUP_AUTH_PWD" 32
@@ -141,13 +141,13 @@ function boot_redis()
     sleep 1
 
 	# 启动状态检测
-	lsof -i:16379
+	lsof -i:${TMP_RDS_SETUP_PORT}
 
 	# 添加系统启动命令
     echo_startup_config "redis" "${TMP_RDS_SETUP_DIR}" "redis-cli /etc/redis.conf " "" "1"
 		
 	# 授权iptables端口访问
-	echo_soft_port 16379
+	echo_soft_port ${TMP_RDS_SETUP_PORT}
 
 	return $?
 }

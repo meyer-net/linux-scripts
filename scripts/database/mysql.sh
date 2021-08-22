@@ -30,6 +30,7 @@ function setup_mysql()
     soft_yum_check_setup "mysql-community-server"
 
 	# 需要运行一次，生成基础文件
+    echo "MySql: Setup Successded，Starting init data file..."
     systemctl start mysqld.service 
     systemctl stop mysqld.service
 
@@ -89,6 +90,7 @@ EOF
 	soft_yum_check_setup "MariaDB-server"
 
 	# 需要运行一次，生成基础文件
+    echo "MariaDB: Setup Successded，Starting init data file..."
     systemctl start mariadb.service 
     systemctl stop mariadb.service
 
@@ -99,12 +101,13 @@ EOF
 	local TMP_MDB_SETUP_DATA_DIR=${TMP_MDB_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
+    path_not_exits_create ${TMP_MDB_SETUP_DIR}
 	rm -rf ${TMP_MDB_SETUP_LOGS_DIR}
 	rm -rf ${TMP_MDB_SETUP_DATA_DIR}
-	mkdir -pv ${TMP_MDB_SETUP_LNK_LOGS_DIR}
+
 	cp /var/lib/mysql ${TMP_MDB_SETUP_LNK_DATA_DIR} -Rp
     mv /var/lib/mysql ${TMP_MDB_SETUP_LNK_DATA_DIR}_empty
-
+    
 	ln -sf ${TMP_MDB_SETUP_LNK_LOGS_DIR} ${TMP_MDB_SETUP_LOGS_DIR}
 	ln -sf ${TMP_MDB_SETUP_LNK_DATA_DIR} /var/lib/mysql
 	ln -sf ${TMP_MDB_SETUP_LNK_DATA_DIR} ${TMP_MDB_SETUP_DATA_DIR}
@@ -135,16 +138,17 @@ function conf_mysql()
 	cd ${TMP_MSQL_SETUP_DIR}
 	
 	local TMP_MSQL_SETUP_LNK_ETC_DIR=${ATT_DIR}/mysql
+	local TMP_MSQL_SETUP_LNK_ETC_REALY_DIR=${TMP_MSQL_SETUP_LNK_ETC_DIR}/my.cnf.d
 	local TMP_MSQL_SETUP_LNK_ETC_PATH=${TMP_MSQL_SETUP_LNK_ETC_DIR}/my.cnf
 	local TMP_MSQL_SETUP_ETC_DIR=${TMP_MSQL_SETUP_DIR}/etc
 
 	# ①-Y：存在配置文件：原路径文件放给真实路径
 	mkdir -pv ${TMP_MSQL_SETUP_LNK_ETC_DIR}
-    mv /etc/my.cnf ${TMP_MSQL_SETUP_LNK_ETC_PATH}
 
 	# 替换原路径链接
+    ln -sf /etc/my.cnf.d ${TMP_MSQL_SETUP_LNK_ETC_REALY_DIR} 
 	ln -sf ${TMP_MSQL_SETUP_LNK_ETC_DIR} ${TMP_MSQL_SETUP_ETC_DIR}
-    ln -sf ${TMP_MSQL_SETUP_LNK_ETC_PATH} /etc/my.cnf
+    ln -sf /etc/my.cnf ${TMP_MSQL_SETUP_LNK_ETC_PATH}
 
     local TMP_MSQL_SETUP_TEMPORARY_PWD=`grep "A temporary password is generated for root" /var/log/mysqld.log`
     TMP_MSQL_SETUP_TEMPORARY_PWD="${TMP_MSQL_SETUP_TEMPORARY_PWD##*: }"
@@ -157,7 +161,7 @@ function conf_mysql()
     SET password FOR 'root'@'localhost'=PASSWORD('${TMP_MSQL_SETUP_TEMPORARY_PWD}');
     GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '${TMP_MYSQL_SETUP_PWD}' WITH GRANT OPTION;
     USE mysql;
-    DELETE FROM user WHERE user='' OR authentication_string='';
+    DELETE FROM user WHERE user='' OR user='${SYS_NAME}' OR authentication_string='';
     SET GLOBAL MAX_CONNECT_ERRORS=1024;
     FLUSH HOSTS;
     FLUSH PRIVILEGES;
@@ -180,30 +184,27 @@ function conf_mariadb()
 	local TMP_MDB_SETUP_LNK_ETC_DIR=${ATT_DIR}/mysql
 	local TMP_MDB_SETUP_LNK_ETC_REALY_DIR=${TMP_MDB_SETUP_LNK_ETC_DIR}/my.cnf.d
 	local TMP_MDB_SETUP_LNK_ETC_PATH=${TMP_MDB_SETUP_LNK_ETC_DIR}/my.cnf
-    local TMP_MDB_SETUP_LNK_ETC_SERVER_PATH=${TMP_MDB_SETUP_LNK_ETC_REALY_DIR}/server.cnf
 	local TMP_MDB_SETUP_ETC_DIR=${TMP_MDB_SETUP_DIR}/etc
 
 	# ①-Y：存在配置文件：原路径文件放给真实路径
-    mv /etc/my.cnf ${TMP_MDB_SETUP_LNK_ETC_DIR}/
-	mv /etc/my.cnf.d ${TMP_MDB_SETUP_LNK_ETC_DIR}/
-    # yes | cp /usr/share/mysql/my-innodb-heavy-4G.cnf ${TMP_MDB_SETUP_LNK_ETC_PATH}
+	mkdir -pv ${TMP_MDB_SETUP_LNK_ETC_DIR}
 
 	# 替换原路径链接
-    ln -sf ${TMP_MDB_SETUP_LNK_ETC_REALY_DIR} /etc/my.cnf.d
+    ln -sf /etc/my.cnf.d ${TMP_MDB_SETUP_LNK_ETC_REALY_DIR} 
 	ln -sf ${TMP_MDB_SETUP_LNK_ETC_DIR} ${TMP_MDB_SETUP_ETC_DIR}
-    ln -sf ${TMP_MDB_SETUP_LNK_ETC_PATH} /etc/my.cnf
+    ln -sf /etc/my.cnf ${TMP_MDB_SETUP_LNK_ETC_PATH}
 
-	input_if_empty "TMP_SETUP_MYSQL_PWD" "MariaDB: Please ender ${red}mysql password${reset} of User(Root)"
+	input_if_empty "TMP_MYSQL_SETUP_PWD" "MariaDB: Please ender ${red}mysql password${reset} of User(Root)"
     
     systemctl start mariadb.service 
     mysql -e"
     use mysql;
-    UPDATE user SET password=PASSWORD('${TMP_SETUP_MYSQL_PWD}') WHERE user='root';
-    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_SETUP_MYSQL_PWD}' WITH GRANT OPTION;
-    DELETE FROM user WHERE user='' OR password='';
+    UPDATE user SET password=PASSWORD('${TMP_MYSQL_SETUP_PWD}') WHERE user='root';
+    GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_MYSQL_SETUP_PWD}' WITH GRANT OPTION;
+    DELETE FROM user WHERE user='' OR user='${SYS_NAME}' OR password='';
     FLUSH PRIVILEGES;
     exit"
-    echo "MariaDB: Password（'${TMP_SETUP_MYSQL_PWD}'） Set Success！"
+    echo "MariaDB: Password（'${TMP_MYSQL_SETUP_PWD}'） Set Success！"
 
     systemctl stop mariadb.service
 
@@ -220,30 +221,31 @@ function conf_all()
 
 	local TMP_DB_SETUP_LOGS_DIR=${TMP_DB_SETUP_DIR}/logs
 
+    sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a long_query_time = 3" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a slow-query-log-file = ${TMP_DB_SETUP_LOGS_DIR}/mysql-slow.log" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a slow-query-log = 0" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a " ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a max_heap_table_size = 64M" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a tmp_table_size = 64M" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a " ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a query_cache_size = 256M" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a query_cache_min_res_unit = 4K" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a query_cache_limit = 512K" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a query_cache_type = 1" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a " ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a thread_cache_size = 512" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a max_connect_errors = 256" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a max_connections = 1024" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a " ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a skip-character-set-client-handshake" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a skip-name-resolve" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a " ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a collation-server=utf8_unicode_ci" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a init_connect='SET collation_connection = utf8_unicode_ci'" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a init_connect='SET NAMES utf8'" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a character-set-server=utf8" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a " ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a server-id = ${LOCAL_ID}" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a user = mysql" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a port = ${TMP_MYSQL_SETUP_PORT}" ${TMP_DB_ETC_PATH}
@@ -356,9 +358,9 @@ function boot_mysql()
 
 	# 当前启动命令
     sudo systemctl daemon-reload
-    sudo systemctl enable mysql.service
-    sudo systemctl start mysql.service
-    systemctl status mysql.service
+    sudo systemctl enable mysqld.service
+    sudo systemctl start mysqld.service
+    systemctl status mysqld.service
     # journalctl -u mysql --no-pager | less
     # sudo systemctl reload mysql.service
 
