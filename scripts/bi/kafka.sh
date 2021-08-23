@@ -217,7 +217,7 @@ function conf_kafka_eagle()
     local TMP_KFK_SETUP_EAGLE_DBADDRESS="127.0.0.1"
     local TMP_KFK_SETUP_EAGLE_DBPORT="3306"
     local TMP_KFK_SETUP_EAGLE_DBUNAME="root"
-    local TMP_KFK_SETUP_EAGLE_DBPWD="mysql@DB!m${LOCAL_ID}_"
+    local TMP_KFK_SETUP_EAGLE_DBPWD="mysql\@DB!m${LOCAL_ID}_"
 
 	input_if_empty "TMP_KFK_SETUP_EAGLE_DBADDRESS" "KafkaEagle.Mysql: Please ender ${red}mysql host address${reset}"
 	input_if_empty "TMP_KFK_SETUP_EAGLE_DBPORT" "KafkaEagle.Mysql: Please ender ${red}mysql database port${reset} of ${TMP_KFK_SETUP_EAGLE_DBADDRESS}"
