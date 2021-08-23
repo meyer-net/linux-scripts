@@ -11,6 +11,7 @@
 # 软件安装名称：consul
 # 软件授权用户名称&组：consul/consul_group
 #------------------------------------------------
+local TMP_CSL_SETUP_PORT=18500
 local TMP_CSL_SETUP_CLUSTER_LEADER_ADDR="${LOCAL_HOST}"
 local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR="${LOCAL_HOST}"
 
@@ -106,24 +107,24 @@ function conf_consul()
     #-pid-file:提供一个路径来存放pid文件，可以使用该文件进行SIGINT/SIGHUP(关闭/更新)agent
 
     local TMP_CSL_SETUP_KEYGEN=`bin/consul keygen`
-    input_if_empty "TMP_CSL_SETUP_KEYGEN" "Consul: Please Ender Cluster KeyGen Like '${TMP_CSL_SETUP_KEYGEN}'"
+    input_if_empty "TMP_CSL_SETUP_KEYGEN" "Consul: Please ender cluster keygen like '${TMP_CSL_SETUP_KEYGEN}'"
     echo "The Keygen Used：'${red}${TMP_CSL_SETUP_KEYGEN}${reset}', Please ${green}copy${reset} it use for other cluster host"
     echo 
 
     input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_ADDR" "Consul.Cluster: Please ender cluster of ${green}leader host${reset}"
 
     exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR" "Consul.Cluster: Please ender cluster child.\$I host like '${LOCAL_HOST}'" "%s" "
-        echo \"Port of 8300 allowed for '\${CURRENT}'\"
-        echo_soft_port 8300 \${CURRENT}
-        echo \"Port of 8301 allowed for '\${CURRENT}'\"
-        echo_soft_port 8301 \${CURRENT}
-        echo \"Port of 8302 allowed for '\${CURRENT}'\"
-        echo_soft_port 8302 \${CURRENT}
-        echo \"Port of 8400 allowed for '\${CURRENT}'\"
-        echo_soft_port 8400 \${CURRENT}
-        echo \"Port of 8600 allowed for '\${CURRENT}'\"
-        echo_soft_port 8600 \${CURRENT}
-    "
+        echo \"Port of 18300 allowed for '\${CURRENT}'\"
+        echo_soft_port 18300 \${CURRENT}
+        echo \"Port of 18301 allowed for '\${CURRENT}'\"
+        echo_soft_port 18301 \${CURRENT}
+        echo \"Port of 18302 allowed for '\${CURRENT}'\"
+        echo_soft_port 18302 \${CURRENT}
+        echo \"Port of 18400 allowed for '\${CURRENT}'\"
+        echo_soft_port 18400 \${CURRENT}
+        echo \"Port of 18600 allowed for '\${CURRENT}'\"
+        echo_soft_port 18600 \${CURRENT}"
+
     cat > ${TMP_CSL_ETC_DIR}/bootstrap/config.json <<EOF
 {
 	"ui" : true,
@@ -157,7 +158,7 @@ EOF
         "http": "0.0.0.0"
     },
 	"enable_syslog": true,
-	"start_join": ["$TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR"]
+	"start_join": ["${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR}"]
 }
 EOF
 
@@ -202,10 +203,10 @@ function boot_consul()
     fi
 
     # 验证启动
-    lsof -i:8500
+    lsof -i:${TMP_CSL_SETUP_PORT}
 
     # 添加端口许可
-    echo_soft_port 8500
+    echo_soft_port ${TMP_CSL_SETUP_PORT}
 
 	return $?
 }

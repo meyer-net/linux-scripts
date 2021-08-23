@@ -7,14 +7,20 @@
 # 参考文献：
 #         https://ci.apache.org/projects/flink/flink-docs-release-1.13/zh/docs
 #------------------------------------------------
+local TMP_FLK_SETUP_PORT=16123
+local TMP_FLK_SETUP_REST_PORT=18081
+local TMP_FLK_SETUP_HIS_WEB_PORT=19010
+
+local TMP_FLK_SETUP_HDOP_PORT=13000
 
 # 1-配置环境
-function set_environment()
+function set_env_flink()
 {
     cd ${__DIR} && source scripts/lang/java.sh
     
-    if [ -z "${TMP_IS_HDOP_LOCAL}" ]; then 
-        exec_yn_action "setup_hadoop" "Flink.Hadoop: Please sure if u want hadoop local?"
+    local TMP_IS_FLK_HDOP_LOCAL=`lsof -i:${TMP_FLK_SETUP_HDOP_PORT}`
+    if [ -z "${TMP_IS_FLK_HDOP_LOCAL}" ]; then 
+        exec_yn_action "setup_hadoop" "Flink.Hadoop: Please sure if u want to get hadoop local?"
     fi
 
 	return $?
@@ -22,7 +28,6 @@ function set_environment()
 
 function setup_hadoop()
 {
-    TMP_IS_FLK_HDOP_LOCAL=1
     cd ${__DIR} && source scripts/ha/hadoop.sh
 
 	return $?
@@ -78,11 +83,11 @@ function conf_flink()
     # 每一台机器上能使用的 CPU 个数
     sed -i "s@taskmanager\.numberOfTaskSlots:.*@taskmanager\.numberOfTaskSlots: ${PROCESSOR_COUNT}@g" conf/flink-conf.yaml
     
-    # Flink web UI默认端口与Spark的端口8081冲突,更改为8085
-    sed -i "s@^#rest\.port:.*@rest\.port: 8085@g" conf/flink-conf.yaml
+    # Flink web UI默认端口与Spark的端口8081冲突,更改为${TMP_FLK_SETUP_REST_PORT}
+    sed -i "s@^#rest\.port:.*@rest\.port: ${TMP_FLK_SETUP_REST_PORT}@g" conf/flink-conf.yaml
 
     sed -i "s@^#historyserver\.web\.address@historyserver\.web\.address@g" conf/flink-conf.yaml
-    sed -i "s@^#historyserver\.web\.port:.*@historyserver\.web\.port: 9010@g" conf/flink-conf.yaml
+    sed -i "s@^#historyserver\.web\.port:.*@historyserver\.web\.port: ${TMP_FLK_SETUP_HIS_WEB_PORT}@g" conf/flink-conf.yaml
 
     exec_yn_action "conf_flink_cluster" "Flink.Cluster: Please sure if this install is ${green}cluster mode${reset}"
 
@@ -129,9 +134,9 @@ function boot_flink()
 
 	cd ${TMP_FLK_SETUP_DIR}
     
-    echo_soft_port 6123
-    echo_soft_port 8085
-    echo_soft_port 9010
+    echo_soft_port ${TMP_FLK_SETUP_PORT}
+    echo_soft_port ${TMP_FLK_SETUP_REST_PORT}
+    echo_soft_port ${TMP_FLK_SETUP_HIS_WEB_PORT}
 	
 	# 当前启动命令
     exec_yn_action "boot_flink_master" "Flink.Cluster.Master: Please sure if this is a boot server of master"
@@ -147,9 +152,9 @@ function boot_flink_master()
 
 	# 验证安装
     jps
-    lsof -i:6123
-    lsof -i:8085
-    lsof -i:9010
+    lsof -i:${TMP_FLK_SETUP_PORT}
+    lsof -i:${TMP_FLK_SETUP_REST_PORT}
+    lsof -i:${TMP_FLK_SETUP_HIS_WEB_PORT}
 
 	# 添加系统启动命令
     echo_startup_config "flink" "${TMP_FLK_SETUP_DIR}" "bash bin/start-cluster.sh" "" "100"
@@ -177,7 +182,7 @@ function exec_step_flink()
 	local TMP_FLK_SETUP_DIR=${1}
 	local TMP_FLK_CURRENT_DIR=`pwd`
     
-	set_environment "${TMP_FLK_SETUP_DIR}"
+	set_env_flink "${TMP_FLK_SETUP_DIR}"
 
 	setup_flink "${TMP_FLK_SETUP_DIR}" "${TMP_FLK_CURRENT_DIR}"
 

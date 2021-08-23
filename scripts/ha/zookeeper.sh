@@ -11,6 +11,7 @@
 # 软件安装名称：zookeeper
 # 软件授权用户名称&组：zookeeper/zookeeper_group
 #------------------------------------------------
+local TMP_ZK_SETUP_PORT=12181
 
 # 1-配置环境
 function set_environment()
@@ -82,8 +83,8 @@ function conf_zookeeper()
     mv conf/zoo_sample.cfg conf/zoo.cfg
 
 	# 开始配置
-    sed -i "s@dataDir=.*@dataDir=${TMP_ZK_DATA_DIR}@g" conf/zoo.cfg
-    sed -i "s@clientPort=2181@clientPort=2233@g" conf/zoo.cfg
+    sed -i "s@^dataDir=.*@dataDir=${TMP_ZK_DATA_DIR}@g" conf/zoo.cfg
+    sed -i "s@^clientPort=.*@clientPort=${TMP_ZK_SETUP_PORT}@g" conf/zoo.cfg
 
     local TMP_ZK_CLUSTER_LOCAL_ID="${LOCAL_ID}"
     # input_if_empty "TMP_ZK_CLUSTER_LOCAL_ID" "ZooKeeper: Please Ender This Server Of Index In Cluster"
@@ -92,10 +93,10 @@ function conf_zookeeper()
     local TMP_ZK_CLUSTER_INDEX_HOSTS="${LOCAL_HOST}"
     exec_while_read "TMP_ZK_CLUSTER_INDEX_HOSTS" "ZooKeeper: Please Ender Cluster Index.\${I} Address Like '${LOCAL_HOST}'" "" "
         local TMP_ZK_CLUSTER_INDEX_ID=\`echo \\\${CURRENT##*.}\`
-        echo \"Port of 4001 allowed for '\${CURRENT}'\"
-        echo_soft_port 4001 \${CURRENT}
-        echo \"Port of 4002 allowed for '\${CURRENT}'\"
-        echo_soft_port 4002 \${CURRENT}
+        echo \"Port of 14001 allowed for '\${CURRENT}'\"
+        echo_soft_port 14001 \${CURRENT}
+        echo \"Port of 14002 allowed for '\${CURRENT}'\"
+        echo_soft_port 14002 \${CURRENT}
         
         echo \"Cluster INDEX-\$I Of 'server.\${TMP_ZK_CLUSTER_INDEX_ID} -> \${CURRENT}' Was Added To conf/zoo.cfg\"
 		
@@ -104,7 +105,7 @@ function conf_zookeeper()
             CURRENT='0.0.0.0'
         fi
 
-        echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:4001:4002\" >> conf/zoo.cfg
+        echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:14001:14002\" >> conf/zoo.cfg
     "
 
 	return $?
@@ -130,6 +131,9 @@ function boot_zookeeper()
 
 	# 添加系统启动命令
     echo_startup_config "zookeeper" "${TMP_ZK_SETUP_DIR}" "bash bin/zkServer.sh start" "" "1"
+
+	# 授权iptables端口访问
+	echo_soft_port ${TMP_ZK_SETUP_PORT}
 
 	return $?
 }
@@ -172,10 +176,10 @@ function exec_step_zookeeper()
 # x1-下载软件
 function down_zookeeper()
 {
-	local TMP_ZK_SETUP_NEWER="zookeeper-3.7.0"
+	local TMP_ZK_SETUP_NEWER="3.7.0"
 	local TMP_ZK_DOWN_URL_BASE="https://archive.apache.org/dist/zookeeper/"
 	set_url_list_newer_href_link_filename "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}" "zookeeper-()"
-	exec_text_format "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}/%s/apache-%s-bin.tar.gz"
+	exec_text_format "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}zookeeper-%s/apache-zookeeper-%s-bin.tar.gz"
     setup_soft_wget "zookeeper" "${TMP_ZK_SETUP_NEWER}" "exec_step_zookeeper"
 
 	return $?

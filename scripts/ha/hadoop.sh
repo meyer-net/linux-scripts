@@ -8,6 +8,14 @@
 #		   http://www.jianshu.com/p/b49712bbe044
 #          http://dblab.xmu.edu.cn/blog/install-hadoop/
 #------------------------------------------------
+local TMP_HDOP_SETUP_HDFS_PORT 13000
+local TMP_HDOP_SETUP_SCHEDULER_PORT 18030
+local TMP_HDOP_SETUP_RES_TRACK_PORT 18031
+local TMP_HDOP_SETUP_RES_MGR_PORT 18032
+local TMP_HDOP_SETUP_RES_ADMIN_PORT 18033
+local TMP_HDOP_SETUP_WEBAPP_PORT 18088
+local TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT 18090
+
 local TMP_HDOP_WAS_SETUPED=0
 
 # 1-配置环境
@@ -123,7 +131,7 @@ function conf_hadoop()
 </property>
 <property>
 	<name>fs.defaultFS</name>
-	<value>hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:3000</value>
+	<value>hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:${TMP_HDOP_SETUP_HDFS_PORT}</value>
 </property>
 </configuration>
 EOF
@@ -230,32 +238,32 @@ EOF
    <property>
         <description>The address of the applications manager interface in the RM.</description>
         <name>yarn.resourcemanager.address</name>
-        <value>\${yarn.resourcemanager.hostname}:8032</value>
+        <value>\${yarn.resourcemanager.hostname}:${TMP_HDOP_SETUP_RES_MGR_PORT}</value>
 		<description>表示ResourceManager监听的端口</description>
    </property>
    <property>
         <description>The address of the scheduler interface.</description>
         <name>yarn.resourcemanager.scheduler.address</name>
-        <value>\${yarn.resourcemanager.hostname}:8030</value>
+        <value>\${yarn.resourcemanager.hostname}:${TMP_HDOP_SETUP_SCHEDULER_PORT}</value>
    </property>
    <property>
         <description>The http address of the RM web application.</description>
         <name>yarn.resourcemanager.webapp.address</name>
-        <value>\${yarn.resourcemanager.hostname}:8088</value>
+        <value>\${yarn.resourcemanager.hostname}:${TMP_HDOP_SETUP_WEBAPP_PORT}</value>
    </property>
    <property>
         <description>The https adddress of the RM web application.</description>
         <name>yarn.resourcemanager.webapp.https.address</name>
-        <value>\${yarn.resourcemanager.hostname}:8090</value>
+        <value>\${yarn.resourcemanager.hostname}:${TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT}</value>
    </property>
    <property>
         <name>yarn.resourcemanager.resource-tracker.address</name>
-        <value>\${yarn.resourcemanager.hostname}:8031</value>
+        <value>\${yarn.resourcemanager.hostname}:${TMP_HDOP_SETUP_RES_TRACK_PORT}</value>
    </property>
    <property>
         <description>The address of the RM admin interface.</description>
         <name>yarn.resourcemanager.admin.address</name>
-        <value>\${yarn.resourcemanager.hostname}:8033</value>
+        <value>\${yarn.resourcemanager.hostname}:${TMP_HDOP_SETUP_RES_ADMIN_PORT}</value>
    </property>
    <property>
         <name>yarn.nodemanager.aux-services</name>
@@ -290,13 +298,13 @@ EOF
 	# 添加授权
     cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys
 
-    # echo_soft_port 3000 "${TMP_HDOP_MASTER_HOST}"
-    # echo_soft_port 8030 "${TMP_HDOP_MASTER_HOST}"
-    # echo_soft_port 8031 "${TMP_HDOP_MASTER_HOST}"
-    # echo_soft_port 8032 "${TMP_HDOP_MASTER_HOST}"
-    # echo_soft_port 8033 "${TMP_HDOP_MASTER_HOST}"
-    # echo_soft_port 8088 "${TMP_HDOP_MASTER_HOST}"
-    # echo_soft_port 8090 "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port ${TMP_HDOP_SETUP_HDFS_PORT} "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port ${TMP_HDOP_SETUP_SCHEDULER_PORT} "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port ${TMP_HDOP_SETUP_RES_TRACK_PORT} "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port ${TMP_HDOP_SETUP_RES_MGR_PORT} "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port ${TMP_HDOP_SETUP_RES_ADMIN_PORT} "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_PORT} "${TMP_HDOP_MASTER_HOST}"
+    # echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT} "${TMP_HDOP_MASTER_HOST}"
     # echo_soft_port 49001 "${TMP_HDOP_MASTER_HOST}"
     # echo_soft_port 50070 "${TMP_HDOP_MASTER_HOST}"
     # echo_soft_port 50075 "${TMP_HDOP_MASTER_HOST}"
@@ -343,13 +351,13 @@ function conf_hadoop_cluster()
         fi
 
 		# 授权本地端口开放给Slaves
-        echo_soft_port 3000 \"\$CURRENT\"
-        echo_soft_port 8030 \"\$CURRENT\"
-        echo_soft_port 8031 \"\$CURRENT\"
-        echo_soft_port 8032 \"\$CURRENT\"
-        echo_soft_port 8033 \"\$CURRENT\"
-        echo_soft_port 8088 \"\$CURRENT\"
-        echo_soft_port 8090 \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_HDFS_PORT} \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_SCHEDULER_PORT} \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_TRACK_PORT} \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_MGR_PORT} \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_ADMIN_PORT} \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_PORT} \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT} \"\$CURRENT\"
         echo_soft_port 49001 \"\$CURRENT\"
         echo_soft_port 50070 \"\$CURRENT\"
         echo_soft_port 50075 \"\$CURRENT\"
@@ -432,10 +440,10 @@ function boot_hadoop()
 
 	# 测试安装
     bin/hdfs dfs -ls /
-    echo "test ok" > test.log && bin/hdfs dfs -put test.log hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:3000/ && rm -f test.log
+    echo "test ok" > test.log && bin/hdfs dfs -put test.log hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:${TMP_HDOP_SETUP_HDFS_PORT}/ && rm -f test.log
     bin/hdfs dfs -ls /
 
-    bin/hdfs dfs -get hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:3000/test.log
+    bin/hdfs dfs -get hdfs://${TMP_HDOP_HADOOP_MASTER_NAME}:${TMP_HDOP_SETUP_HDFS_PORT}/test.log
 
     bin/hdfs dfs -df -h /
 
@@ -505,3 +513,5 @@ function check_and_run_slave()
 
 	return $?
 }
+
+check_and_run_slave

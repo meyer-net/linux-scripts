@@ -12,8 +12,10 @@
 #------------------------------------------------
 local TMP_$soft_upper_short_name_SETUP_PORT=1$soft_port
 
+##########################################################################################################
+
 # 1-配置环境
-function set_environment()
+function set_env_$soft_name()
 {
     cd ${__DIR}
 
@@ -21,6 +23,8 @@ function set_environment()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 function setup_$soft_name()
@@ -74,6 +78,8 @@ EOF
 	return $?
 }
 
+##########################################################################################################
+
 # 3-设置软件
 function conf_$soft_name()
 {
@@ -99,6 +105,8 @@ function conf_$soft_name()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 4-启动软件
 function boot_$soft_name()
@@ -145,7 +153,7 @@ function exec_step_$soft_name()
 {
 	local TMP_$soft_upper_short_name_SETUP_DIR=${SETUP_DIR}/$setup_name
     
-	set_environment "${TMP_$soft_upper_short_name_SETUP_DIR}"
+	set_env_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
 
 	setup_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
 
@@ -158,6 +166,8 @@ function exec_step_$soft_name()
 	return $?
 }
 
+##########################################################################################################
+
 # x1-下载软件
 function check_setup_$soft_name()
 {
@@ -165,6 +175,8 @@ function check_setup_$soft_name()
 
 	return $?
 }
+
+##########################################################################################################
 
 #安装主体
 setup_soft_basic "$title_name" "check_setup_$soft_name"

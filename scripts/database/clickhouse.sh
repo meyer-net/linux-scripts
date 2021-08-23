@@ -187,15 +187,15 @@ setup_soft_basic "Clickhouse" "check_env"
 # <zookeeper-servers>
 #     <node index="1">
 #         <host>ip-172-30-10-152</host>
-#         <port>2233</port>
+#         <port>12181</port>
 #     </node>
 #     <node index="2">
 #         <host>ip-172-30-10-155</host>
-#         <port>2233</port>
+#         <port>12181</port>
 #     </node>
 #     <node index="3">
 #         <host>ip-172-30-10-158</host>
-#         <port>2233</port>
+#         <port>12181</port>
 #     </node>
 # </zookeeper-servers>
 
