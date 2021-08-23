@@ -12,6 +12,7 @@
 # 软件授权用户名称&组：zookeeper/zookeeper_group
 #------------------------------------------------
 local TMP_ZK_SETUP_PORT=12181
+local TMP_ZK_SETUP_ADMIN_SERVER_PORT=18080
 
 # 1-配置环境
 function set_environment()
@@ -105,8 +106,9 @@ function conf_zookeeper()
             CURRENT='0.0.0.0'
         fi
 
-        echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:14001:14002\" >> conf/zoo.cfg
-    "
+		echo \"admin.serverPort=${TMP_KFK_SETUP_ADMIN_SERVER_PORT}\" >> conf/zoo.cfg
+		echo "" >> conf/zoo.cfg
+        echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:14001:14002\" >> conf/zoo.cfg"
 
 	return $?
 }

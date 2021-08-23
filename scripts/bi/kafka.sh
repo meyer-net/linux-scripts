@@ -13,7 +13,7 @@
 #------------------------------------------------
 local TMP_KFK_SETUP_ZK_PORT=12181
 local TMP_KFK_SETUP_LISTENERS_PORT=19092
-local TMP_KFK_SETUP_ADMIN_SERVER_PORT=18080
+local TMP_KFK_SETUP_ZK_ADMIN_SERVER_PORT=18080
 local TMP_KFK_SETUP_JMX_PORT=10000
 
 local TMP_KFK_EGL_SETUP_PORT=18048
@@ -147,7 +147,7 @@ function conf_kafka()
 	local TMP_KFK_SETUP_DATA_DIR=${TMP_KFK_SETUP_DIR}/data
     sed -i "s@^dataDir=.*@dataDir=${TMP_KFK_SETUP_DATA_DIR}@g" config/zookeeper.properties
     sed -i "s@^clientPort=.*@clientPort=${TMP_KFK_SETUP_ZK_PORT}@g" config/zookeeper.properties
-    sed -i "s@admin.serverPort=.*@admin.serverPort=${TMP_KFK_SETUP_ADMIN_SERVER_PORT}@g" config/zookeeper.properties
+    sed -i "s@^# admin.serverPort=.*@admin.serverPort=${TMP_KFK_SETUP_ZK_ADMIN_SERVER_PORT}@g" config/zookeeper.properties
 
 	# - socket server 部分
     local TMP_KFK_SETUP_BROKER="${LOCAL_ID}"
@@ -161,9 +161,15 @@ function conf_kafka()
     if [ -n "${TMP_KFK_SETUP_HOST}" ]; then
         sed -i "s@^#advertised.listeners=.*@advertised.listeners=PLAINTEXT://${TMP_KFK_SETUP_HOST}:${TMP_KFK_SETUP_LISTENERS_PORT}@g" config/server.properties
     fi
-    sed -i "s@^socket.send.buffer.bytes=.*@socket.send.buffer.bytes=409600@g" config/server.properties
+    
+	# socket的发送缓冲区，socket的调优参数SO_SNDBUFF
+	sed -i "s@^socket.send.buffer.bytes=.*@socket.send.buffer.bytes=409600@g" config/server.properties
+
+	# socket的接受缓冲区，socket的调优参数SO_RCVBUFF
     sed -i "s@^socket.receive.buffer.bytes=.*@socket.receive.buffer.bytes=409600@g" config/server.properties
-    sed -i "s@^socket.request.max.bytes=.*@socket.request.max.bytes=167772160000@g" config/server.properties
+
+	# socket请求的最大数值，防止serverOOM，message.max.bytes必然要小于socket.request.max.bytes，会被topic创建时的指定参数覆盖
+    sed -i "s@^socket.request.max.bytes=.*@socket.request.max.bytes=419430400@g" config/server.properties
 
     sed -i "s@^log.dirs=.*@log.dirs=${TMP_KFK_SETUP_LOGS_DIR}@g" config/server.properties
 
@@ -250,15 +256,14 @@ function boot_kafka()
     sleep 10
 
 	# 启动状态检测
-	lsof -i:${TMP_KFK_SETUP_ZK_PORT}
+	lsof -i:${TMP_KFK_SETUP_LISTENERS_PORT}
 
 	# 添加系统启动命令
     echo_startup_config "kafka" "${TMP_KFK_SETUP_DIR}" "bash bin/kafka-server-start.sh config/server.properties" "JMX_PORT=${TMP_KFK_SETUP_JMX_PORT}" "100"
 	
 	# 授权iptables端口访问
-    echo_soft_port ${TMP_KFK_SETUP_ZK_PORT}
     echo_soft_port ${TMP_KFK_SETUP_LISTENERS_PORT}
-	echo_soft_port ${TMP_KFK_SETUP_ADMIN_SERVER_PORT}
+	echo_soft_port ${TMP_KFK_SETUP_ZK_ADMIN_SERVER_PORT}
     echo_soft_port ${TMP_KFK_SETUP_JMX_PORT}
 
 	return $?
