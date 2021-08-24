@@ -68,11 +68,13 @@ function setup_clickhouse()
     echo "ClickHouse: Setup Successded，Starting init data file..."
     systemctl start clickhouse-server.service 
     systemctl stop clickhouse-server.service
-    sleep 5
+    sleep 15
 
 	# 创建日志软链
-	local TMP_CH_SETUP_LNK_SERVER_LOGS_DIR=${LOGS_DIR}/clickhouse
-	local TMP_CH_SETUP_LNK_SERVER_DATA_DIR=${DATA_DIR}/clickhouse
+    local TMP_CH_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/clickhouse
+	local TMP_CH_SETUP_LNK_SERVER_LOGS_DIR=${TMP_CH_SETUP_LNK_LOGS_DIR}/server
+	local TMP_CH_SETUP_LNK_DATA_DIR=${DATA_DIR}/clickhouse
+	local TMP_CH_SETUP_LNK_SERVER_DATA_DIR=${TMP_CH_SETUP_LNK_DATA_DIR}/server
 	local TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR=${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}/lib
 	local TMP_CH_SETUP_LNK_SERVER_DATA_XML_DIR=${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}/xml
 	local TMP_CH_SETUP_SERVER_LOGS_DIR=${TMP_CH_SETUP_DIR}/logs
@@ -80,23 +82,26 @@ function setup_clickhouse()
 
 	# 先清理文件，再创建文件
 	path_not_exits_create ${TMP_CH_SETUP_DIR}
+    path_not_exits_create ${TMP_CH_SETUP_LNK_LOGS_DIR}
 	rm -rf ${TMP_CH_SETUP_SERVER_LOGS_DIR}
 	rm -rf ${TMP_CH_SETUP_SERVER_DATA_DIR}
-	mv /var/log/clickhouse ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
-	mv /var/lib/clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR}
+    path_not_exits_create ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}
+	mv /var/log/clickhouse-server ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
+	cp /var/lib/clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR} -Rp
+    mv /var/lib/clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR}_empty
     path_not_exits_create ${TMP_CH_SETUP_LNK_SERVER_DATA_XML_DIR}
 	
-    ln -sf ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR} /var/log/clickhouse
+    ln -sf ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR} /var/log/clickhouse-server
 	ln -sf ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR} ${TMP_CH_SETUP_SERVER_LOGS_DIR}
 	ln -sf ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR} /var/lib/clickhouse
 	ln -sf ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR} ${TMP_CH_SETUP_SERVER_DATA_DIR}
 
 	# 授权权限，否则无法写入
 	create_user_if_not_exists clickhouse clickhouse
-	chgrp -R clickhouse ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
-	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
-	chgrp -R clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}
-	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}
+	chgrp -R clickhouse ${TMP_CH_SETUP_LNK_LOGS_DIR}
+	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_LOGS_DIR}
+	chgrp -R clickhouse ${TMP_CH_SETUP_LNK_DATA_DIR}
+	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_DATA_DIR}
 	
 	return $?
 }
@@ -167,22 +172,23 @@ function boot_clickhouse()
 	cd ${TMP_CH_SETUP_DIR}
 	
 	# 验证安装
-    clickhouse -v  # lsof -i:${TMP_CH_SETUP_PORT}
+    clickhouse-server -V  # lsof -i:${TMP_CH_SETUP_PORT}
 
 	# 当前启动命令
-    nohup sudo -u clickhouse clickhouse-server --config-file /etc/clickhouse-server/config.xml > logs/boot.log 2>&1 &
+    # nohup sudo -u clickhouse clickhouse-server --config-file /etc/clickhouse-server/config.xml > logs/boot.log 2>&1 &
+    sudo systemctl daemon-reload
+    sudo systemctl enable clickhouse-server.service
+    sudo systemctl start clickhouse-server.service
     
     # 等待启动
-    echo "Starting $soft_name，Waiting for a moment..."
+    echo "Starting clickhouse-server，Waiting for a moment..."
     echo "--------------------------------------------"
-    sleep 15
+    sleep 5
 
-    cat logs/boot.log
+    cat /var/log/clickhouse-server/clickhouse-server.log
+    sudo systemctl status clickhouse-server.service
     echo "--------------------------------------------"
     
-	# 添加系统启动命令
-    echo_startup_config "clickhouse" "/usr/bin" "clickhouse-server --config-file /etc/clickhouse-server/config.xml" "" "1" "" "clickhouse"
-
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_CH_SETUP_HTTP_PORT}
 	echo_soft_port ${TMP_CH_SETUP_TCP_PORT}

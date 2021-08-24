@@ -52,8 +52,8 @@ function setup_$soft_name()
 	# mv /var/log/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	# mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
-	## cp /var/lib/mysql ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} -Rp
-    ## mv /var/lib/mysql ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}_empty
+	## cp /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} -Rp
+    ## mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}_empty
 	
 	# 特殊多层结构下使用
     # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}`
@@ -135,6 +135,7 @@ function boot_$soft_name()
     sleep 15
 
     cat logs/boot.log
+    # cat /var/log/$setup_name/$setup_name.log
     echo "--------------------------------------------"
 
 	# 启动状态检测
