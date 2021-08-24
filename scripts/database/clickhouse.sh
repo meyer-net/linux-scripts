@@ -4,127 +4,245 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
-# 参考资料：https://clickhouse.tech/docs/zh/
+# 安装标题：ClickHouse
+# 软件名称：clickhouse
+# 软件大写分组与简称：CH
+# 软件安装名称：clickhouse
+# 软件授权用户名称&组：clickhouse/clickhouse
+#------------------------------------------------
+local TMP_CH_SETUP_HTTP_PORT=18123
+local TMP_CH_SETUP_TCP_PORT=19876
+local TMP_CH_SETUP_MYSQL_PORT=19004
+local TMP_CH_SETUP_PSQL_PORT=19005
+local TMP_CH_SETUP_ITS_HTTP_PORT=19009
 
-function check_env()
+##########################################################################################################
+
+# 1-配置环境
+function set_env_clickhouse()
 {
-    # local SSE42_SUPPORTED=`grep -q sse4_2 /proc/cpuinfo`
-    # check_yn_action "SSE42_SUPPORTED"
-    
-    soft_rpm_check_action "clickhouse" "setup_clickhouse" "Clickhouse was installed"
+    cd ${__DIR}
 
-    return $?
-}
-# https://www.zouyesheng.com/clickhouse.html
-function setup_clickhouse()
-{
-    cd $DOWN_DIR
-    mkdir -pv rpms/clickhouse
-    cd rpms/clickhouse
-
-    # http://www.clickhouse.com.cn/topic/5a366e97828d76d75ab5d5a0
-    yum -y install libicu-devel
-
-    echo "------------------------------------------------------"
-    echo "ClickHouse: System start find the newer stable version"
-    echo "------------------------------------------------------"
-    local TMP_NEWER_STABLE_VERSION_CH_SERVER="clickhouse-server-21.6.6.51-2.noarch.rpm"
-    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-().noarch.rpm"
-    local TMP_NEWER_STABLE_VERSION_CH_CLIENT=`echo "${TMP_NEWER_STABLE_VERSION_CH_SERVER}" | sed 's@server@client@g'`
-
-    local TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON="clickhouse-server-common-19.4.0-2.noarch.rpm"
-    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-common-().noarch.rpm"
-
-    local TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC="clickhouse-common-static-21.6.6.51-2.x86_64.rpm"
-    set_url_list_newer_href_link_filename "TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-().x86_64.rpm"
-
-    #19.13.3.26-1
-    #curl -s https://packagecloud.io/install/repositories/Altinity/clickhouse/script.rpm.sh | sudo bash
-    
-    echo "ClickHouse[server-common]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON}"
-    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_SERVER_COMMON}"
-
-    echo "ClickHouse[server-static]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC}"
-    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_COMMON_STATIC}"
-
-    echo "ClickHouse[server]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_SERVER}"
-    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_SERVER}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_SERVER}"
-
-    echo "ClickHouse[client]: The newer stable version is ${TMP_NEWER_STABLE_VERSION_CH_CLIENT}"
-    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_NEWER_STABLE_VERSION_CH_CLIENT}" "rpm -ivh ${TMP_NEWER_STABLE_VERSION_CH_CLIENT}"
-
-    # 默认配置文件位置
-    # /etc/clickhouse-server/config.xml  
-    # /etc/clickhouse-server/users.xml
-
-    CLICKHOUSE_SERVER_CONF_DIR=${ATT_DIR}/clickhouse/server/conf
-    CLICKHOUSE_CLIENT_CONF_DIR=${ATT_DIR}/clickhouse/client/conf
-    CLICKHOUSE_SERVER_LOGS_DIR=${LOGS_DIR}/clickhouse/server
-    CLICKHOUSE_SERVER_DATA_DIR=${DATA_DIR}/clickhouse
-    CLICKHOUSE_SERVER_DATA_ETC_DIR=${CLICKHOUSE_SERVER_DATA_DIR}/etc
-    CLICKHOUSE_SERVER_DATA_XML_DIR=${CLICKHOUSE_SERVER_DATA_DIR}/xml
-    mkdir -pv ${CLICKHOUSE_SERVER_LOGS_DIR} && rm -rf ${CLICKHOUSE_SERVER_LOGS_DIR}
-    mkdir -pv ${CLICKHOUSE_SERVER_DATA_ETC_DIR} && rm -rf ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
-    mkdir -pv ${CLICKHOUSE_SERVER_DATA_XML_DIR}
-    # mv mycat $SETUP_DIR
-
-    mkdir -pv ${CLICKHOUSE_SERVER_CONF_DIR} && rm -rf ${CLICKHOUSE_SERVER_CONF_DIR}
-    mv /etc/clickhouse-server ${CLICKHOUSE_SERVER_CONF_DIR}
-    ln -sf ${CLICKHOUSE_SERVER_CONF_DIR} /etc/clickhouse-server
-
-    mkdir -pv ${CLICKHOUSE_CLIENT_CONF_DIR} && rm -rf ${CLICKHOUSE_CLIENT_CONF_DIR}
-    mv /etc/clickhouse-client ${CLICKHOUSE_CLIENT_CONF_DIR}
-    ln -sf ${CLICKHOUSE_CLIENT_CONF_DIR} /etc/clickhouse-client
-
-    # 默认启动脚本，注意，这个名字虽然叫server，其实是个shell脚本
-    sed -i "s@^CLICKHOUSE_LOGDIR_USER=.*@CLICKHOUSE_LOGDIR_USER=clickhouse@g" /etc/rc.d/init.d/clickhouse-server
-
-    local CLICKHOUSE_TCP_PORT=9876
-	input_if_empty "CLICKHOUSE_TCP_PORT" "Clickhouse: Please ender ${red}tcp port${reset}"
-    sed -i "0,/<tcp_port>[0-9]*<\/tcp_port>/{s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>$CLICKHOUSE_TCP_PORT</tcp_port>@}" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
-
-    sed -i "0,/<path>.*<\/path>/{s@<path>.*</path>@<path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/</path>@}" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
-    sed -i "0,/<tmp_path>.*<\/tmp_path>/{s@<tmp_path>.*</tmp_path>@<tmp_path>${CLICKHOUSE_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@}" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
-    
-    echo_soft_port 8123
-
-    sudo service clickhouse-server start
-
-    mv /var/lib/clickhouse ${CLICKHOUSE_SERVER_DATA_ETC_DIR}
-    ln -sf ${CLICKHOUSE_SERVER_DATA_ETC_DIR} /var/lib/clickhouse
-    create_user_if_not_exists clickhouse clickhouse
-    chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_DATA_DIR}
-
-    mv /var/log/clickhouse-server ${CLICKHOUSE_SERVER_LOGS_DIR}
-    chown -R clickhouse:clickhouse ${CLICKHOUSE_SERVER_LOGS_DIR}
-    ln -sf ${CLICKHOUSE_SERVER_LOGS_DIR} /var/log/clickhouse-server
-
-    sudo service clickhouse-server stop
-
-    # 交互模式启动，预先排错
-    nohup sudo -u clickhouse /usr/bin/clickhouse-server --config-file ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml &
-
-    # 等待启动日志
-    echo "ClickHouse：Booting clickhouse..."
-    echo "---------------------------------"
-    sleep 15
-
-    cat nohup.out
-    echo "---------------------------------"
-
-    # 启动完成以后再修改配置文件
-    sed -i "/<yandex>/a     \\\    <listen_host>0.0.0.0</listen_host>" ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml
-
-    sudo journalctl -u clickhouse-server
-    sudo service clickhouse-server status
-    
-    echo_startup_config "clickhouse" "/usr/bin" "clickhouse-server --config-file ${CLICKHOUSE_SERVER_CONF_DIR}/config.xml" "" "1" "" "clickhouse"
+    soft_yum_check_setup "libicu-devel"
 
 	return $?
 }
 
-setup_soft_basic "Clickhouse" "check_env"
+##########################################################################################################
 
+# 2-安装软件
+function setup_clickhouse()
+{
+	local TMP_CH_SETUP_DIR=${1}
+
+	## 源模式    
+    echo "------------------------------------------------------"
+    echo "ClickHouse: System start find the newer stable version"
+    echo "------------------------------------------------------"
+    local TMP_CH_SETUP_CH_SERVER_NEWER="clickhouse-server-21.6.6.51-2.noarch.rpm"
+    set_url_list_newer_href_link_filename "TMP_CH_SETUP_CH_SERVER_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-().noarch.rpm"
+    local TMP_CH_SETUP_CLIENT_NEWER=`echo "${TMP_CH_SETUP_CH_SERVER_NEWER}" | sed 's@server@client@g'`
+
+    local TMP_CH_SETUP_CH_SERVER_COMMON_NEWER="clickhouse-server-common-19.4.0-2.noarch.rpm"
+    set_url_list_newer_href_link_filename "TMP_CH_SETUP_CH_SERVER_COMMON_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-common-().noarch.rpm"
+
+    local TMP_CH_SETUP_COMMON_STATIC_NEWER="clickhouse-common-static-21.6.6.51-2.x86_64.rpm"
+    set_url_list_newer_href_link_filename "TMP_CH_SETUP_COMMON_STATIC_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-().x86_64.rpm"
+
+    #19.13.3.26-1
+    #curl -s https://packagecloud.io/install/repositories/Altinity/clickhouse/script.rpm.sh | sudo bash
+    
+    echo "ClickHouse[server-common]: The newer stable version is ${TMP_CH_SETUP_CH_SERVER_COMMON_NEWER}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_CH_SETUP_CH_SERVER_COMMON_NEWER}" "rpm -ivh ${TMP_CH_SETUP_CH_SERVER_COMMON_NEWER}"
+
+    echo "ClickHouse[server-static]: The newer stable version is ${TMP_CH_SETUP_COMMON_STATIC_NEWER}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_CH_SETUP_COMMON_STATIC_NEWER}" "rpm -ivh ${TMP_CH_SETUP_COMMON_STATIC_NEWER}"
+
+    echo "ClickHouse[server]: The newer stable version is ${TMP_CH_SETUP_CH_SERVER_NEWER}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_CH_SETUP_CH_SERVER_NEWER}" "rpm -ivh ${TMP_CH_SETUP_CH_SERVER_NEWER}"
+
+    echo "ClickHouse[client]: The newer stable version is ${TMP_CH_SETUP_CLIENT_NEWER}"
+    while_wget "--content-disposition http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/${TMP_CH_SETUP_CLIENT_NEWER}" "rpm -ivh ${TMP_CH_SETUP_CLIENT_NEWER}"
+
+	# 需要运行一次，生成基础文件
+    echo "ClickHouse: Setup Successded，Starting init data file..."
+    systemctl start clickhouse-server.service 
+    systemctl stop clickhouse-server.service
+    sleep 5
+
+	# 创建日志软链
+	local TMP_CH_SETUP_LNK_SERVER_LOGS_DIR=${LOGS_DIR}/clickhouse
+	local TMP_CH_SETUP_LNK_SERVER_DATA_DIR=${DATA_DIR}/clickhouse
+	local TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR=${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}/lib
+	local TMP_CH_SETUP_LNK_SERVER_DATA_XML_DIR=${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}/xml
+	local TMP_CH_SETUP_SERVER_LOGS_DIR=${TMP_CH_SETUP_DIR}/logs
+	local TMP_CH_SETUP_SERVER_DATA_DIR=${TMP_CH_SETUP_DIR}/data
+
+	# 先清理文件，再创建文件
+	path_not_exits_create ${TMP_CH_SETUP_DIR}
+	rm -rf ${TMP_CH_SETUP_SERVER_LOGS_DIR}
+	rm -rf ${TMP_CH_SETUP_SERVER_DATA_DIR}
+	mv /var/log/clickhouse ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
+	mv /var/lib/clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR}
+    path_not_exits_create ${TMP_CH_SETUP_LNK_SERVER_DATA_XML_DIR}
+	
+    ln -sf ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR} /var/log/clickhouse
+	ln -sf ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR} ${TMP_CH_SETUP_SERVER_LOGS_DIR}
+	ln -sf ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR} /var/lib/clickhouse
+	ln -sf ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR} ${TMP_CH_SETUP_SERVER_DATA_DIR}
+
+	# 授权权限，否则无法写入
+	create_user_if_not_exists clickhouse clickhouse
+	chgrp -R clickhouse ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
+	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
+	chgrp -R clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}
+	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}
+	
+	return $?
+}
+
+##########################################################################################################
+
+# 3-设置软件
+function conf_clickhouse()
+{
+	local TMP_CH_SETUP_DIR=${1}
+
+	cd ${TMP_CH_SETUP_DIR}
+	
+	local TMP_CH_SETUP_LNK_SERVER_ETC_DIR=${ATT_DIR}/clickhouse/server/conf
+	local TMP_CH_SETUP_LNK_CLIENT_ETC_DIR=${ATT_DIR}/clickhouse/client/conf
+	local TMP_CH_SETUP_SERVER_ETC_DIR=${TMP_CH_SETUP_DIR}/etc/server
+	local TMP_CH_SETUP_CLIENT_ETC_DIR=${TMP_CH_SETUP_DIR}/etc/client
+
+	# 特殊多层结构下使用
+    mkdir -pv `dirname ${TMP_CH_SETUP_LNK_SERVER_ETC_DIR}`
+    mkdir -pv `dirname ${TMP_CH_SETUP_LNK_CLIENT_ETC_DIR}`
+    mkdir -pv `dirname ${TMP_CH_SETUP_SERVER_ETC_DIR}`
+    mkdir -pv `dirname ${TMP_CH_SETUP_CLIENT_ETC_DIR}`
+
+	# 替换原路径链接
+	ln -sf /etc/clickhouse-server ${TMP_CH_SETUP_LNK_SERVER_ETC_DIR}
+    ln -sf /etc/clickhouse-server ${TMP_CH_SETUP_SERVER_ETC_DIR}
+	ln -sf /etc/clickhouse-client ${TMP_CH_SETUP_LNK_CLIENT_ETC_DIR}
+    ln -sf /etc/clickhouse-client ${TMP_CH_SETUP_CLIENT_ETC_DIR}
+	
+    # 开始配置
+    # 默认启动脚本，注意，这个名字虽然叫server，其实是个shell脚本
+    # sed -i "s@^CLICKHOUSE_LOGDIR_USER=.*@CLICKHOUSE_LOGDIR_USER=clickhouse@g" /etc/rc.d/init.d/clickhouse-server
+
+    # 启动完成以后再修改配置文件
+    sed -i "/<yandex>/a     \\\    <listen_host>0.0.0.0</listen_host>" /etc/clickhouse-server/config.xml
+
+	input_if_empty "TMP_CH_SETUP_HTTP_PORT" "Clickhouse-Server: Please ender ${red}http port${reset}"
+    sed -i "0,/<http_port>[0-9]*<\/http_port>/{s@<http_port>[0-9]*</http_port>@<http_port>${TMP_CH_SETUP_HTTP_PORT}</http_port>@}" /etc/clickhouse-server/config.xml
+
+	input_if_empty "TMP_CH_SETUP_TCP_PORT" "Clickhouse-Server: Please ender ${red}tcp port${reset}"
+    sed -i "0,/<tcp_port>[0-9]*<\/tcp_port>/{s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>${TMP_CH_SETUP_TCP_PORT}</tcp_port>@}" /etc/clickhouse-server/config.xml
+
+	input_if_empty "TMP_CH_SETUP_MYSQL_PORT" "Clickhouse-Server: Please ender ${red}mysql port${reset}"
+    sed -i "0,/<mysql_port>[0-9]*<\/mysql_port>/{s@<mysql_port>[0-9]*</mysql_port>@<mysql_port>${TMP_CH_SETUP_MYSQL_PORT}</mysql_port>@}" /etc/clickhouse-server/config.xml
+    
+	input_if_empty "TMP_CH_SETUP_PSQL_PORT" "Clickhouse-Server: Please ender ${red}postgresql port${reset}"
+    sed -i "0,/<postgresql_port>[0-9]*<\/postgresql_port>/{s@<postgresql_port>[0-9]*</postgresql_port>@<postgresql_port>${TMP_CH_SETUP_PSQL_PORT}</postgresql_port>@}" /etc/clickhouse-server/config.xml
+    
+	input_if_empty "TMP_CH_SETUP_ITS_HTTP_PORT" "Clickhouse-Server: Please ender ${red}interserver http port${reset}"
+    sed -i "0,/<interserver_http_port>[0-9]*<\/interserver_http_port>/{s@<interserver_http_port>[0-9]*</interserver_http_port>@<interserver_http_port>${TMP_CH_SETUP_ITS_HTTP_PORT}</interserver_http_port>@}" /etc/clickhouse-server/config.xml
+
+	local TMP_CH_SETUP_SERVER_DATA_DIR=${TMP_CH_SETUP_DIR}/data
+	local TMP_CH_SETUP_SERVER_DATA_XML_DIR=${TMP_CH_SETUP_SERVER_DATA_DIR}/xml
+    sed -i "0,/<path>.*<\/path>/{s@<path>.*</path>@<path>${TMP_CH_SETUP_SERVER_DATA_XML_DIR}/</path>@}" /etc/clickhouse-server/config.xml
+    sed -i "0,/<tmp_path>.*<\/tmp_path>/{s@<tmp_path>.*</tmp_path>@<tmp_path>${TMP_CH_SETUP_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@}" /etc/clickhouse-server/config.xml
+    
+	return $?
+}
+
+##########################################################################################################
+
+# 4-启动软件
+function boot_clickhouse()
+{
+	local TMP_CH_SETUP_DIR=${1}
+
+	cd ${TMP_CH_SETUP_DIR}
+	
+	# 验证安装
+    clickhouse -v  # lsof -i:${TMP_CH_SETUP_PORT}
+
+	# 当前启动命令
+    nohup sudo -u clickhouse clickhouse-server --config-file /etc/clickhouse-server/config.xml > logs/boot.log 2>&1 &
+    
+    # 等待启动
+    echo "Starting $soft_name，Waiting for a moment..."
+    echo "--------------------------------------------"
+    sleep 15
+
+    cat logs/boot.log
+    echo "--------------------------------------------"
+    
+	# 添加系统启动命令
+    echo_startup_config "clickhouse" "/usr/bin" "clickhouse-server --config-file /etc/clickhouse-server/config.xml" "" "1" "" "clickhouse"
+
+	# 授权iptables端口访问
+	echo_soft_port ${TMP_CH_SETUP_HTTP_PORT}
+	echo_soft_port ${TMP_CH_SETUP_TCP_PORT}
+	echo_soft_port ${TMP_CH_SETUP_MYSQL_PORT}
+	echo_soft_port ${TMP_CH_SETUP_PSQL_PORT}
+	echo_soft_port ${TMP_CH_SETUP_ITS_HTTP_PORT}
+    
+	return $?
+}
+
+##########################################################################################################
+
+# 下载驱动/插件
+function down_plugin_clickhouse()
+{
+	return $?
+}
+
+# 安装驱动/插件
+function setup_plugin_clickhouse()
+{
+	return $?
+}
+
+##########################################################################################################
+
+# x2-执行步骤
+function exec_step_clickhouse()
+{
+	local TMP_CH_SETUP_DIR=${SETUP_DIR}/clickhouse
+    
+	set_env_clickhouse "${TMP_CH_SETUP_DIR}"
+
+	setup_clickhouse "${TMP_CH_SETUP_DIR}"
+
+	conf_clickhouse "${TMP_CH_SETUP_DIR}"
+
+    # down_plugin_clickhouse "${TMP_CH_SETUP_DIR}"
+
+	boot_clickhouse "${TMP_CH_SETUP_DIR}"
+
+	return $?
+}
+
+##########################################################################################################
+
+# x1-下载软件
+function check_setup_clickhouse()
+{
+    soft_rpm_check_action "clickhouse" "exec_step_clickhouse" "ClickHouse was installed"
+
+	return $?
+}
+
+##########################################################################################################
+
+#安装主体
+setup_soft_basic "ClickHouse" "check_setup_clickhouse"
+
+##########################################################################################################
 # 1、/etc/clickhouse-server/config.xml添加修改如下：
 #     <listen_host>0.0.0.0</listen_host>
 	

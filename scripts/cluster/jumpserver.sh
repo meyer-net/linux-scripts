@@ -6,9 +6,11 @@
 #------------------------------------------------
 # 参考：https://docs.jumpserver.org/zh/master/install/setup_by_fast/
 #------------------------------------------------
+local TMP_JMS_SETUP_SSH_PORT=22222
+local TMP_JMS_SETUP_RDP_PORT=33389
 
 # 1-配置环境
-function set_environment()
+function set_env_jumpserver()
 {
     cd ${__DIR}
 
@@ -99,8 +101,8 @@ function conf_jumpserver_pre()
     fi
     
     # Nginx配置
-    sed -i "s@SSH_PORT=.*@SSH_PORT=22222@g" config-example.txt
-    sed -i "s@RDP_PORT=.*@RDP_PORT=33389@g" config-example.txt
+    sed -i "s@SSH_PORT=.*@SSH_PORT=${TMP_JMS_SETUP_SSH_PORT}@g" config-example.txt
+    sed -i "s@RDP_PORT=.*@RDP_PORT=${TMP_JMS_SETUP_RDP_PORT}@g" config-example.txt
     
 	return $?
 }
@@ -200,8 +202,8 @@ function boot_jumpserver()
 	
 	# 授权iptables端口访问
 	echo_soft_port 80
-	echo_soft_port 22222
-	echo_soft_port 33389
+	echo_soft_port ${TMP_JMS_SETUP_SSH_PORT}
+	echo_soft_port ${TMP_JMS_SETUP_RDP_PORT}
 
 	return $?
 }
@@ -228,7 +230,7 @@ function exec_step_jumpserver()
 	local TMP_JMS_SETUP_DIR=${1}
 	local TMP_JMS_CURRENT_DIR=`pwd`
     
-	set_environment "${TMP_JMS_SETUP_DIR}"
+	set_env_jumpserver "${TMP_JMS_SETUP_DIR}"
 
     # jumpserver 属于先配置再安装，故此处反转
 	conf_jumpserver_pre "${TMP_JMS_SETUP_DIR}" "${TMP_JMS_CURRENT_DIR}"

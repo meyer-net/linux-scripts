@@ -4,14 +4,15 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
-# ???待调整为选择版本，因konga需求postgresql最高只支持到11，所以目前只能装到11
+local TMP_PSQL_SETUP_PORT=15432
 
 #路径配置
-POSTGRESQL_LOGS_DIR=$LOGS_DIR/postgresql
-POSTGRESQL_DATA_DIR=$DATA_DIR/postgresql
-POSTGRESQL_CONF_PATH=$POSTGRESQL_DATA_DIR/postgresql.conf
-POSTGRESQL_STP_VER=11
-function set_environment()
+local POSTGRESQL_LOGS_DIR=${LOGS_DIR}/postgresql
+local POSTGRESQL_DATA_DIR=${DATA_DIR}/postgresql
+local POSTGRESQL_CONF_PATH=${POSTGRESQL_DATA_DIR}/postgresql.conf
+local POSTGRESQL_STP_VER=11
+
+function set_env_postgresql()
 {
 	return $?
 }
@@ -25,7 +26,7 @@ function switch_setup_postgresql_version()
 
 function check_setup_postgresql()
 {
-    path_not_exists_action "$DATA_DIR/postgresql" "setup_postgresql" "PostgreSql was installed"
+    path_not_exists_action "${DATA_DIR}/postgresql" "setup_postgresql" "PostgreSql was installed"
 
 	return $?
 }
@@ -49,32 +50,35 @@ function setup_postgresql()
 function set_postgresql()
 {    
     #初始化db
-    mkdir -pv $POSTGRESQL_LOGS_DIR
+    mkdir -pv ${POSTGRESQL_LOGS_DIR}
     create_user_if_not_exists postgres postgres
-    chown -R postgres:postgres $POSTGRESQL_LOGS_DIR
+    chown -R postgres:postgres ${POSTGRESQL_LOGS_DIR}
 
-    mkdir -pv $POSTGRESQL_DATA_DIR
-    chown -R postgres:postgres $POSTGRESQL_DATA_DIR
-    su - postgres -c "/usr/pgsql-${POSTGRESQL_STP_VER}/bin/initdb -D $POSTGRESQL_DATA_DIR"
+    mkdir -pv ${POSTGRESQL_DATA_DIR}
+    chown -R postgres:postgres ${POSTGRESQL_DATA_DIR}
+    su - postgres -c "/usr/pgsql-${POSTGRESQL_STP_VER}/bin/initdb -D ${POSTGRESQL_DATA_DIR}"
 
-    #停止服务
+    # 停止服务
     systemctl stop postgresql-${POSTGRESQL_STP_VER}.service
 
-    #开启外网访问
-    sed -i "s@^#listen_addresses =.*@listen_addresses = '*'@g" $POSTGRESQL_CONF_PATH
+    # 开启外网访问
+    sed -i "s@^#listen_addresses =.*@listen_addresses = '*'@g" ${POSTGRESQL_CONF_PATH}
 
-    #修改日志目录
-    sed -i "s@^log_directory =.*@log_directory = '$POSTGRESQL_LOGS_DIR'@g" $POSTGRESQL_CONF_PATH
+    # 修改端口
+    sed -i "s@^#port = 5432 @port = ${TMP_PSQL_SETUP_PORT}@g" ${POSTGRESQL_CONF_PATH}
 
-    #修改数据库目录
-    sed -i "s@^#data_directory =.*@data_directory = '$POSTGRESQL_DATA_DIR'@g" $POSTGRESQL_CONF_PATH
+    # 修改日志目录
+    sed -i "s@^log_directory =.*@log_directory = '${POSTGRESQL_LOGS_DIR}'@g" ${POSTGRESQL_CONF_PATH}
 
-    #修改启动环境
-    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=$POSTGRESQL_DATA_DIR@g" /usr/lib/systemd/system/postgresql-${POSTGRESQL_STP_VER}.service
+    # 修改数据库目录
+    sed -i "s@^#data_directory =.*@data_directory = '${POSTGRESQL_DATA_DIR}'@g" ${POSTGRESQL_CONF_PATH}
+
+    # 修改启动环境
+    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=${POSTGRESQL_DATA_DIR}@g" /usr/lib/systemd/system/postgresql-${POSTGRESQL_STP_VER}.service
     systemctl daemon-reload
 
-    #修改认证
-    echo "host    all             all              0.0.0.0/0              trust" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
+    # 修改认证
+    echo "host    all             all              0.0.0.0/0              trust" >> ${POSTGRESQL_DATA_DIR}/pg_hba.conf
 
     #唤醒服务
     systemctl start postgresql-${POSTGRESQL_STP_VER}.service
@@ -90,7 +94,7 @@ psql -U postgres -h localhost -d postgres << EOF
     \password postgres;
 EOF
     
-    echo_soft_port 5432
+    echo_soft_port ${TMP_PSQL_SETUP_PORT}
 }
 
 function check_setup_set()
@@ -109,31 +113,31 @@ function set_db_master()
     input_if_empty "TMP_SET_DB_MASTER_SLAVE" "PostgreSql: Please ender ${red}postgresql slave address in internal${reset}"
 
     #修改最大同步用户
-    sed -i "s@^#max_wal_senders =.*@max_wal_senders = 5@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#max_wal_senders =.*@max_wal_senders = 5@g" ${POSTGRESQL_CONF_PATH}
     
     #
-    sed -i "s@^#wal_level@wal_level@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#wal_level@wal_level@g" ${POSTGRESQL_CONF_PATH}
     
     #
-    sed -i "s@^#archive_mode =.*@archive_mode = on@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#archive_mode =.*@archive_mode = on@g" ${POSTGRESQL_CONF_PATH}
     
     #
-    sed -i "s@^#archive_command =.*@archive_command = 'cd ./'@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#archive_command =.*@archive_command = 'cd ./'@g" ${POSTGRESQL_CONF_PATH}
     
     #
-    sed -i "s@^#hot_standby@hot_standby@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#hot_standby@hot_standby@g" ${POSTGRESQL_CONF_PATH}
     
     #
-    sed -i "s@^#wal_keep_segments =.*@wal_keep_segments = 64@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#wal_keep_segments =.*@wal_keep_segments = 64@g" ${POSTGRESQL_CONF_PATH}
     
     #
-    sed -i "s@^#full_page_writes@full_page_writes@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#full_page_writes@full_page_writes@g" ${POSTGRESQL_CONF_PATH}
     
     #
-    sed -i "s@^#wal_log_hints =.*@wal_log_hints = on@g" $POSTGRESQL_CONF_PATH
+    sed -i "s@^#wal_log_hints =.*@wal_log_hints = on@g" ${POSTGRESQL_CONF_PATH}
 
     #修改认证
-    echo "host    replication     rep_user        $TMP_SET_DB_MASTER_SLAVE/32        md5" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
+    echo "host    replication     rep_user        $TMP_SET_DB_MASTER_SLAVE/32        md5" >> ${POSTGRESQL_DATA_DIR}/pg_hba.conf
     
     #创建同步用户
 psql -U postgres -h localhost -d postgres << EOF
@@ -141,22 +145,22 @@ psql -U postgres -h localhost -d postgres << EOF
 EOF
     
     #复制样例
-    cp /usr/pgsql-${POSTGRESQL_STP_VER}/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.done
+    cp /usr/pgsql-${POSTGRESQL_STP_VER}/share/recovery.conf.sample ${POSTGRESQL_DATA_DIR}/recovery.done
     
     #
-    sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.done
+    sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" ${POSTGRESQL_DATA_DIR}/recovery.done
     
     #
-    sed -i "s@^#standby_mode =.*@standby_mode = on@g" $POSTGRESQL_DATA_DIR/recovery.done
+    sed -i "s@^#standby_mode =.*@standby_mode = on@g" ${POSTGRESQL_DATA_DIR}/recovery.done
     
     #
-    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_MASTER_SLAVE port=5432 user=rep_user password=reppsql%1475963\&m'@g" $POSTGRESQL_DATA_DIR/recovery.done
+    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_MASTER_SLAVE port=${TMP_PSQL_SETUP_PORT} user=rep_user password=reppsql%1475963\&m'@g" ${POSTGRESQL_DATA_DIR}/recovery.done
     
     #
-    sed -i "s@^#trigger_file =.*@trigger_file = '$POSTGRESQL_DATA_DIR/trigger_file'@g" $POSTGRESQL_DATA_DIR/recovery.done
+    sed -i "s@^#trigger_file =.*@trigger_file = '${POSTGRESQL_DATA_DIR}/trigger_file'@g" ${POSTGRESQL_DATA_DIR}/recovery.done
 
     #输出pgpass
-    echo "$TMP_SET_DB_MASTER_SLAVE:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
+    echo "$TMP_SET_DB_MASTER_SLAVE:${TMP_PSQL_SETUP_PORT}:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
     systemctl restart postgresql-${POSTGRESQL_STP_VER}.service
@@ -176,33 +180,33 @@ function set_db_slave()
     input_if_empty "TMP_SET_DB_SLAVE_MASTER" "PostgreSql: Please ender ${red}postgresql master address in internal${reset}"
 
     #复制样例
-    cp /usr/pgsql-${POSTGRESQL_STP_VER}/share/recovery.conf.sample $POSTGRESQL_DATA_DIR/recovery.conf
+    cp /usr/pgsql-${POSTGRESQL_STP_VER}/share/recovery.conf.sample ${POSTGRESQL_DATA_DIR}/recovery.conf
     
     #
-    sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" $POSTGRESQL_DATA_DIR/recovery.conf
+    sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" ${POSTGRESQL_DATA_DIR}/recovery.conf
     
     #
-    sed -i "s@^#standby_mode =.*@standby_mode = on@g" $POSTGRESQL_DATA_DIR/recovery.conf
+    sed -i "s@^#standby_mode =.*@standby_mode = on@g" ${POSTGRESQL_DATA_DIR}/recovery.conf
     
     #
-    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_SLAVE_MASTER port=5432 user=rep_user password=reppsql%1475963\&m'@g" $POSTGRESQL_DATA_DIR/recovery.conf
+    sed -i "s@^#primary_conninfo =.*@primary_conninfo = 'host=$TMP_SET_DB_SLAVE_MASTER port=${TMP_PSQL_SETUP_PORT} user=rep_user password=reppsql%1475963\&m'@g" ${POSTGRESQL_DATA_DIR}/recovery.conf
     
     #
-    sed -i "s@^#trigger_file =.*@trigger_file = '$POSTGRESQL_DATA_DIR/trigger_file'@g" $POSTGRESQL_DATA_DIR/recovery.conf
+    sed -i "s@^#trigger_file =.*@trigger_file = '${POSTGRESQL_DATA_DIR}/trigger_file'@g" ${POSTGRESQL_DATA_DIR}/recovery.conf
     
     #输出pgpass
-    echo "$TMP_SET_DB_SLAVE_MASTER:5432:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
+    echo "$TMP_SET_DB_SLAVE_MASTER:${TMP_PSQL_SETUP_PORT}:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
     #修改认证
-    echo "host    replication     rep_user        $TMP_SET_DB_SLAVE_MASTER/32       md5" >> $POSTGRESQL_DATA_DIR/pg_hba.conf
+    echo "host    replication     rep_user        $TMP_SET_DB_SLAVE_MASTER/32       md5" >> ${POSTGRESQL_DATA_DIR}/pg_hba.conf
 
     #创建备库
-    pg_basebackup -D ${POSTGRESQL_DATA_DIR}_replicate -Fp -Xs -v -P -h $TMP_SET_DB_SLAVE_MASTER -p 5432 -U rep_user
+    pg_basebackup -D ${POSTGRESQL_DATA_DIR}_replicate -Fp -Xs -v -P -h $TMP_SET_DB_SLAVE_MASTER -p ${TMP_PSQL_SETUP_PORT} -U rep_user
     rsync -av ${POSTGRESQL_DATA_DIR}_replicate/* ${POSTGRESQL_DATA_DIR} --exclude '*.conf *.done *.pots'
 
     #重新授权
-    chown -R postgres:postgres $POSTGRESQL_DATA_DIR
+    chown -R postgres:postgres ${POSTGRESQL_DATA_DIR}
 
     rm -rf ${POSTGRESQL_DATA_DIR}_replicate
 
@@ -214,5 +218,5 @@ function set_db_slave()
 	return $?
 }
 
-set_environment
+set_env_postgresql
 exec_if_choice "CHOICE_POSTGRES" "Please choice which postgresql action you want to done" "...,PostgreSql,Set,Exit" "$TMP_SPLITER" "check_setup_"

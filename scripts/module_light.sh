@@ -21,7 +21,7 @@ function set_env_$soft_name()
 {
     cd ${__DIR}
 
-    soft_yum_check_action ""
+    soft_yum_check_setup ""
 
 	return $?
 }
@@ -49,14 +49,20 @@ function setup_$soft_name()
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
+	# mv /var/log/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
+	# mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
+	## cp /var/lib/mysql ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} -Rp
+    ## mv /var/lib/mysql ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}_empty
 	
 	# 特殊多层结构下使用
-    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}`
-    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}`
+    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}`
+    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}`
 
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
+	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} /var/log/$setup_name
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
+	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} /var/lib/$setup_name
 
 	# 环境变量或软连接
 	echo "$soft_upper_name_HOME=${TMP_$soft_upper_short_name_SETUP_DIR}" >> /etc/profile
@@ -69,8 +75,10 @@ function setup_$soft_name()
 
 	# 授权权限，否则无法写入
 	# create_user_if_not_exists $setup_owner $setup_owner_group
-	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_DIR}
-	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_DIR}
+	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
+	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
+	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
+	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 
 	return $?
 }
@@ -94,9 +102,12 @@ function conf_$soft_name()
 	# rm -rf ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
 	# mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
 
-	# 替换原路径链接
+	# 特殊多层结构下使用
+    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}`
+
+	# 替换原路径链接（存在etc下时，不能作为软连接存在）
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
-    ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} /etc/$soft_name
+    # ln -sf /etc/$soft_name ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} 
 
 	# 开始配置
 
@@ -120,7 +131,11 @@ function boot_$soft_name()
 	
     # 等待启动
     echo "Starting $soft_name，Waiting for a moment"
-    sleep 10
+    echo "--------------------------------------------"
+    sleep 15
+
+    cat logs/boot.log
+    echo "--------------------------------------------"
 
 	# 启动状态检测
 	bin/$setup_name status  # lsof -i:${TMP_$soft_upper_short_name_SETUP_PORT}

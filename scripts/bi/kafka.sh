@@ -24,7 +24,7 @@ local TMP_KFK_EGL_SETUP_PORT=18048
 function set_env_kafka()
 {
     cd ${__DIR}
-
+	
     local TMP_IS_KFK_ZK_LOCAL=`lsof -i:${TMP_KFK_SETUP_ZK_PORT}`
     if [ -z "${TMP_IS_KFK_ZK_LOCAL}" ]; then 
     	exec_yn_action "setup_zookeeper" "Kafka: Please sure if u want to get zookeeper local?"
