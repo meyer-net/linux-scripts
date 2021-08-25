@@ -33,23 +33,14 @@ function setup_$soft_name()
 	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
 
 	## 源模式
-	sudo tee /etc/yum.repos.d/$setup_name.repo <<-'EOF'
-[$setup_name]
-name=$setup_name
-enabled=1
-baseurl=
-gpgkey=
-gpgcheck=1
-EOF
-
+	local TMP_$soft_upper_short_name_SETUP_RPM_NEWER="$soft_name.noarch.rpm"
+	local TMP_$soft_upper_short_name_DOWN_URL_BASE="http://www.xxx.net/rpm/stable/x86_64/"
+	# set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-.*.noarch.rpm"
+	set_url_list_newer_href_link_filename "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-().noarch.rpm"
+	exec_text_format "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}%s"
+    while_wget "--content-disposition http://xxx.xyz.com/get/${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}" "rpm -ivh ${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}"
+	
 	soft_yum_check_setup "$soft_name"
-
-	# local TMP_$soft_upper_short_name_SETUP_RPM_NEWER="$soft_name.noarch.rpm"
-	# local TMP_$soft_upper_short_name_DOWN_URL_BASE="http://www.xxx.net/rpm/stable/x86_64/"
-	# # set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-.*.noarch.rpm"
-	# set_url_list_newer_href_link_filename "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-().noarch.rpm"
-	# exec_text_format "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}%s"
-    # while_wget "--content-disposition http://xxx.xyz.com/get/${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}" "rpm -ivh ${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}"
 
 	# 创建日志软链
 	local TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
@@ -84,9 +75,7 @@ EOF
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 
-	# rm -rf /etc/yum.repos.d/$setup_name.repo
-	
-    # sudo yum clean all && sudo yum makecache fast
+    # 安装初始
 
 	return $?
 }
@@ -148,6 +137,7 @@ function boot_$soft_name()
     # cat logs/boot.log
     cat /var/log/$setup_name/$setup_name.log
 	sudo systemctl status $setup_name.service
+    sudo chkconfig $setup_name on
     # journalctl -u $setup_name --no-pager | less
     # sudo systemctl reload $setup_name.service
     echo "--------------------------------------------"
@@ -200,8 +190,10 @@ function exec_step_$soft_name()
 # x1-下载软件
 function check_setup_$soft_name()
 {
-    soft_yum_check_action "$setup_name" "exec_step_$soft_name" "$title_name was installed"
-	# soft_rpm_check_action "$setup_name" "exec_step_$soft_name" "$title_name was installed"
+	# local TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR=${DATA_DIR}/$setup_name
+    # path_not_exists_action "${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}" "exec_step_$soft_name" "$title_name was installed"
+
+	soft_rpm_check_action "$setup_name" "exec_step_$soft_name" "$title_name was installed"
 
 	return $?
 }

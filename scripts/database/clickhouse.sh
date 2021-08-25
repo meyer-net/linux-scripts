@@ -4,14 +4,13 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
-# 安装标题：ClickHouse
-# 软件名称：clickhouse
-# 软件大写分组与简称：CH
-# 软件安装名称：clickhouse
-# 软件授权用户名称&组：clickhouse/clickhouse
+# 相关参考：
+#         https://clickhouse.tech/docs/zh/
+#         https://www.zouyesheng.com/clickhouse.html
+#         http://www.clickhouse.com.cn/topic/5a366e97828d76d75ab5d5a0
 #------------------------------------------------
 local TMP_CH_SETUP_HTTP_PORT=18123
-local TMP_CH_SETUP_TCP_PORT=19876
+local TMP_CH_SETUP_TCP_PORT=19000
 local TMP_CH_SETUP_MYSQL_PORT=19004
 local TMP_CH_SETUP_PSQL_PORT=19005
 local TMP_CH_SETUP_ITS_HTTP_PORT=19009
@@ -187,6 +186,7 @@ function boot_clickhouse()
 
     cat /var/log/clickhouse-server/clickhouse-server.log
     sudo systemctl status clickhouse-server.service
+    sudo chkconfig clickhouse-server on
     echo "--------------------------------------------"
     
 	# 授权iptables端口访问

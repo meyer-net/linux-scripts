@@ -141,6 +141,7 @@ function boot_caddy()
     sudo systemctl enable caddy
     sudo systemctl start caddy
     sudo systemctl status caddy
+    sudo chkconfig caddy on
     #journalctl -u caddy --no-pager | less
     #sudo systemctl reload caddy
 

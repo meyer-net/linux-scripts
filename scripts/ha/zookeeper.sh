@@ -15,7 +15,7 @@ local TMP_ZK_SETUP_PORT=12181
 local TMP_ZK_SETUP_ADMIN_SERVER_PORT=18080
 
 # 1-配置环境
-function set_environment()
+function set_env_zookeeper()
 {
     cd ${__DIR}
 
@@ -162,7 +162,7 @@ function exec_step_zookeeper()
 	local TMP_ZK_SETUP_DIR=${1}
 	local TMP_ZK_CURRENT_DIR=`pwd`
     
-	set_environment "${TMP_ZK_SETUP_DIR}"
+	set_env_zookeeper "${TMP_ZK_SETUP_DIR}"
 
 	setup_zookeeper "${TMP_ZK_SETUP_DIR}" "${TMP_ZK_CURRENT_DIR}"
 

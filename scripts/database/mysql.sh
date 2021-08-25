@@ -361,6 +361,7 @@ function boot_mysql()
     sudo systemctl enable mysqld.service
     sudo systemctl start mysqld.service
     systemctl status mysqld.service
+    sudo chkconfig mysqld on
     # journalctl -u mysql --no-pager | less
     # sudo systemctl reload mysql.service
 
@@ -384,6 +385,7 @@ function boot_mariadb()
     sudo systemctl enable mariadb.service
     sudo systemctl start mariadb.service
     systemctl status mariadb.service
+    sudo chkconfig mariadb on
     # journalctl -u mariadb --no-pager | less
     # sudo systemctl reload mariadb
 

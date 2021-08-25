@@ -234,6 +234,8 @@ function boot_frps()
 
 	# 启动状态检测
     systemctl status frps.service
+    
+    sudo chkconfig frps on
 	
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_FRPS_SETUP_BIND_PORT}
@@ -262,6 +264,8 @@ function boot_frpc()
 
 	# 启动状态检测
     systemctl status frpc.service
+    
+    sudo chkconfig frpc on
 
 	return $?
 }
