@@ -101,7 +101,7 @@ function conf_postgresql()
     sed -i "s@^#listen_addresses =.*@listen_addresses = '*'@g" etc/postgresql.conf
 
     # -- 修改端口
-    sed -i "s@^#port = 5432 @port = ${TMP_PSQL_SETUP_PORT}@g" etc/postgresql.conf
+    sed -i "s@^#port = 5432@port = ${TMP_PSQL_SETUP_PORT}@g" etc/postgresql.conf
 
     # -- 修改日志目录
     sed -i "s@^log_directory =.*@log_directory = '${TMP_PSQL_SETUP_LOGS_DIR}'@g" etc/postgresql.conf
@@ -115,13 +115,6 @@ function conf_postgresql()
 
     # -- 修改认证
     echo "host    all             all              0.0.0.0/0              trust" >> etc/pg_hba.conf
-
-    #初始化密码
-    echo "PostgresQL: Please ender your system inited password of user 'postgres'"
-    echo "-----------------------------------------------------------------------"
-psql -U postgres -h localhost -d postgres << EOF
-    \password postgres;
-EOF
 
 	return $?
 }
@@ -166,7 +159,7 @@ function conf_postgresql_master()
     echo "host    replication     rep_user        ${TMP_PSQL_SET_DB_MASTER_SLAVE}/32        md5" >> etc/pg_hba.conf
     
     #创建同步用户
-psql -U postgres -h localhost -d postgres << EOF
+psql -U postgres -h localhost -p ${TMP_PSQL_SETUP_PORT} -d postgres << EOF
     CREATE USER rep_user replication LOGIN CONNECTION LIMIT 3 ENCRYPTED PASSWORD 'reppsql%1475963&m';
 EOF
     
@@ -271,6 +264,13 @@ function boot_postgresql()
     echo "Starting postgresql，Waiting for a moment"
     echo "-----------------------------------------"
     sleep 5
+    
+    #初始化密码
+    echo "PostgresQL: Please ender your system inited password of user 'postgres'"
+    echo "-----------------------------------------------------------------------"
+psql -U postgres -h localhost -p ${TMP_PSQL_SETUP_PORT} -d postgres << EOF
+    \password postgres;
+EOF
 
 	sudo systemctl status postgresql-${TMP_PSQL_SETUP_STP_VER}.service
     sudo chkconfig postgresql-${TMP_PSQL_SETUP_STP_VER} on

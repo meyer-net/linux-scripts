@@ -62,8 +62,8 @@ EOF
     ## mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}_empty
 	
 	# 特殊多层结构下使用
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}`
-    mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}`
+    path_not_exits_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}`
+    path_not_exits_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}`
 
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
 	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} /var/log/$setup_name
@@ -106,11 +106,12 @@ function conf_$soft_name()
 	# mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
 
 	# 特殊多层结构下使用
-    # mkdir -pv `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}`
+    # path_not_exits_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}`
 
 	# 替换原路径链接
+    # ln -sf /etc/$soft_name ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} 
+    # ln -sf /etc/$soft_name ${TMP_$soft_upper_short_name_SETUP_ETC_DIR} 
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
-    # ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} /etc/$soft_name
 	
     # 开始配置
 
