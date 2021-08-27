@@ -658,18 +658,19 @@ function while_curl()
 
 	#包含指定参数
 	local TMP_SOFT_CURL_FILE_DEST_NAME=`echo "$TMP_SOFT_CURL_URL" | awk -F'-o' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | awk -F' ' '{print $1}'`
-	
+
 	#原始链接名
-	local TMP_SOFT_CURL_FILE_NAME=`echo "$TMP_SOFT_CURL_URL" | awk -F'/' '{print $NF}' | awk -F' ' '{print $(NF)}'`
+	local TMP_SOFT_CURL_FILE_NAME=`echo "$TMP_SOFT_CURL_URL" | awk -F'/' '{print $NF}' | awk -F' ' '{print $NR}'`
 
 	#提取真实URL链接
 	local TMP_SOFT_CURL_URL=`echo "$TMP_SOFT_CURL_URL" | grep -oh -E "https?://[a-zA-Z0-9\.\/_&=@$%?~#-]*"`
 
 	#最终名
-	TMP_SOFT_CURL_FILE_DEST_NAME=$([ -n "$TMP_SOFT_CURL_FILE_DEST_NAME" ] && echo "$TMP_SOFT_CURL_FILE_DEST_NAME" || echo $TMP_SOFT_CURL_FILE_NAME)
+	TMP_SOFT_CURL_FILE_DEST_NAME=${TMP_SOFT_CURL_FILE_DEST_NAME:-${TMP_SOFT_CURL_FILE_NAME}}
+	# TMP_SOFT_CURL_FILE_DEST_NAME=$([ -n "$TMP_SOFT_CURL_FILE_DEST_NAME" ] && echo "$TMP_SOFT_CURL_FILE_DEST_NAME" || echo $TMP_SOFT_CURL_FILE_NAME)
 	
 	echo "----------------------------------------------------------------"
-	echo "Start to get file '${red}$TMP_SOFT_CURL_FILE_NAME${reset}'"
+	echo "Start to get file from '${red}${TMP_SOFT_CURL_URL}${reset}' named '${green}$TMP_SOFT_CURL_FILE_NAME${reset}'"
 	echo "----------------------------------------------------------------"
 
 	while [ ! -f "$TMP_SOFT_CURL_FILE_DEST_NAME" ]; do
@@ -679,6 +680,8 @@ function while_curl()
 	if [ ${#TMP_SOFT_CURL_SCRIPT} -gt 0 ]; then
 		eval "$TMP_SOFT_CURL_SCRIPT"
 	fi
+
+	rm -rf ${TMP_SOFT_CURL_FILE_DEST_NAME}
 
 	return $?
 }

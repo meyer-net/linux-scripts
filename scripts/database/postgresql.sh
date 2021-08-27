@@ -64,6 +64,8 @@ function setup_postgresql()
 
     # 初始配置
     su - postgres -c "/usr/pgsql-${TMP_PSQL_SETUP_STP_VER}/bin/initdb -D ${TMP_PSQL_SETUP_LNK_DATA_DIR}"    
+    
+	rm -rf pgdg-redhat-repo-latest.noarch.rpm
 
 	return $?
 }
@@ -111,7 +113,6 @@ function conf_postgresql()
 
     # -- 修改启动环境
     sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=${TMP_PSQL_SETUP_DATA_DIR}@g" /usr/lib/systemd/system/postgresql-${TMP_PSQL_SETUP_STP_VER}.service
-    systemctl daemon-reload
 
     # -- 修改认证
     echo "host    all             all              0.0.0.0/0              trust" >> etc/pg_hba.conf

@@ -11,6 +11,7 @@
 # 软件大写分组与简称：$soft_upper_short_name
 # 软件安装名称：$setup_name
 # 软件授权用户名称&组：$setup_owner/$setup_owner_group
+# 软件GIT仓储名称：${git_repo}
 #------------------------------------------------
 local TMP_$soft_upper_short_name_SETUP_PORT=1$soft_port
 
@@ -199,8 +200,9 @@ function exec_step_$soft_name()
 # x1-下载软件
 function down_$soft_name()
 {
+	# setup_soft_git "$setup_name" "https://github.com/${git_repo}" "exec_step_$soft_name"
 	local TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"
-	set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_NEWER" "meyer-net/snake"
+	set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_NEWER" "${git_repo}"
 	exec_text_format "TMP_$soft_upper_short_name_SETUP_NEWER" "https://www.xxx.com/downloads/$setup_name-%s.tar.gz"
 	# local TMP_$soft_upper_short_name_DOWN_URL_BASE="http://www.xxx.net/projects/releases/"
 	# set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-.*.tar.gz"

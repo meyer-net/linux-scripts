@@ -10,7 +10,9 @@ red=`tput setaf 1`
 green=`tput setaf 2`
 reset=`tput sgr0`
 
-NVM_PATH=~/.nvm/nvm.sh
+SETUP_DIR=/opt
+# NVM_PATH=~/.nvm/nvm.sh
+NVM_PATH=${SETUP_DIR}/nvm/nvm.sh
 CURRENT_USER=`whoami`
 #---------- SYS ---------- }
 
@@ -24,7 +26,6 @@ LSBLK_MOUNT_ROOT=`df -h | grep ${LSBLK_DISKS_STR:-":"} | awk -F' ' '{print $NF}'
 
 MOUNT_ROOT=${LSBLK_MOUNT_ROOT:-"/mountdisk"}
 MOUNT_DIR=${MOUNT_ROOT}
-SETUP_DIR=/opt
 DEFAULT_DIR=/home/${CURRENT_USER}/default
 ATT_DIR=${MOUNT_DIR}/etc
 DATA_DIR=${MOUNT_DIR}/data

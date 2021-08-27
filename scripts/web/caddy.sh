@@ -25,6 +25,10 @@
 #      https://caddyserver.com/docs/install#fedora-redhat-centos
 #      https://www.noip.com/support/knowledgebase/installing-the-linux-dynamic-update-client/
 #------------------------------------------------
+local TMP_CDY_SETUP_API_PORT=12019
+local TMP_CDY_SETUP_HTTP_PORT=60080
+local TMP_CDY_SETUP_HTTPS_PORT=60443
+
 local TMP_CDY_SETUP_DIR=${SETUP_DIR}/caddy
 local TMP_CDY_LNK_ETC_DIR=${ATT_DIR}/caddy
 local TMP_CDY_LNK_LOGS_DIR=${LOGS_DIR}/caddy
@@ -33,7 +37,7 @@ local TMP_CDY_LOGS_DIR=${TMP_CDY_SETUP_DIR}/logs
 local TMP_CDY_DATA_DIR=${TMP_CDY_SETUP_DIR}/data
 
 # 1-配置环境
-function set_environment()
+function set_env_caddy()
 {
     cd ${__DIR}
 
@@ -96,8 +100,8 @@ function conf_caddy()
 #         https://caddyserver.com/docs/caddyfile/options
 
 {
-    http_port  60080
-    https_port 60443
+    http_port  ${TMP_CDY_SETUP_HTTP_PORT}
+    https_port ${TMP_CDY_SETUP_HTTPS_PORT}
 
     log {
         output file ${TMP_CDY_LOGS_DIR}/access.log {
@@ -108,7 +112,7 @@ function conf_caddy()
     }
 }
 
-#:60080,:60443 {
+#:${TMP_CDY_SETUP_HTTP_PORT},:${TMP_CDY_SETUP_HTTPS_PORT} {
     # Set this path to your site's directory.
     # root * /usr/share/caddy
 
@@ -175,13 +179,16 @@ function increase_auto_https_conf()
     echo "----------------------------------------------------------------"
 sudo tee Caddyfile.json <<-EOF
 {
+	"admin": {
+		"listen": "${TMP_CDY_SETUP_API_PORT}"
+	},
 	"apps": {
 		"http": {
-			"http_port": 60080,
-			"https_port": 60443,
+			"http_port": ${TMP_CDY_SETUP_HTTP_PORT},
+			"https_port": ${TMP_CDY_SETUP_HTTPS_PORT},
 			"servers": {
 				"autohttps": {
-					"listen": [":60080",":60443"],
+					"listen": [":${TMP_CDY_SETUP_HTTP_PORT}",":${TMP_CDY_SETUP_HTTPS_PORT}"],
 					"routes": [],
 					"logs": {
 						"default_logger_name": "autohttps.log",
@@ -228,8 +235,8 @@ sudo tee Caddyroute_for_${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 	}
 EOF
 
-    curl localhost:2019/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json
-	curl localhost:2019/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}": "${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}"}'
+    curl localhost:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}.json
+	curl localhost:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}": "${TMP_SETUP_CDD_CONF_VLD_BIND_DOMAIN}"}'
 
     echo "----------------------------------------------------------------"
 
@@ -252,7 +259,7 @@ function conf_kong_dashboard_auto_https()
 # x2-执行步骤
 function exec_step_caddy()
 {    
-	set_environment
+	set_env_caddy
 
 	setup_caddy
 
@@ -262,7 +269,7 @@ function exec_step_caddy()
 
 	boot_caddy
 
-    echo_soft_port 2019
+    echo_soft_port ${TMP_CDY_SETUP_API_PORT}
 
 	return $?
 }

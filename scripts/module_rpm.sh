@@ -10,6 +10,7 @@
 # 软件大写分组与简称：$soft_upper_short_name
 # 软件安装名称：$setup_name
 # 软件授权用户名称&组：$setup_owner/$setup_owner_group
+# 软件GIT仓储名称：${git_repo}
 #------------------------------------------------
 local TMP_$soft_upper_short_name_SETUP_PORT=1$soft_port
 
@@ -33,6 +34,7 @@ function setup_$soft_name()
 	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
 
 	## 源模式
+	# -- 1：
 	local TMP_$soft_upper_short_name_SETUP_RPM_NEWER="$soft_name.noarch.rpm"
 	local TMP_$soft_upper_short_name_DOWN_URL_BASE="http://www.xxx.net/rpm/stable/x86_64/"
 	# set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-.*.noarch.rpm"
@@ -41,6 +43,13 @@ function setup_$soft_name()
     while_wget "--content-disposition http://xxx.xyz.com/get/${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}" "rpm -ivh ${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}"
 	
 	soft_yum_check_setup "$soft_name"
+
+	# -- 2：
+	# local TMP_$soft_upper_short_name_SETUP_SH_NEWER="v0.0.0"
+	# local TMP_$soft_upper_short_name_SETUP_SH_FILE_NEWER="install_$soft_name.sh"
+	# set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_SH_NEWER" "${git_repo}"
+	# exec_text_format "TMP_$soft_upper_short_name_SETUP_SH_NEWER" "https://raw.githubusercontent.com/${git_repo}/%s/install.sh"
+    # while_curl "${TMP_$soft_upper_short_name_SETUP_SH_NEWER} -o ${TMP_$soft_upper_short_name_SETUP_SH_FILE_NEWER} | bash ${TMP_$soft_upper_short_name_SETUP_SH_FILE_NEWER}"
 
 	# 创建日志软链
 	local TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
@@ -76,6 +85,8 @@ function setup_$soft_name()
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 
     # 安装初始
+
+	rm -rf ${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}
 
 	return $?
 }
