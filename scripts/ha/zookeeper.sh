@@ -84,6 +84,8 @@ function conf_zookeeper()
     mv conf/zoo_sample.cfg conf/zoo.cfg
 
 	# 开始配置
+	echo "admin.serverPort=${TMP_ZK_SETUP_ADMIN_SERVER_PORT}" >> conf/zoo.cfg
+	echo "" >> conf/zoo.cfg
     sed -i "s@^dataDir=.*@dataDir=${TMP_ZK_DATA_DIR}@g" conf/zoo.cfg
     sed -i "s@^clientPort=.*@clientPort=${TMP_ZK_SETUP_PORT}@g" conf/zoo.cfg
 
@@ -106,8 +108,6 @@ function conf_zookeeper()
             CURRENT='0.0.0.0'
         fi
 
-		echo \"admin.serverPort=${TMP_KFK_SETUP_ADMIN_SERVER_PORT}\" >> conf/zoo.cfg
-		echo "" >> conf/zoo.cfg
         echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:14001:14002\" >> conf/zoo.cfg"
 
 	return $?

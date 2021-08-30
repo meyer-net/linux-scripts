@@ -41,6 +41,8 @@ function setup_$soft_name()
 	./configure --prefix=${TMP_$soft_upper_name_SETUP_DIR}
 	make -j4 && make -j4 install
 
+	cd ${TMP_$soft_upper_name_SETUP_DIR}
+
 	# 创建日志软链
 	local TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
 	local TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR=${DATA_DIR}/$setup_name

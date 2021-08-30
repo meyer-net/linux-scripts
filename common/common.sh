@@ -614,32 +614,39 @@ function while_wget()
 
 	local TMP_SOFT_WGET_URL=$1
 	local TMP_SOFT_WGET_SCRIPT=$2
+	local TMP_SOFT_WGET_CURRENT_DIR=`pwd`
 
 	#包含指定参数
-	local TMP_SOFT_WGET_FILE_DEST_NAME=`echo "$TMP_SOFT_WGET_URL" | awk -F'-O' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | awk -F' ' '{print $1}'`
+	local TMP_SOFT_WGET_FILE_DEST_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'-O' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | awk -F' ' '{print $1}'`
 	
 	#原始链接名
-	local TMP_SOFT_WGET_FILE_NAME=`echo "$TMP_SOFT_WGET_URL" | awk -F'/' '{print $NF}' | awk -F' ' '{print $(NF)}'`
+	local TMP_SOFT_WGET_FILE_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'/' '{print $NF}' | awk -F' ' '{print $NR}'`
 
-	if [ "$TMP_SOFT_WGET_FILE_NAME" == "download.rpm" ]; then
-		TMP_SOFT_WGET_FILE_NAME=`echo "$TMP_SOFT_WGET_URL" | awk -F'/' '{print $(NF-1)}'`
+	if [ "${TMP_SOFT_WGET_FILE_NAME}" == "download.rpm" ]; then
+		TMP_SOFT_WGET_FILE_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'/' '{print $(NF-1)}'`
 	fi
 
-	#最终名
-	TMP_SOFT_WGET_FILE_DEST_NAME=$([ -n "$TMP_SOFT_WGET_FILE_DEST_NAME" ] && echo "$TMP_SOFT_WGET_FILE_DEST_NAME" || echo $TMP_SOFT_WGET_FILE_NAME)
-	
-	echo "----------------------------------------------------------------"
-	echo "Start to get file '${green}$TMP_SOFT_WGET_FILE_NAME${reset}'"
-	echo "----------------------------------------------------------------"
+	#提取真实URL链接
+	local TMP_SOFT_WGET_TRUE_URL=`echo "${TMP_SOFT_WGET_URL}" | grep -oh -E "https?://[a-zA-Z0-9\.\+\/_&=@$%?~#-]*"`
 
-	while [ ! -f "$TMP_SOFT_WGET_FILE_DEST_NAME" ]; do
+	#最终名
+	TMP_SOFT_WGET_FILE_DEST_NAME=${TMP_SOFT_WGET_FILE_DEST_NAME:-${TMP_SOFT_WGET_FILE_NAME}}
+	# TMP_SOFT_WGET_FILE_DEST_NAME=$([ -n "$TMP_SOFT_WGET_FILE_DEST_NAME" ] && echo "$TMP_SOFT_WGET_FILE_DEST_NAME" || echo $TMP_SOFT_WGET_FILE_NAME)
+	
+	echo "-------------------------------------------------------------------------------------------------------------------"
+	echo "Start to get file from '${red}${TMP_SOFT_WGET_TRUE_URL}${reset}' named '${green}${TMP_SOFT_WGET_FILE_DEST_NAME}${reset}'"
+	echo "-------------------------------------------------------------------------------------------------------------------"
+
+	cd ${DOWN_DIR}
+	while [ ! -f "${TMP_SOFT_WGET_FILE_DEST_NAME}" ]; do
 		#https://wenku.baidu.com/view/64f7d302b52acfc789ebc936.html
-		wget -c --tries=0 --timeout=60 $TMP_SOFT_WGET_URL
+		wget -c --tries=0 --timeout=60 ${TMP_SOFT_WGET_TRUE_URL} -O ${TMP_SOFT_WGET_FILE_DEST_NAME}
 	done
 
 	if [ ${#TMP_SOFT_WGET_SCRIPT} -gt 0 ]; then
-		eval "$TMP_SOFT_WGET_SCRIPT"
+		eval "${TMP_SOFT_WGET_SCRIPT}"
 	fi
+	cd ${TMP_SOFT_WGET_CURRENT_DIR}
 
 	return $?
 }
@@ -655,33 +662,36 @@ function while_curl()
 
 	local TMP_SOFT_CURL_URL=$1
 	local TMP_SOFT_CURL_SCRIPT=$2
+	local TMP_SOFT_CURL_CURRENT_DIR=`pwd`
 
 	#包含指定参数
-	local TMP_SOFT_CURL_FILE_DEST_NAME=`echo "$TMP_SOFT_CURL_URL" | awk -F'-o' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | awk -F' ' '{print $1}'`
+	local TMP_SOFT_CURL_FILE_DEST_NAME=`echo "${TMP_SOFT_CURL_URL}" | awk -F'-o' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | awk -F' ' '{print $1}'`
 
 	#原始链接名
-	local TMP_SOFT_CURL_FILE_NAME=`echo "$TMP_SOFT_CURL_URL" | awk -F'/' '{print $NF}' | awk -F' ' '{print $NR}'`
+	local TMP_SOFT_CURL_FILE_NAME=`echo "${TMP_SOFT_CURL_URL}" | awk -F'/' '{print $NF}' | awk -F' ' '{print $NR}'`
 
 	#提取真实URL链接
-	local TMP_SOFT_CURL_URL=`echo "$TMP_SOFT_CURL_URL" | grep -oh -E "https?://[a-zA-Z0-9\.\/_&=@$%?~#-]*"`
+	local TMP_SOFT_CURL_TRUE_URL=`echo "${TMP_SOFT_CURL_URL}" | grep -oh -E "https?://[a-zA-Z0-9\.\+\/_&=@$%?~#-]*"`
 
 	#最终名
 	TMP_SOFT_CURL_FILE_DEST_NAME=${TMP_SOFT_CURL_FILE_DEST_NAME:-${TMP_SOFT_CURL_FILE_NAME}}
 	# TMP_SOFT_CURL_FILE_DEST_NAME=$([ -n "$TMP_SOFT_CURL_FILE_DEST_NAME" ] && echo "$TMP_SOFT_CURL_FILE_DEST_NAME" || echo $TMP_SOFT_CURL_FILE_NAME)
 	
-	echo "----------------------------------------------------------------"
-	echo "Start to get file from '${red}${TMP_SOFT_CURL_URL}${reset}' named '${green}$TMP_SOFT_CURL_FILE_NAME${reset}'"
-	echo "----------------------------------------------------------------"
+	echo "-------------------------------------------------------------------------------------------------------------------------"
+	echo "Start to curl file from '${red}${TMP_SOFT_CURL_TRUE_URL}${reset}' named '${green}${TMP_SOFT_CURL_FILE_DEST_NAME}${reset}'"
+	echo "-------------------------------------------------------------------------------------------------------------------------"
 
-	while [ ! -f "$TMP_SOFT_CURL_FILE_DEST_NAME" ]; do
-		curl -4sSkL $TMP_SOFT_CURL_URL -o $TMP_SOFT_CURL_FILE_DEST_NAME
+	cd ${CURL_DIR}
+	while [ ! -f "${TMP_SOFT_CURL_FILE_DEST_NAME}" ]; do
+		curl -4sSkL ${TMP_SOFT_CURL_TRUE_URL} -o- ${TMP_SOFT_CURL_FILE_DEST_NAME}
 	done
 
 	if [ ${#TMP_SOFT_CURL_SCRIPT} -gt 0 ]; then
-		eval "$TMP_SOFT_CURL_SCRIPT"
+		eval "${TMP_SOFT_CURL_SCRIPT}"
 	fi
+	cd ${TMP_SOFT_CURL_CURRENT_DIR}
 
-	rm -rf ${TMP_SOFT_CURL_FILE_DEST_NAME}
+	# rm -rf ${TMP_SOFT_CURL_FILE_DEST_NAME}
 
 	return $?
 }

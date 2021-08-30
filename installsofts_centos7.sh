@@ -55,7 +55,8 @@ function mkdirs()
     fi
 
     #path_not_exists_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
-    path_not_exits_create "${DOWN_DIR}"
+    path_not_exits_create "${RPMS_DIR}"
+    path_not_exits_create "${CURL_DIR}"
     path_not_exits_create "${SETUP_DIR}"
     path_not_exits_create "${WWW_DIR}"
     path_not_exits_create "${APP_DIR}"

@@ -40,6 +40,7 @@ function setup_webhook()
 	mv ${TMP_WBH_CURRENT_DIR} ${TMP_WBH_SETUP_DIR}
 
     cd ${TMP_WBH_SETUP_DIR}
+    
     mkdir bin
     mv webhook bin/
 

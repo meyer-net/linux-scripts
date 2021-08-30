@@ -26,6 +26,7 @@ local TMP_KNG_SETUP_CDY_API_PORT=12019
 local TMP_KNG_SETUP_CDY_BIND_WBH_API_PORT=19000
 local TMP_KNG_SETUP_CDY_DFT_HTTP_PORT=60080
 
+local TMP_KNG_SETUP_PSQL_SELF_DATABASE="kong"
 local TMP_KNG_SETUP_WORKSPACE_ID="e4b9993d-653f-44fd-acc5-338ce807582c"
 local TMP_KNG_SETUP_PSQL_HOST="${LOCAL_HOST}"
 local TMP_KNG_SETUP_PSQL_PORT=15432
@@ -73,16 +74,15 @@ function setup_kong()
 	local TMP_KNG_SETUP_RPM_FILE_NEWER="kong-${TMP_KNG_SETUP_NEWER}.amd64.rpm"
 	set_github_soft_releases_newer_version "TMP_KNG_SETUP_NEWER" "kong/kong"
     local TMP_KNG_SETUP_RPM_NEWER=$(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/Packages/k/kong-${TMP_KNG_SETUP_NEWER}.el%{centos_ver}.amd64.rpm")
-    while_wget "${TMP_KNG_SETUP_RPM_NEWER} -O ${TMP_KNG_SETUP_RPM_FILE_NEWER}"
-        
+    while_wget "${TMP_KNG_SETUP_RPM_NEWER} -O ${TMP_KNG_SETUP_RPM_FILE_NEWER}" "yum -y install ${TMP_KNG_SETUP_RPM_FILE_NEWER}"
+    
     #通过Repository安装
     # 等效如下：
     # curl -s $(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/config.repo") | sudo tee /etc/yum.repos.d/kong.repo
     # while_wget "https://bintray.com/kong/kong-rpm/rpm -O bintray-kong-kong-rpm.repo" "sed -i -e 's/baseurl.*/&\/centos\/'$MAJOR_VERSION''/ bintray-kong-kong-rpm.repo && sudo mv bintray-kong-kong-rpm.repo /etc/yum.repos.d/ && sudo yum install -y kong"
     # local TMP_KNG_SETUP_REPO_NEWER=$(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/config.repo")
     # while_wget "${TMP_KNG_SETUP_REPO_NEWER} -O kong.repo" "sed -i '2 aname=gateway-kong - $basearch' kong.repo && sudo mv kong.repo /etc/yum.repos.d/" 
-
-    soft_yum_check_setup "${TMP_KNG_SETUP_RPM_FILE_NEWER}"
+    # soft_yum_check_setup "kong.repo"
 
 	# 创建日志软链
 	local TMP_KNG_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/kong
@@ -101,8 +101,6 @@ function setup_kong()
 	chgrp -R kong ${TMP_KNG_SETUP_LNK_LOGS_DIR}
 	chown -R kong:kong ${TMP_KNG_SETUP_LNK_LOGS_DIR}
 
-	rm -rf ${TMP_KNG_SETUP_RPM_FILE_NEWER}
-
     # 安装初始
 
 	return $?
@@ -119,6 +117,8 @@ function setup_konga()
 
 	mv ${TMP_KNGA_CURRENT_DIR} ${TMP_KNGA_SETUP_DIR}
 
+    cd ${TMP_KNGA_SETUP_DIR}
+
 	# 创建日志软链
 	local TMP_KNGA_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/konga
 	local TMP_KNGA_SETUP_LOGS_DIR=${TMP_KNGA_SETUP_DIR}/logs
@@ -133,8 +133,12 @@ function setup_konga()
     #while_exec "su - root -c 'cd ${TMP_KNGA_SETUP_DASHBOARD_DIR} && nvm install 8.11.3 && nvm use 8.11.3 && npm install > $DOWN_DIR/konga_install.log'" "cat $DOWN_DIR/konga_install.log | grep -o \"up to date\" | awk 'END{print NR}' | xargs -I {} [ {} -eq 1 ] && echo 1" "npm uninstall && rm -rf node_modules package-lock.json && rm -rf $NVM_DIR/versions/node/v8.11.3 && rm -rf $NVM_DIR/.cache"
     #国内镜像源无法安装完全，故先切换到官方源，再还原
     npm install -g nrm
+
+    local TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT=`nrm current`
     nrm use npm
     npm install
+    nrm use ${TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT}
+    
 
 	return $?
 }
@@ -155,9 +159,15 @@ function conf_kong()
 
 	# 替换原路径链接
     path_not_exits_create ${TMP_KNG_SETUP_LNK_ETC_DIR}
+    mv .kong_env ${TMP_KNG_SETUP_LNK_ETC_DIR}/
+    mv nginx*.conf ${TMP_KNG_SETUP_LNK_ETC_DIR}/
     ln -sf /etc/kong ${TMP_KNG_SETUP_LNK_SELF_ETC_DIR}
     mv /usr/local/openresty/nginx/conf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR}
     
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/.kong_env `pwd`/.kong_env
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx.conf `pwd`/nginx.conf
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong.conf `pwd`/nginx-kong.conf
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong-stream.conf `pwd`/nginx-kong-stream.conf
 	ln -sf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR} /usr/local/openresty/nginx/conf
 	ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR} ${TMP_KNG_SETUP_ETC_DIR}
 	
@@ -167,7 +177,6 @@ function conf_kong()
 	input_if_empty "TMP_KNG_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${red}postgres port${reset} of '${TMP_KNG_SETUP_PSQL_HOST}' for kong"
 	input_if_empty "TMP_KNG_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${red}postgres user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}' for kong"
     
-    local TMP_KNG_SETUP_PSQL_SELF_DATABASE="kong"
     local TMP_KNG_SETUP_PSQL_SELF_USRNAME="kong"
     local TMP_KNG_SETUP_PSQL_SELF_USRPWD="kng%DB!m${LOCAL_ID}_"
 	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_DATABASE" "Kong.PostgresQL: Please ender ${red}kong used database${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}'"
@@ -581,7 +590,6 @@ function conf_konga()
 
 	input_if_empty "TMP_KNGA_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${red}postgres host address${reset} for konga"
 	input_if_empty "TMP_KNGA_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${red}postgres port${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}' for konga"
-
 	input_if_empty "TMP_KNGA_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${red}postgres user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}' for konga"
     
 	input_if_empty "TMP_KNGA_SETUP_DOMAIN" "KongA.Web.Domain: Please ender ${red}kong dashboard web domain${reset}"
@@ -606,7 +614,7 @@ function conf_konga()
     sed -i "s@secret:.*@secret: 'extremely-secure-keyboard-cat'@g" config/session.js
 
     #数据库初始化
-    psql -U ${TMP_KNGA_SETUP_PSQL_ROOT_USRNAME} -h ${TMP_KNGA_SETUP_PSQL_HOST} -p ${TMP_KNGA_SETUP_PSQL_PORT} -d postgres << EOF
+    psql -U ${TMP_KNGA_SETUP_PSQL_USRNAME} -h ${TMP_KNGA_SETUP_PSQL_HOST} -p ${TMP_KNGA_SETUP_PSQL_PORT} -d postgres << EOF
     CREATE USER ${TMP_KNGA_SETUP_PSQL_SELF_USRNAME} WITH PASSWORD '${TMP_KNGA_SETUP_PSQL_SELF_USRPWD}'; 
     CREATE DATABASE ${TMP_KNGA_SETUP_PSQL_SELF_DATABASE} OWNER ${TMP_KNGA_SETUP_PSQL_SELF_USRNAME};
     GRANT ALL PRIVILEGES ON DATABASE ${TMP_KNGA_SETUP_PSQL_SELF_DATABASE} TO ${TMP_KNGA_SETUP_PSQL_SELF_USRNAME};
@@ -617,7 +625,8 @@ EOF
     sed -i "s@_hookTimeout: .*@_hookTimeout: 999999@g" config/pubsub.js
     node ./bin/konga.js prepare  #不能加sudo
 
-    npm run bower-deps
+    local TMP_KNGA_SETUP_PSQL_KNG_DATABASE="${TMP_KNG_SETUP_PSQL_SELF_DATABASE}"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_KNG_DATABASE" "KongA.Kong: Please sure ${red}kong database name ${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
 
     # 添加konga及kong绑定关系
     # konga：
@@ -635,7 +644,7 @@ EOF
     # 3：绑定upstream指针对应的访问地址：konga
     # 4：添加服务指针（表示一个nginx配置文件conf）：konga
     # 5：添加服务指针对应路由（表示一个nginx配置文件conf中的location）：konga
-psql -U ${TMP_KNGA_SETUP_PSQL_ROOT_USRNAME} -h ${TMP_KNGA_SETUP_PSQL_HOST} -p ${TMP_KNGA_SETUP_PSQL_PORT} -d postgres << EOF
+    psql -U ${TMP_KNGA_SETUP_PSQL_USRNAME} -h ${TMP_KNGA_SETUP_PSQL_HOST} -p ${TMP_KNGA_SETUP_PSQL_PORT} -d postgres << EOF
     \c ${TMP_KNGA_SETUP_PSQL_SELF_DATABASE};
     INSERT INTO konga_kong_nodes (id,"name","type",kong_admin_url,netdata_url,kong_api_key,jwt_algorithm,jwt_key,jwt_secret,kong_version,health_checks,health_check_details,active,"createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'CONNECTION.KONG.LOCAL.$SYS_IP_CONNECT','default','http://${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}',NULL,'','HS256',NULL,NULL,'2.x.0',true,NULL,true,'${LOCAL_TIME}','${LOCAL_TIME}',1,1);
     UPDATE konga_settings SET "data"='{"signup_enable":false,"signup_require_activation":true,"info_polling_interval":1000,"email_default_sender_name":"Kong Net-Gateway","email_default_sender":"kong@gateway.com","email_notifications":false,"default_transport":"sendmail","notify_when":{"node_down":{"title":"A node is down or unresponsive","description":"Health checks must be enabled for the nodes that need to be monitored.","active":true},"api_down":{"title":"An API is down or unresponsive","description":"Health checks must be enabled for the APIs that need to be monitored.","active":true}},"user_permissions":{"apis":{"create":false,"read":true,"update":false,"delete":false},"services":{"create":false,"read":true,"update":false,"delete":false},"routes":{"create":false,"read":true,"update":false,"delete":false},"consumers":{"create":false,"read":true,"update":false,"delete":false},"plugins":{"create":false,"read":true,"update":false,"delete":false},"upstreams":{"create":false,"read":true,"update":false,"delete":false},"certificates":{"create":false,"read":true,"update":false,"delete":false},"connections":{"create":false,"read":false,"update":false,"delete":false},"users":{"create":false,"read":false,"update":false,"delete":false}},"baseUrl":"https://${TMP_KNGA_SETUP_DOMAIN}","integrations":[{"id":"slack","name":"Slack","image":"slack_rgb.png","config":{"enabled":true,"fields":[{"id":"slack_webhook_url","name":"Slack Webhook URL","type":"text","required":true,"value":"https://hooks.slack.com/services/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"}],"slack_webhook_url":""}}]}' where id = 1;
@@ -645,7 +654,7 @@ psql -U ${TMP_KNGA_SETUP_PSQL_ROOT_USRNAME} -h ${TMP_KNGA_SETUP_PSQL_HOST} -p ${
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (3,'c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',NULL,NULL);
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (4,'0a79e2bc-6fc3-5d59-bbfa-cc733f836935',1,true,true,NULL,false,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',NULL,NULL);
     
-    \c ${TMP_KNGA_SETUP_PSQL_KONG_DATABASE};
+    \c ${TMP_KNGA_SETUP_PSQL_KNG_DATABASE};
     \set kong_workspace_id '${TMP_KNGA_SETUP_WORKSPACE_ID}'
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min','UPS-LCL-GATEWAY.KONGA','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('941a9b3e-72a0-4b32-854d-a3e282b33711',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min','c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','127.0.0.1:${TMP_KNGA_SETUP_HTTP_PORT}',100,NULL, :'kong_workspace_id');
@@ -712,8 +721,7 @@ function boot_konga()
     # bin/konga -v
 
 	# 当前启动命令
-    nohup npm run production > logs/boot.log 2>&1 &
-    nrm use ${TMP_SOFT_NPM_NRM_REPO_CURRENT}
+    nohup npm run bower-deps && npm run production > logs/boot.log 2>&1 &
 	
     # 等待启动
     echo "Starting konga，Waiting for a moment"

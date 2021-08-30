@@ -6,7 +6,7 @@
 #------------------------------------------------
 
 # 1-配置环境
-function set_environment()
+function set_env_java()
 {	
 	return $?
 }
@@ -113,7 +113,7 @@ function exec_step_java()
 {
 	local TMP_LANG_JAVA_SETUP_DIR=${1}
     
-	set_environment "${TMP_LANG_JAVA_SETUP_DIR}"
+	set_env_java "${TMP_LANG_JAVA_SETUP_DIR}"
 
 	setup_java "${TMP_LANG_JAVA_SETUP_DIR}"
 

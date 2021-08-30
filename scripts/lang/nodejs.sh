@@ -41,20 +41,12 @@ function setup_nodejs()
 
 	export NVM_DIR="${TMP_NVM_SETUP_DIR}" && (
     	while_curl "${TMP_NVM_SETUP_SH_NEWER} -o ${TMP_NVM_SETUP_SH_FILE_NEWER}" "bash ${TMP_NVM_SETUP_SH_FILE_NEWER}"
+		echo "NodeJS：Start to wait environment alivable，about 30 secs..."
+		sleep 5
 	)
 	
+	sed -i "1 iNVM_DIR='${TMP_NVM_SETUP_DIR}'" ${TMP_NVM_SETUP_DIR}/nvm.sh
 	source ${TMP_NVM_SETUP_DIR}/nvm.sh
-	
-    # 安装初始
-	local TMP_NVM_SETUP_NPM_PATH=`which npm`
-	local TMP_NVM_SETUP_NODE_PATH=`which node`
-
-	# 部分程序是识别 /usr/bin or /usr/local/bin 目录的，所以在此创建适配其需要的软连接
-    path_not_exists_action "/usr/bin/npm" "ln -sf ${TMP_NVM_SETUP_NPM_PATH} /usr/bin/npm" "Npm at '/usr/bin/npm' was linked"
-    path_not_exists_action "/usr/local/bin/npm" "ln -sf ${TMP_NVM_SETUP_NPM_PATH} /usr/local/bin/npm" "Npm at '/usr/local/bin/npm' was linked"
-
-    path_not_exists_action "/usr/bin/node" "ln -sf ${TMP_NVM_SETUP_NODE_PATH} /usr/bin/node" "Node at '/usr/bin/node' was linked"
-    path_not_exists_action "/usr/local/bin/node" "ln -sf ${TMP_NVM_SETUP_NODE_PATH} /usr/bin/node" "Node at '/usr/local/bin/node' was linked"
 
     echo "---------------------------------------"
 	echo "NodeJs: Remote list"
@@ -85,6 +77,17 @@ function setup_nodejs()
 	echo "NodeJs: Local list"
     echo "---------------------------------"
 	nvm ls
+
+    # 安装初始
+	local TMP_NVM_SETUP_NPM_PATH=`which npm`
+	local TMP_NVM_SETUP_NODE_PATH=`which node`
+
+	# 部分程序是识别 /usr/bin or /usr/local/bin 目录的，所以在此创建适配其需要的软连接
+    path_not_exists_action "/usr/bin/npm" "ln -sf ${TMP_NVM_SETUP_NPM_PATH} /usr/bin/npm" "Npm at '/usr/bin/npm' was linked"
+    path_not_exists_action "/usr/local/bin/npm" "ln -sf ${TMP_NVM_SETUP_NPM_PATH} /usr/local/bin/npm" "Npm at '/usr/local/bin/npm' was linked"
+
+    path_not_exists_action "/usr/bin/node" "ln -sf ${TMP_NVM_SETUP_NODE_PATH} /usr/bin/node" "Node at '/usr/bin/node' was linked"
+    path_not_exists_action "/usr/local/bin/node" "ln -sf ${TMP_NVM_SETUP_NODE_PATH} /usr/bin/node" "Node at '/usr/local/bin/node' was linked"
 
 	node --version
 	node --v8-options | grep harmony
@@ -199,6 +202,8 @@ function exec_step_nodejs()
 function check_setup_nodejs()
 {
     path_not_exists_action "${NVM_PATH}" "exec_step_nodejs" "NodeJS was installed"
+	
+	source ${NVM_PATH}
 
 	return $?
 }

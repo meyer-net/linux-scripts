@@ -16,7 +16,10 @@ local TMP_KFK_SETUP_LISTENERS_PORT=19092
 local TMP_KFK_SETUP_ZK_ADMIN_SERVER_PORT=18080
 local TMP_KFK_SETUP_JMX_PORT=10000
 
-local TMP_KFK_EGL_SETUP_PORT=18048
+local TMP_KFK_EGL_SETUP_WEBUI_PORT=18048
+local TMP_KFK_EGL_SETUP_SERVER_PORT=18065
+local TMP_KFK_EGL_SETUP_CONNECTOR_PORT=18069
+local TMP_KFK_EGL_SETUP_MYSQL_PORT=13306
 
 ##########################################################################################################
 
@@ -27,7 +30,7 @@ function set_env_kafka()
 	
     local TMP_IS_KFK_ZK_LOCAL=`lsof -i:${TMP_KFK_SETUP_ZK_PORT}`
     if [ -z "${TMP_IS_KFK_ZK_LOCAL}" ]; then 
-    	exec_yn_action "setup_zookeeper" "Kafka: Please sure if u want to get zookeeper local?"
+    	exec_yn_action "setup_zookeeper" "Kafka: Please sure if u want to get ${green}zookeeper local${reset}?"
 	fi
 
 	return $?
@@ -38,6 +41,11 @@ function set_env_kafka_eagle()
     cd ${__DIR}
 
     source scripts/lang/java.sh
+	
+    local TMP_IS_KFK_EGL_MYSQL_LOCAL=`lsof -i:${TMP_KFK_EGL_SETUP_MYSQL_PORT}`
+    if [ -z "${TMP_IS_KFK_EGL_MYSQL_LOCAL}" ]; then 
+    	exec_yn_action "setup_mysql" "KafkaEagle: Please sure if u want to get ${green}mysql local${reset}?"
+	fi
 
 	return $?
 }
@@ -47,6 +55,13 @@ function set_env_kafka_eagle()
 function setup_zookeeper()
 {   
     source scripts/ha/zookeeper.sh
+
+    return $?
+}
+
+function setup_mysql()
+{   
+    source scripts/database/mysql.sh
 
     return $?
 }
@@ -98,6 +113,8 @@ function setup_kafka_eagle()
 
 	mv ${TMP_KFK_EGL_CURRENT_DIR} ${TMP_KFK_EGL_SETUP_DIR}
 
+	cd ${TMP_KFK_EGL_SETUP_DIR}
+
 	# 创建日志软链
 	local TMP_KFK_EGL_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/kafka_eagle
 	local TMP_KFK_EGL_SETUP_LNK_DATA_DIR=${DATA_DIR}/kafka_eagle
@@ -147,6 +164,7 @@ function conf_kafka()
 	local TMP_KFK_SETUP_DATA_DIR=${TMP_KFK_SETUP_DIR}/data
     sed -i "s@^dataDir=.*@dataDir=${TMP_KFK_SETUP_DATA_DIR}@g" config/zookeeper.properties
     sed -i "s@^clientPort=.*@clientPort=${TMP_KFK_SETUP_ZK_PORT}@g" config/zookeeper.properties
+    sed -i "s@^admin.enableServer=.*@admin.enableServer=true@g" config/zookeeper.properties
     sed -i "s@^# admin.serverPort=.*@admin.serverPort=${TMP_KFK_SETUP_ZK_ADMIN_SERVER_PORT}@g" config/zookeeper.properties
 
 	# - socket server 部分
@@ -157,7 +175,7 @@ function conf_kafka()
     sed -i "s@^#listeners=.*@listeners=PLAINTEXT://:${TMP_KFK_SETUP_LISTENERS_PORT}@g" config/server.properties
 
 	local TMP_KFK_SETUP_HOST="${LOCAL_HOST}"
-    input_if_empty "TMP_KFK_SETUP_HOST" "Kafka: Please ender listener internal host address(your host name)"
+    input_if_empty "TMP_KFK_SETUP_HOST" "Kafka: Please ender ${green}listener internal host address${reset}(${red}who can visit or '0.0.0.0'${reset})"
     if [ -n "${TMP_KFK_SETUP_HOST}" ]; then
         sed -i "s@^#advertised.listeners=.*@advertised.listeners=PLAINTEXT://${TMP_KFK_SETUP_HOST}:${TMP_KFK_SETUP_LISTENERS_PORT}@g" config/server.properties
     fi
@@ -174,7 +192,7 @@ function conf_kafka()
     sed -i "s@^log.dirs=.*@log.dirs=${TMP_KFK_SETUP_LOGS_DIR}@g" config/server.properties
 
     local TMP_KFK_SETUP_ZK_HOSTS="${LOCAL_HOST}"
-    exec_while_read "TMP_KFK_SETUP_ZK_HOSTS" "Kafka.Zookeeper: Please ender zookeeper cluster address like '${LOCAL_HOST}'" "%s:${TMP_KFK_SETUP_ZK_PORT}" "
+    exec_while_read "TMP_KFK_SETUP_ZK_HOSTS" "Kafka.Zookeeper: Please ender zookeeper cluster address like '${green}${LOCAL_HOST}${reset}'" "%s:${TMP_KFK_SETUP_ZK_PORT}" "
         if [ \"\$CURRENT\" == \"\${LOCAL_HOST}\" ]; then
             echo_soft_port ${TMP_KFK_SETUP_LISTENERS_PORT} \"\$CURRENT\"
         else
@@ -198,13 +216,19 @@ function conf_kafka_eagle()
 	cd ${TMP_KFK_EGL_SETUP_DIR}
 	
 	local TMP_KFK_EGL_SETUP_LNK_ETC_DIR=${ATT_DIR}/kafka_eagle
-	local TMP_KFK_EGL_SETUP_ETC_DIR=${TMP_KFK_EGL_SETUP_DIR}/conf
+	local TMP_KFK_EGL_SETUP_LNK_ETC_WEB_DIR=${TMP_KFK_EGL_SETUP_LNK_ETC_DIR}/web
+	local TMP_KFK_EGL_SETUP_LNK_ETC_KMS_DIR=${TMP_KFK_EGL_SETUP_LNK_ETC_DIR}/kms
+	local TMP_KFK_EGL_SETUP_ETC_WEB_DIR=${TMP_KFK_EGL_SETUP_DIR}/conf
+	local TMP_KFK_EGL_SETUP_ETC_KMS_DIR=${TMP_KFK_EGL_SETUP_DIR}/kms/conf
 
 	# ①-Y：存在配置文件：原路径文件放给真实路径
-	mv ${TMP_KFK_EGL_SETUP_ETC_DIR} ${TMP_KFK_EGL_SETUP_LNK_ETC_DIR}
+	path_not_exits_create "${TMP_KFK_EGL_SETUP_LNK_ETC_DIR}"
+	mv ${TMP_KFK_EGL_SETUP_ETC_WEB_DIR} ${TMP_KFK_EGL_SETUP_LNK_ETC_WEB_DIR}
+	mv ${TMP_KFK_EGL_SETUP_ETC_KMS_DIR} ${TMP_KFK_EGL_SETUP_LNK_ETC_KMS_DIR}
 
 	# 替换原路径链接
-	ln -sf ${TMP_KFK_EGL_SETUP_LNK_ETC_DIR} ${TMP_KFK_EGL_SETUP_ETC_DIR}
+	ln -sf ${TMP_KFK_EGL_SETUP_LNK_ETC_WEB_DIR} ${TMP_KFK_EGL_SETUP_ETC_WEB_DIR}
+	ln -sf ${TMP_KFK_EGL_SETUP_LNK_ETC_KMS_DIR} ${TMP_KFK_EGL_SETUP_ETC_KMS_DIR}
 
 	# 开始配置
     local TMP_KFK_SETUP_ZK_HOSTS="${LOCAL_HOST}"
@@ -213,6 +237,21 @@ function conf_kafka_eagle()
     sed -i "s@^kafka.eagle.zk.cluster.alias=cluster.*@kafka.eagle.zk.cluster.alias=cluster1@g" conf/system-config.properties
     sed -i "s@^cluster1.zk.list=.*@cluster1.zk.list=${TMP_KFK_SETUP_ZK_HOSTS}@g" conf/system-config.properties
     sed -i "s@^cluster2@#cluster2@g" conf/system-config.properties
+    sed -i "s@^cluster3@#cluster3@g" conf/system-config.properties
+    sed -i "s@^kafka.eagle.webui.port=.*@^kafka.eagle.webui.port=${TMP_KFK_EGL_SETUP_WEBUI_PORT}@g" conf/system-config.properties
+	
+    sed -i "s@port=\"8065\"@port=\"${TMP_KFK_EGL_SETUP_SERVER_PORT}\"@g" kms/conf/server.xml
+    sed -i "s@port=\"8069\"@port=\"${TMP_KFK_EGL_SETUP_CONNECTOR_PORT}\"@g" kms/conf/server.xml
+
+    local TMP_KFK_SETUP_EAGLE_JMX_UNAME="server"
+    local TMP_KFK_SETUP_EAGLE_JMX_PWD="ke\@SVR!m${LOCAL_ID}_"
+
+	input_if_empty "TMP_KFK_SETUP_EAGLE_JMX_UNAME" "KafkaEagle.Jmx: Please ender ${red}jmx user name${reset}"
+	input_if_empty "TMP_KFK_SETUP_EAGLE_JMX_PWD" "KafkaEagle.Jmx: Please ender ${red}jmx password${reset}"
+
+    sed -i "s@^cluster1.kafka.eagle.jmx.user=.*@cluster1.kafka.eagle.jmx.user=${TMP_KFK_SETUP_EAGLE_JMX_UNAME}@g" conf/system-config.properties
+    sed -i "s@^cluster1.kafka.eagle.jmx.password=.*@cluster1.kafka.eagle.jmx.password=${TMP_KFK_SETUP_EAGLE_JMX_PWD}@g" conf/system-config.properties
+    sed -i "s@^cluster1.kafka.eagle.jmx.truststore.password=.*@cluster1.kafka.eagle.jmx.truststore.password=${TMP_KFK_SETUP_EAGLE_JMX_PWD}tst@g" conf/system-config.properties
     
     local TMP_KFK_SETUP_EAGLE_DBADDRESS="127.0.0.1"
     local TMP_KFK_SETUP_EAGLE_DBPORT="3306"
@@ -247,6 +286,7 @@ function boot_kafka()
 	
 	# 验证安装
     find ./libs/ -name \*kafka_\* | head -1 | grep -o '\kafka[^\n]*'
+	jps
 
 	# 当前启动命令
 	JMX_PORT=${TMP_KFK_SETUP_JMX_PORT} && nohup bash bin/kafka-server-start.sh config/server.properties > logs/boot.log 2>&1 &
@@ -259,7 +299,7 @@ function boot_kafka()
 	lsof -i:${TMP_KFK_SETUP_LISTENERS_PORT}
 
 	# 添加系统启动命令
-    echo_startup_config "kafka" "${TMP_KFK_SETUP_DIR}" "bash bin/kafka-server-start.sh config/server.properties" "JMX_PORT=${TMP_KFK_SETUP_JMX_PORT}" "100"
+    echo_startup_config "kafka" "${TMP_KFK_SETUP_DIR}" "bash bin/kafka-server-start.sh config/server.properties" "JMX_PORT=${TMP_KFK_SETUP_JMX_PORT}" "999"
 	
 	# 授权iptables端口访问
     echo_soft_port ${TMP_KFK_SETUP_LISTENERS_PORT}
@@ -286,13 +326,13 @@ function boot_kafka_eagle()
     sleep 10
 
 	# 启动状态检测
-	bin/ke.sh status  # lsof -i:${TMP_KFK_EGL_SETUP_PORT}
+	bin/ke.sh status  # lsof -i:${TMP_KFK_EGL_SETUP_WEBUI_PORT}
 
 	# 添加系统启动命令
     echo_startup_config "kafka_eagle" "${TMP_KFK_EGL_SETUP_DIR}" "bin/ke.sh start" "" "100"
 	
 	# 授权iptables端口访问
-	echo_soft_port ${TMP_KFK_EGL_SETUP_PORT}
+	echo_soft_port ${TMP_KFK_EGL_SETUP_WEBUI_PORT}
 
 	return $?
 }
