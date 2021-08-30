@@ -41,30 +41,17 @@ function setup_rabbitmq()
 	# 创建日志软链(启动后才能出现日志及数据目录)
 	local TMP_RBT_MQ_LNK_LOGS_DIR=${LOGS_DIR}/rabbitmq
 	local TMP_RBT_MQ_LNK_DATA_DIR=${DATA_DIR}/rabbitmq
-	local TMP_RBT_MQ_LOGS_DIR=${TMP_RBT_MQ_SETUP_DIR}/var/log/rabbitmq
-	local TMP_RBT_MQ_DATA_DIR=${TMP_RBT_MQ_SETUP_DIR}/var/lib/rabbitmq
+	local TMP_RBT_MQ_LOGS_DIR=${TMP_RBT_MQ_SETUP_DIR}/logs
+	local TMP_RBT_MQ_DATA_DIR=${TMP_RBT_MQ_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
 	rm -rf ${TMP_RBT_MQ_LOGS_DIR}
 	rm -rf ${TMP_RBT_MQ_DATA_DIR}
 
-	if [ ! -d "/var/log/rabbitmq" ]; then
-		mkdir -pv ${TMP_RBT_MQ_LNK_LOGS_DIR}
-	else
-		mv /var/log/rabbitmq ${TMP_RBT_MQ_LNK_LOGS_DIR}
-	fi
+	mkdir -pv ${TMP_RBT_MQ_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_RBT_MQ_LNK_DATA_DIR}
 	
-	if [ ! -d "/var/lib/rabbitmq" ]; then
-		mkdir -pv ${TMP_RBT_MQ_LNK_DATA_DIR}
-	else
-		mv /var/lib/rabbitmq ${TMP_RBT_MQ_LNK_DATA_DIR}
-	fi
-
-    mkdir -pv `dirname ${TMP_RBT_MQ_LOGS_DIR}`
-    mkdir -pv `dirname ${TMP_RBT_MQ_DATA_DIR}`
-
 	ln -sf ${TMP_RBT_MQ_LNK_LOGS_DIR} ${TMP_RBT_MQ_LOGS_DIR}
-	ln -sf ${TMP_RBT_MQ_LNK_LOGS_DIR} /var/log/rabbitmq
 	ln -sf ${TMP_RBT_MQ_LNK_DATA_DIR} ${TMP_RBT_MQ_DATA_DIR}
 	ln -sf ${TMP_RBT_MQ_LNK_DATA_DIR} /var/lib/rabbitmq
 
@@ -87,7 +74,7 @@ function conf_rabbitmq()
 	# 替换原路径链接
 	ln -sf ${TMP_RBT_SETUP_LNK_ETC_DIR} ${TMP_RBT_SETUP_ETC_DIR}
 
-	while_wget "https://raw.githubusercontent.com/rabbitmq/rabbitmq-server/master/deps/rabbit/docs/rabbitmq.conf.example" "mv rabbitmq.conf.example etc/rabbitmq/rabbitmq.conf"
+	while_wget "https://raw.githubusercontent.com/rabbitmq/rabbitmq-server/master/deps/rabbit/docs/rabbitmq.conf.example" "mv rabbitmq.conf.example `pwd`/etc/rabbitmq/rabbitmq.conf"
 
 	# 4369，epmd（Erlang Port Mapper Daemon），是Erlang的端口/结点名称映射程序，用来跟踪节点名称监听地址，在集群中起到一个类似DNS的作用。
 	# 5672, 5671， AMQP 0-9-1 和 1.0 客户端端口，used by AMQP 0-9-1 and 1.0 clients without and with TLS(Transport Layer Security)

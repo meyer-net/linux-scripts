@@ -637,10 +637,23 @@ function while_wget()
 	echo "Start to get file from '${red}${TMP_SOFT_WGET_TRUE_URL}${reset}' named '${green}${TMP_SOFT_WGET_FILE_DEST_NAME}${reset}'"
 	echo "-------------------------------------------------------------------------------------------------------------------"
 
-	cd ${DOWN_DIR}
+	local TMP_SOFT_WGET_DIST_FILE_EXT=`echo ${TMP_SOFT_WGET_FILE_DEST_NAME##*.}`	
+	case ${TMP_SOFT_WGET_DIST_FILE_EXT} in
+		"rpm")
+			cd ${RPMS_DIR}
+		;;
+		"repo")
+			cd ${REPO_DIR}
+		;;
+		*)
+		cd ${DOWN_DIR}
+	esac
+
+	local TMP_SOFT_WGET_COMMAND="wget -c --tries=0 --timeout=60 ${TMP_SOFT_WGET_TRUE_URL} -O ${TMP_SOFT_WGET_FILE_DEST_NAME}"
+	echo "${TMP_SOFT_WGET_COMMAND}"
 	while [ ! -f "${TMP_SOFT_WGET_FILE_DEST_NAME}" ]; do
 		#https://wenku.baidu.com/view/64f7d302b52acfc789ebc936.html
-		wget -c --tries=0 --timeout=60 ${TMP_SOFT_WGET_TRUE_URL} -O ${TMP_SOFT_WGET_FILE_DEST_NAME}
+		${TMP_SOFT_WGET_COMMAND}
 	done
 
 	if [ ${#TMP_SOFT_WGET_SCRIPT} -gt 0 ]; then
@@ -682,8 +695,11 @@ function while_curl()
 	echo "-------------------------------------------------------------------------------------------------------------------------"
 
 	cd ${CURL_DIR}
+	local TMP_SOFT_CURL_COMMAND="curl -4sSkL ${TMP_SOFT_CURL_TRUE_URL} -o- ${TMP_SOFT_CURL_FILE_DEST_NAME}"
+	echo "${TMP_SOFT_CURL_COMMAND}"
 	while [ ! -f "${TMP_SOFT_CURL_FILE_DEST_NAME}" ]; do
-		curl -4sSkL ${TMP_SOFT_CURL_TRUE_URL} -o- ${TMP_SOFT_CURL_FILE_DEST_NAME}
+		${TMP_SOFT_CURL_COMMAND}
+		
 	done
 
 	if [ ${#TMP_SOFT_CURL_SCRIPT} -gt 0 ]; then

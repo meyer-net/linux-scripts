@@ -19,6 +19,7 @@ CURRENT_USER=`whoami`
 #---------- DIR ---------- {
 DOWN_DIR=/tmp/downloads
 RPMS_DIR=${DOWN_DIR}/rpms
+REPO_DIR=/etc/yum.repos.d
 CURL_DIR=${DOWN_DIR}/curl
 
 # 默认找最大的磁盘  ??? 优化为自动识别是否存在挂载第一个磁盘

@@ -277,7 +277,6 @@ function boot_frp()
 
 	cd ${TMP_FRP_SETUP_DIR}
 
-
 	case ${TMP_CHOICE_FRP_CONF} in
 		"Conf_frps")
             boot_frps
