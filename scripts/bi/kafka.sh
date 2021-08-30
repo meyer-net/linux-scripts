@@ -299,7 +299,7 @@ function boot_kafka()
 	lsof -i:${TMP_KFK_SETUP_LISTENERS_PORT}
 
 	# 添加系统启动命令
-    echo_startup_config "kafka" "${TMP_KFK_SETUP_DIR}" "bash bin/kafka-server-start.sh config/server.properties" "JMX_PORT=${TMP_KFK_SETUP_JMX_PORT}" "999"
+    echo_startup_config "kafka" "${TMP_KFK_SETUP_DIR}" "bash bin/kafka-server-start.sh config/server.properties" "JMX_PORT=${TMP_KFK_SETUP_JMX_PORT}" "998"
 	
 	# 授权iptables端口访问
     echo_soft_port ${TMP_KFK_SETUP_LISTENERS_PORT}
@@ -329,7 +329,7 @@ function boot_kafka_eagle()
 	bin/ke.sh status  # lsof -i:${TMP_KFK_EGL_SETUP_WEBUI_PORT}
 
 	# 添加系统启动命令
-    echo_startup_config "kafka_eagle" "${TMP_KFK_EGL_SETUP_DIR}" "bin/ke.sh start" "" "100"
+    echo_startup_config "kafka_eagle" "${TMP_KFK_EGL_SETUP_DIR}" "bin/ke.sh start" "" "999"
 	
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_KFK_EGL_SETUP_WEBUI_PORT}
