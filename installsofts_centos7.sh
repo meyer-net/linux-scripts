@@ -124,7 +124,7 @@ function cluster()
 
 function elk()
 {
-    exec_if_choice "TMP_CHOICE_ELK" "Please choice which ELK compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Exit" "${TMP_SPLITER}" "scripts/bi"
+    exec_if_choice "TMP_CHOICE_ELK" "Please choice which ELK compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Exit" "${TMP_SPLITER}" "scripts/elk"
 	
     return $?
 }
