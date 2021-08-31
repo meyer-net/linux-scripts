@@ -55,16 +55,16 @@ function mkdirs()
     fi
 
     #path_not_exists_action "$DEFAULT_DIR" "mkdir -pv $SETUP_DIR && cp --parents -av ~/.* . && sed -i \"s@$CURRENT_USER:/.*:/bin/bash@$CURRENT_USER:$DEFAULT_DIR:/bin/bash@g\" /etc/passwd"
-    path_not_exits_create "${RPMS_DIR}"
-    path_not_exits_create "${REPO_DIR}"
-    path_not_exits_create "${CURL_DIR}"
-    path_not_exits_create "${SETUP_DIR}"
-    path_not_exits_create "${WWW_DIR}"
-    path_not_exits_create "${APP_DIR}"
-    path_not_exits_create "${BOOT_DIR}"
-    path_not_exits_create "${HTML_DIR}"
+    path_not_exists_create "${RPMS_DIR}"
+    path_not_exists_create "${REPO_DIR}"
+    path_not_exists_create "${CURL_DIR}"
+    path_not_exists_create "${SETUP_DIR}"
+    path_not_exists_create "${WWW_DIR}"
+    path_not_exists_create "${APP_DIR}"
+    path_not_exists_create "${BOOT_DIR}"
+    path_not_exists_create "${HTML_DIR}"
     
-    path_not_exits_create "${DATA_DIR}"
+    path_not_exists_create "${DATA_DIR}"
     path_not_exists_action "${LOGS_DIR}" "link_logs"
 
     sudo yum makecache fast

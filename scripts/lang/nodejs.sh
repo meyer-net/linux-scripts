@@ -37,7 +37,7 @@ function setup_nodejs()
 	
 	local TMP_NVM_SETUP_SH_FILE_NEWER="install_nvm.sh"
 
-	path_not_exits_create "${TMP_NVM_SETUP_DIR}"
+	path_not_exists_create "${TMP_NVM_SETUP_DIR}"
 
 	export NVM_DIR="${TMP_NVM_SETUP_DIR}" && (
     	while_curl "${TMP_NVM_SETUP_SH_NEWER} -o ${TMP_NVM_SETUP_SH_FILE_NEWER}" "bash ${TMP_NVM_SETUP_SH_FILE_NEWER}"

@@ -12,10 +12,10 @@ AUTO_CERT_CONFIG_PATH="~/.auto-certrc"
 function check_config()
 {
     convert_path "CERT_CHECKER_CONFIG_PATH"
-    path_not_exits_create `dirname ${CERT_CHECKER_CONFIG_PATH}`
+    path_not_exists_create `dirname ${CERT_CHECKER_CONFIG_PATH}`
 
     convert_path "AUTO_CERT_CONFIG_PATH"
-    path_not_exits_create `dirname ${AUTO_CERT_CONFIG_PATH}`
+    path_not_exists_create `dirname ${AUTO_CERT_CONFIG_PATH}`
     path_not_exists_action "${AUTO_CERT_CONFIG_PATH}" "fill_config"
     
     #路径转换

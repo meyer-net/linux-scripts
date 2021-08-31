@@ -12,7 +12,7 @@ function check_config()
 {
     convert_path "SVN_PACKAGE_CONFIG_PATH"
     local SVN_PACKAGE_CONFIG_DIR=`dirname $SVN_PACKAGE_CONFIG_PATH`
-    path_not_exits_create "${SVN_PACKAGE_CONFIG_DIR}"
+    path_not_exists_create "${SVN_PACKAGE_CONFIG_DIR}"
     path_not_exists_action "${SVN_PACKAGE_CONFIG_PATH}" "fill_config"
     
     #路径转换

@@ -80,15 +80,15 @@ function setup_clickhouse()
 	local TMP_CH_SETUP_SERVER_DATA_DIR=${TMP_CH_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
-	path_not_exits_create ${TMP_CH_SETUP_DIR}
-    path_not_exits_create ${TMP_CH_SETUP_LNK_LOGS_DIR}
+	path_not_exists_create ${TMP_CH_SETUP_DIR}
+    path_not_exists_create ${TMP_CH_SETUP_LNK_LOGS_DIR}
 	rm -rf ${TMP_CH_SETUP_SERVER_LOGS_DIR}
 	rm -rf ${TMP_CH_SETUP_SERVER_DATA_DIR}
-    path_not_exits_create ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}
+    path_not_exists_create ${TMP_CH_SETUP_LNK_SERVER_DATA_DIR}
 	mv /var/log/clickhouse-server ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR}
 	cp /var/lib/clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR} -Rp
     mv /var/lib/clickhouse ${TMP_CH_SETUP_LNK_SERVER_DATA_LIB_DIR}_empty
-    path_not_exits_create ${TMP_CH_SETUP_LNK_SERVER_DATA_XML_DIR}
+    path_not_exists_create ${TMP_CH_SETUP_LNK_SERVER_DATA_XML_DIR}
 	
     ln -sf ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR} /var/log/clickhouse-server
 	ln -sf ${TMP_CH_SETUP_LNK_SERVER_LOGS_DIR} ${TMP_CH_SETUP_SERVER_LOGS_DIR}

@@ -63,10 +63,10 @@ function setup_openresty()
 	rm -rf ${TMP_ORST_SETUP_LOGS_DIR}
 	
     mv nginx/logs ${TMP_ORST_SETUP_LNK_LOGS_DIR}
-    path_not_exits_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/application"
-    path_not_exits_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/error"
-    path_not_exits_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/access"
-    path_not_exits_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/proxy"
+    path_not_exists_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/application"
+    path_not_exists_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/error"
+    path_not_exists_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/access"
+    path_not_exists_create "${TMP_ORST_SETUP_LNK_LOGS_DIR}/proxy"
 	
 	ln -sf ${TMP_ORST_SETUP_LNK_LOGS_DIR} `pwd`/nginx/logs
 	ln -sf ${TMP_ORST_SETUP_LNK_LOGS_DIR} ${TMP_ORST_SETUP_LOGS_DIR}
@@ -84,7 +84,7 @@ function setup_openresty()
 	source /etc/profile
     
     # 创建一个线程目录，这里将文件放在.../tmp/tcmalloc
-    path_not_exits_create `pwd`/nginx/tmp/tcmalloc
+    path_not_exists_create `pwd`/nginx/tmp/tcmalloc
 
 	# 移除源文件
 	rm -rf ${TMP_ORST_CURRENT_DIR}
@@ -109,7 +109,7 @@ function conf_openresty()
 	mv nginx/conf ${TMP_ORST_SETUP_LNK_ETC_DIR}
 	
 	# 替换原路径链接（存在etc下时，不能作为软连接存在
-    path_not_exits_create "${TMP_ORST_SETUP_LNK_ETC_DIR}/vhosts"
+    path_not_exists_create "${TMP_ORST_SETUP_LNK_ETC_DIR}/vhosts"
 	ln -sf ${TMP_ORST_SETUP_LNK_ETC_DIR} `pwd`/nginx/conf
 	ln -sf ${TMP_ORST_SETUP_LNK_ETC_DIR} ${TMP_ORST_SETUP_ETC_DIR}
 

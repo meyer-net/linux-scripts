@@ -442,7 +442,7 @@ function path_not_exists_action()
 #路径不存在则创建
 #参数1：检测路径
 #参数2：路径存在时输出信息
-function path_not_exits_create() 
+function path_not_exists_create() 
 {
 	local _TMP_NOT_EXITS_PATH="$1"
 	local _TMP_NOT_EXITS_PATH_ECHO="$2"
@@ -1764,7 +1764,7 @@ function echo_startup_config()
 	local TMP_SFT_SUPERVISOR_CONF_DIR="${SUPERVISOR_ATT_DIR}/conf"
 	local TMP_SFT_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH=${TMP_SFT_SUPERVISOR_CONF_DIR}/${TMP_STARTUP_SUPERVISOR_FILENAME}
     local TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
-	path_not_exits_create "${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}"
+	path_not_exists_create "${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}"
 
 	cat >$TMP_SFT_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH<<EOF
 [program:${TMP_STARTUP_SUPERVISOR_NAME}]

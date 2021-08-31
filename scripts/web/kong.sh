@@ -162,7 +162,7 @@ function conf_kong()
 	local TMP_KNG_SETUP_ETC_DIR=${TMP_KNG_SETUP_DIR}/etc
 
 	# 替换原路径链接
-    path_not_exits_create ${TMP_KNG_SETUP_LNK_ETC_DIR}
+    path_not_exists_create ${TMP_KNG_SETUP_LNK_ETC_DIR}
     mv .kong_env ${TMP_KNG_SETUP_LNK_ETC_DIR}/
     mv nginx*.conf ${TMP_KNG_SETUP_LNK_ETC_DIR}/
     ln -sf /etc/kong ${TMP_KNG_SETUP_LNK_GLOBAL_ETC_DIR}

@@ -46,7 +46,7 @@ function setup_postgresql()
 	local TMP_PSQL_SETUP_DATA_DIR=${TMP_PSQL_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
-	path_not_exits_create ${TMP_PSQL_SETUP_DIR}
+	path_not_exists_create ${TMP_PSQL_SETUP_DIR}
 	rm -rf ${TMP_PSQL_SETUP_LOGS_DIR}
 	rm -rf ${TMP_PSQL_SETUP_DATA_DIR}
 	mkdir -pv ${TMP_PSQL_SETUP_LNK_LOGS_DIR}

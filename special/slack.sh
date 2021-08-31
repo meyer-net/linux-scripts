@@ -12,7 +12,7 @@ function check_config()
 {
     convert_path "SLACK_CONFIG_PATH"
 
-    path_not_exits_create `dirname ${SLACK_CONFIG_PATH}`
+    path_not_exists_create `dirname ${SLACK_CONFIG_PATH}`
     path_not_exists_action "${SLACK_CONFIG_PATH}" "fill_config"
 
     #路径转换

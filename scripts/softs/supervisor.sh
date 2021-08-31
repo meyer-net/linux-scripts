@@ -17,8 +17,8 @@ function set_environment()
 # 2-安装软件
 function setup_supervisor()
 {
-    path_not_exits_create "${SUPERVISOR_ATT_DIR}"
-    path_not_exits_create "${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}"
+    path_not_exists_create "${SUPERVISOR_ATT_DIR}"
+    path_not_exists_create "${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}"
     
 	return $?
 }
@@ -52,7 +52,7 @@ function set_supervisor_conf()
     local TMP_SFT_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
 	local TMP_SFT_SUPERVISOR_VTL_LOGS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/logs
 
-    path_not_exits_create "${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}"
+    path_not_exists_create "${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}"
 
 	rm -rf ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
     ln -sf ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR} ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
@@ -67,8 +67,8 @@ function set_supervisor_conf()
     local TMP_SFT_SUPERVISOR_VTL_CONF_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/conf
     local TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/scripts
     
-	path_not_exits_create "${TMP_SFT_SUPERVISOR_CONF_DIR}"
-	path_not_exits_create "${TMP_SFT_SUPERVISOR_SCRIPTS_DIR}"
+	path_not_exists_create "${TMP_SFT_SUPERVISOR_CONF_DIR}"
+	path_not_exists_create "${TMP_SFT_SUPERVISOR_SCRIPTS_DIR}"
 
     rm -rf ${TMP_SFT_SUPERVISOR_VTL_CONF_DIR}
     rm -rf ${TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR}

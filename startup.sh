@@ -28,7 +28,7 @@ function bootstrap() {
 	source special/slack.sh
 
     #https://www.cnblogs.com/wu-wu/p/11214503.html
-    path_not_exits_create "${CRTB_LOGS_DIR}"
+    path_not_exists_create "${CRTB_LOGS_DIR}"
 
 	choice_type
 }

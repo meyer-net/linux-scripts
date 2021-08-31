@@ -222,7 +222,7 @@ function conf_kafka_eagle()
 	local TMP_KFK_EGL_SETUP_ETC_KMS_DIR=${TMP_KFK_EGL_SETUP_DIR}/kms/conf
 
 	# ①-Y：存在配置文件：原路径文件放给真实路径
-	path_not_exits_create "${TMP_KFK_EGL_SETUP_LNK_ETC_DIR}"
+	path_not_exists_create "${TMP_KFK_EGL_SETUP_LNK_ETC_DIR}"
 	mv ${TMP_KFK_EGL_SETUP_ETC_WEB_DIR} ${TMP_KFK_EGL_SETUP_LNK_ETC_WEB_DIR}
 	mv ${TMP_KFK_EGL_SETUP_ETC_KMS_DIR} ${TMP_KFK_EGL_SETUP_LNK_ETC_KMS_DIR}
 

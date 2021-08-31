@@ -62,7 +62,7 @@ function setup_openresty_frame_lor_baseapp()
 	local TMP_ORST_FWS_LOR_BASEAPP_CURRENT_DIR=${2}
 
 	## 直装模式
-	path_not_exits_create `dirname ${TMP_ORST_FWS_LOR_BASEAPP_SETUP_DIR}`
+	path_not_exists_create `dirname ${TMP_ORST_FWS_LOR_BASEAPP_SETUP_DIR}`
 	cd `dirname ${TMP_ORST_FWS_LOR_BASEAPP_CURRENT_DIR}`
 
 	mv ${TMP_ORST_FWS_LOR_BASEAPP_CURRENT_DIR} ${TMP_ORST_FWS_LOR_BASEAPP_SETUP_DIR}
