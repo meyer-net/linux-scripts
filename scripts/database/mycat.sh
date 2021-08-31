@@ -4,7 +4,7 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
-
+#https://github.com/MyCATApache/Mycat-Server
 function set_environment()
 {
     # 需要提前安装Java

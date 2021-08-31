@@ -5,7 +5,7 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 
-function set_python()
+function set_env_python()
 {
     #export PIP_INDEX_URL=https://mirror.in.zhihu.com/simple
 	mkdir -pv ${PY_DIR}
@@ -85,7 +85,7 @@ function setup_python()
 
 function down_python()
 {
-	set_python
+	set_env_python
     setup_soft_wget "python3" "https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz" "setup_python"
 
 	return $?

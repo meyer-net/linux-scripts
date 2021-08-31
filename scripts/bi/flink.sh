@@ -198,10 +198,10 @@ function exec_step_flink()
 # x1-下载软件
 function down_flink()
 {
-	local TMP_OFFICIAL_STABLE_VERSION=`curl -s https://flink.apache.org/downloads.html | egrep "Apache Flink® .+ is our latest stable release" | awk -F' ' '{print $3}'`
-	echo "Flink: The newer stable version is ${TMP_OFFICIAL_STABLE_VERSION}"
+	local TMP_FLK_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://flink.apache.org/downloads.html | egrep "Apache Flink® .+ is our latest stable release" | awk -F' ' '{print $3}'`
+	echo "Flink: The newer stable version is ${TMP_FLK_SETUP_OFFICIAL_STABLE_VERSION}"
     
-    local TMP_FLK_SETUP_NEWER=${TMP_OFFICIAL_STABLE_VERSION}
+    local TMP_FLK_SETUP_NEWER="${TMP_FLK_SETUP_OFFICIAL_STABLE_VERSION}"
 	exec_text_format "TMP_FLK_SETUP_NEWER" "https://archive.apache.org/dist/flink/flink-%s/flink-%s-bin-scala_2.12.tgz"
     setup_soft_wget "flink" "${TMP_FLK_SETUP_NEWER}" "exec_step_flink"
 

@@ -73,10 +73,10 @@ function mkdirs()
 }
 
 function choice_type()
-{   
+{
 	echo_title
 
-	exec_if_choice "TMP_CHOICE_CTX" "Please choice your setup type" "Update_libs,From_clean,From_bak,Mount_unmount_disks,Gen_ngx_conf,Gen_sup_conf,Proxy_by_ss,Exit" "${TMP_SPLITER}"
+	exec_if_choice "TMP_CHOICE_CTX" "Please choice your setup type" "Update_Libs,From_Clean,From_Bak,Mount_Unmount_Disks,Gen_Ngx_Conf,Gen_Sup_Conf,SSH_Redict,Proxy_By_SS,Exit" "${TMP_SPLITER}"
 
 	return $?
 }
@@ -145,7 +145,7 @@ function servicemesh()
 
 function database()
 {
-	exec_if_choice "TMP_CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,MySql,Mycat,PostgreSql,ClickHouse,RethinkDB,Exit" "${TMP_SPLITER}" "scripts/database"
+	exec_if_choice "TMP_CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,MySql,PostgresQL,ClickHouse,RethinkDB,Exit" "${TMP_SPLITER}" "scripts/database"
 	
     return $?
 }
@@ -208,6 +208,38 @@ function gen_ngx_conf()
 
 function gen_sup_conf()
 {
+	return $?
+}
+
+# SSH 端口转发
+function ssh_redirect()
+{
+    local TMP_SSH_REDIR_TUNNEL_MODE="L"
+    input_if_empty "TMP_SSH_REDIR_TUNNEL_MODE" "SSH-Redirect：Please ender ${green}the tunnel mode(Local/L、Remote/R、Dynamic/D)${reset}?"
+
+    local TMP_SSH_REDIR_TUNNEL_PORT="80"
+    input_if_empty "TMP_SSH_REDIR_TUNNEL_PORT" "SSH-Redirect：Please ender ${green}the port${reset} u want to listener?"
+            
+    local TMP_SSH_REDIR_DEST_ADDRESS="xyz.ipssh.net"
+    input_if_empty "TMP_SSH_REDIR_DEST_ADDRESS" "SSH-Redirect：Please ender ${green}which dest address${reset} you want to redirect?"
+    
+    local TMP_SSH_REDIR_DEST_USER="root"
+    input_if_empty "TMP_SSH_REDIR_DEST_USER" "SSH-Redirect：Please ender ${green}which user of dest(${TMP_SSH_REDIR_DEST_ADDRESS})${reset} by ssh to redirect?"
+    
+    local TMP_SSH_REDIR_DEST_NATIVE_ADDRESS="localhost" 
+    input_if_empty "TMP_SSH_REDIR_DEST_NATIVE_ADDRESS" "SSH-Redirect：Please ender ${green}which dest address on '${TMP_SSH_REDIR_DEST_ADDRESS}'${reset} you want to redirect?"
+    
+    local TMP_SSH_REDIR_DEST_NATIVE_PORT="${TMP_SSH_REDIR_LOCAL_PORT}"
+    input_if_empty "TMP_SSH_REDIR_DEST_NATIVE_PORT" "SSH-Redirect：Please ender ${green}which dest address port on '${TMP_SSH_REDIR_DEST_ADDRESS}'${reset} you want to redirect?"
+
+    local TMP_SSH_REDIR_SCRIPTS="ssh -C -f -N -${TMP_SSH_REDIR_TUNNEL_MODE} ${TMP_SSH_REDIR_TUNNEL_PORT}:${TMP_SSH_REDIR_DEST_NATIVE_ADDRESS}:${TMP_SSH_REDIR_DEST_NATIVE_PORT}  ${TMP_SSH_REDIR_DEST_USER}@${TMP_SSH_REDIR_DEST_ADDRESS}"
+    
+    ${TMP_SSH_REDIR_SCRIPTS}
+
+    echo
+    echo "SSH-Redirect：Done -> (${TMP_SSH_REDIR_SCRIPTS})"
+    echo
+
 	return $?
 }
 

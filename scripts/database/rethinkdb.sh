@@ -19,7 +19,7 @@ function set_environment()
 {
     soft_yum_check_setup "openssl-devel,libcurl-devel,wget,tar,m4,git-core,boost-static,m4,gcc-c++,npm,ncurses-devel,which,make,ncurses-static,zlib-devel,zlib-static,bzip2,patch"
 
-    soft_yum_check_setup "epel-release protobuf-devel protobuf-static"
+    soft_yum_check_setup "epel-release,protobuf-devel,protobuf-static"
 	
 	# yum不一定能安装成功，jemalloc-devel，改用rpm
     soft_rpm_check_action "jemalloc" "setup_jemalloc" "Jemalloc was installed"

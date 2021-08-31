@@ -4,6 +4,9 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 相关参考：
+#		  
+#------------------------------------------------
 # 安装标题：$title_name
 # 软件名称：$soft_name
 # 软件端口：$soft_port

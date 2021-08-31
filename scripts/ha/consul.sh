@@ -4,19 +4,25 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
-# 安装标题：Consul
-# 软件名称：consul
-# 软件大写名称：CONSUL
-# 软件大写分组与简称：CSL
-# 软件安装名称：consul
-# 软件授权用户名称&组：consul/consul_group
+# 相关参考：
 #------------------------------------------------
-local TMP_CSL_SETUP_PORT=18500
+# Consul最多需要6个不同的端口才能正常工作，有些使用TCP，UDP或两种协议。下面我们记录每个端口的要求。
+# 服务器RPC（默认8300）。这由服务器用来处理来自其他代理的传入请求。仅限TCP。
+# Serf LAN（默认8301）。这是用来处理局域网中的八卦。所有代理都需要。TCP和UDP。
+# Serf WAN（默认8302）。这被服务器用来在WAN上闲聊到其他服务器。TCP和UDP。从Consul 0.8开始，建议通过端口8302在LAN接口上为TCP和UDP启用服务器之间的连接，以及WAN加入泛滥功能。另见： Consul 0.8.0 CHANGELOG和GH-3058
+# HTTP API（默认8500）。这被客户用来与HTTP API交谈。仅限TCP。
+# DNS接口（默认8600）。用于解析DNS查询。TCP和UDP。
+local TMP_CSL_SETUP_RPC_PORT=18300
+local TMP_CSL_SETUP_SERF_LAN_PORT=18301
+local TMP_CSL_SETUP_SERF_WAN_PORT=18302
+local TMP_CSL_SETUP_HTTP_API_PORT=18500
+local TMP_CSL_SETUP_DNS_PORT=18600
+
 local TMP_CSL_SETUP_CLUSTER_LEADER_ADDR="${LOCAL_HOST}"
 local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR="${LOCAL_HOST}"
 
 # 1-配置环境
-function set_environment()
+function set_env_consul()
 {
     cd ${__DIR}
 
@@ -114,16 +120,16 @@ function conf_consul()
     input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_ADDR" "Consul.Cluster: Please ender cluster of ${green}leader host${reset}"
 
     exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR" "Consul.Cluster: Please ender cluster child.\$I host like '${LOCAL_HOST}'" "%s" "
-        echo \"Port of 18300 allowed for '\${CURRENT}'\"
-        echo_soft_port 18300 \${CURRENT}
-        echo \"Port of 18301 allowed for '\${CURRENT}'\"
-        echo_soft_port 18301 \${CURRENT}
-        echo \"Port of 18302 allowed for '\${CURRENT}'\"
-        echo_soft_port 18302 \${CURRENT}
-        echo \"Port of 18400 allowed for '\${CURRENT}'\"
-        echo_soft_port 18400 \${CURRENT}
-        echo \"Port of 18600 allowed for '\${CURRENT}'\"
-        echo_soft_port 18600 \${CURRENT}"
+        echo \"Port of ${TMP_CSL_SETUP_RPC_PORT} allowed for '\${CURRENT}'\"
+        echo_soft_port ${TMP_CSL_SETUP_RPC_PORT} \${CURRENT}
+        echo \"Port of ${TMP_CSL_SETUP_SERF_LAN_PORT} allowed for '\${CURRENT}'\"
+        echo_soft_port ${TMP_CSL_SETUP_SERF_LAN_PORT} \${CURRENT}
+        echo \"Port of ${TMP_CSL_SETUP_SERF_WAN_PORT} allowed for '\${CURRENT}'\"
+        echo_soft_port ${TMP_CSL_SETUP_SERF_WAN_PORT} \${CURRENT}
+        echo \"Port of ${TMP_CSL_SETUP_HTTP_API_PORT} allowed for '\${CURRENT}'\"
+        echo_soft_port ${TMP_CSL_SETUP_HTTP_API_PORT} \${CURRENT}
+        echo \"Port of ${TMP_CSL_SETUP_DNS_PORT} allowed for '\${CURRENT}'\"
+        echo_soft_port ${TMP_CSL_SETUP_DNS_PORT} \${CURRENT}"
 
     cat > ${TMP_CSL_ETC_DIR}/bootstrap/config.json <<EOF
 {
@@ -139,6 +145,13 @@ function conf_consul()
 	"addresses": {
         "http": "0.0.0.0"
     },
+	"ports": {
+		"server": ${TMP_CSL_SETUP_RPC_PORT},
+		"serf_lan": ${TMP_CSL_SETUP_SERF_LAN_PORT},
+		"serf_wan": ${TMP_CSL_SETUP_SERF_WAN_PORT},
+		"http": ${TMP_CSL_SETUP_HTTP_API_PORT},
+		"dns": ${TMP_CSL_SETUP_DNS_PORT}
+  	},
 	"enable_syslog": true
 }
 EOF
@@ -157,6 +170,13 @@ EOF
 	"addresses": {
         "http": "0.0.0.0"
     },
+	"ports": {
+		"server": ${TMP_CSL_SETUP_RPC_PORT},
+		"serf_lan": ${TMP_CSL_SETUP_SERF_LAN_PORT},
+		"serf_wan": ${TMP_CSL_SETUP_SERF_WAN_PORT},
+		"http": ${TMP_CSL_SETUP_HTTP_API_PORT},
+		"dns": ${TMP_CSL_SETUP_DNS_PORT}
+  	},
 	"enable_syslog": true,
 	"start_join": ["${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR}"]
 }
@@ -175,6 +195,13 @@ EOF
 	"addresses": {
         "http": "0.0.0.0"
     },
+	"ports": {
+		"server": ${TMP_CSL_SETUP_RPC_PORT},
+		"serf_lan": ${TMP_CSL_SETUP_SERF_LAN_PORT},
+		"serf_wan": ${TMP_CSL_SETUP_SERF_WAN_PORT},
+		"http": ${TMP_CSL_SETUP_HTTP_API_PORT},
+		"dns": ${TMP_CSL_SETUP_DNS_PORT}
+  	},
 	"enable_syslog": true,
 	"start_join": ["${TMP_CSL_SETUP_CLUSTER_LEADER_ADDR}"]
 }
@@ -203,10 +230,14 @@ function boot_consul()
     fi
 
     # 验证启动
-    lsof -i:${TMP_CSL_SETUP_PORT}
+    lsof -i:${TMP_CSL_SETUP_RPC_PORT}
+	lsof -i:${TMP_CSL_SETUP_SERF_LAN_PORT}
+	lsof -i:${TMP_CSL_SETUP_SERF_WAN_PORT}
+	lsof -i:${TMP_CSL_SETUP_HTTP_API_PORT}
+	lsof -i:${TMP_CSL_SETUP_DNS_PORT}
 
     # 添加端口许可
-    echo_soft_port ${TMP_CSL_SETUP_PORT}
+    # echo_soft_port ${TMP_CSL_SETUP_HTTP_API_PORT}
 
 	return $?
 }
@@ -273,7 +304,7 @@ function exec_step_consul()
 	local TMP_CSL_SETUP_DIR=${1}
 	local TMP_CSL_CURRENT_DIR=`pwd`
     
-	set_environment "${TMP_CSL_SETUP_DIR}"
+	set_env_consul "${TMP_CSL_SETUP_DIR}"
 
 	setup_consul "${TMP_CSL_SETUP_DIR}" "${TMP_CSL_CURRENT_DIR}"
 

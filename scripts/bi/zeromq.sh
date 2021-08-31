@@ -6,7 +6,7 @@
 #------------------------------------------------
 
 # 1-配置环境
-function set_environment()
+function set_env_zeromq()
 {	
 	return $?
 }
@@ -20,6 +20,8 @@ function setup_zeromq()
 	# 编译模式
 	./configure --prefix=${TMP_ZEROMQ_SETUP_DIR} --without-libsodium
 	sudo make -j4 && make -j4 install
+
+	cd ${TMP_ZEROMQ_SETUP_DIR}
 
 	# # 创建日志软链
 	# local TMP_BI_ZM_LNK_LOGS_DIR=${LOGS_DIR}/zeromq
@@ -76,7 +78,7 @@ function exec_step_zeromq()
 {
 	local TMP_BI_ZM_SETUP_DIR=${1}
     
-	set_environment "${TMP_BI_ZM_SETUP_DIR}"
+	set_env_zeromq "${TMP_BI_ZM_SETUP_DIR}"
 
 	setup_zeromq "${TMP_BI_ZM_SETUP_DIR}"
 

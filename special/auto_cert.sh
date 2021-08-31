@@ -4,7 +4,7 @@
 ####################################################################################
 
 # 检测根目录
-AUTO_CERT_LOCAL_ROOT_DIR=`find / -name acme-v02.api.letsencrypt.org-directory | grep certificates`
+AUTO_CERT_LOCAL_ROOT_DIR=`find / -name acme-v02.api.letsencrypt.org-directory 2> /dev/null | grep certificates`
 
 CERT_CHECKER_CONFIG_PATH="~/.cert-checkerrc"
 AUTO_CERT_CONFIG_PATH="~/.auto-certrc"

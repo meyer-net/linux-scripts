@@ -4,6 +4,9 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 相关参考：
+#		  
+#------------------------------------------------
 # 安装标题：$title_name
 # 软件名称：$soft_name
 # 软件端口：$soft_port
@@ -82,6 +85,8 @@ function setup_$soft_name()
 	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
+	
+    # 安装初始
 
 	return $?
 }
@@ -222,6 +227,10 @@ function exec_step_$soft_name()
 # x1-下载软件
 function down_$soft_name()
 {
+	# local TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://www.xxx.com`
+	# echo "$title_name: The newer stable version is ${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
+    # local TMP_$soft_upper_short_name_SETUP_NEWER="${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
+
 	# setup_soft_git "$setup_name" "https://github.com/${git_repo}" "exec_step_$soft_name"
 	local TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"
 	set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_NEWER" "${git_repo}"

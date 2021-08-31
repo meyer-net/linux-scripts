@@ -4,6 +4,9 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 相关参考：
+#		  
+#------------------------------------------------
 # 安装标题：$title_name
 # 软件名称：$soft_name
 # 软件端口：$soft_port
@@ -32,16 +35,16 @@ function set_env_$soft_name()
 # 2-安装软件
 function setup_$soft_name()
 {
-	local TMP_$soft_upper_name_SETUP_DIR=${1}
-	local TMP_$soft_upper_name_CURRENT_DIR=${2}
+	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
+	local TMP_$soft_upper_short_name_CURRENT_DIR=${2}
 
 	cd ${TMP_$soft_upper_short_name_CURRENT_DIR}
 
 	# 编译模式
-	./configure --prefix=${TMP_$soft_upper_name_SETUP_DIR}
+	./configure --prefix=${TMP_$soft_upper_short_name_SETUP_DIR}
 	make -j4 && make -j4 install
 
-	cd ${TMP_$soft_upper_name_SETUP_DIR}
+	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
 
 	# 创建日志软链
 	local TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/$setup_name
@@ -85,11 +88,12 @@ function setup_$soft_name()
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 
 	# 移动编译目录所需文件
-	# mv $setup_name.conf ${TMP_$soft_upper_name_SETUP_DIR}/
+	# mv $setup_name.conf ${TMP_$soft_upper_short_name_SETUP_DIR}/
 
 	# 移除源文件
-	cd `dirname ${TMP_$soft_upper_short_name_CURRENT_DIR}`
-	rm -rf ${TMP_$soft_upper_name_CURRENT_DIR}
+	rm -rf ${TMP_$soft_upper_short_name_CURRENT_DIR}
+	
+    # 安装初始
 
 	return $?
 }
@@ -202,6 +206,10 @@ function exec_step_$soft_name()
 # x1-下载软件
 function down_$soft_name()
 {
+	# local TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://www.xxx.com`
+	# echo "$title_name: The newer stable version is ${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
+    # local TMP_$soft_upper_short_name_SETUP_NEWER="${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
+
 	# setup_soft_git "$setup_name" "https://github.com/${git_repo}" "exec_step_$soft_name"
 	local TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"
 	set_github_soft_releases_newer_version "TMP_$soft_upper_short_name_SETUP_NEWER" "${git_repo}"

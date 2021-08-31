@@ -563,13 +563,13 @@ function wget_unpack_dist()
 		return $?
 	fi
 
-	TMP_WGET_UNPACK_DIST_PWD=`pwd`
-	TMP_WGET_UNPACK_DIST_URL=$1
-	TMP_WGET_UNPACK_DIST_SOURCE=$2
-	TMP_WGET_UNPACK_DIST_PATH=$3
-	TMP_WGET_UNPACK_DIST_SCRIPT=$4
+	local TMP_WGET_UNPACK_DIST_PWD=`pwd`
+	local TMP_WGET_UNPACK_DIST_URL=$1
+	local TMP_WGET_UNPACK_DIST_SOURCE=$2
+	local TMP_WGET_UNPACK_DIST_PATH=$3
+	local TMP_WGET_UNPACK_DIST_SCRIPT=$4
 
-	TMP_WGET_UNPACK_FILE_NAME=`echo "$TMP_WGET_UNPACK_DIST_URL" | awk -F'/' '{print $NF}'`
+	local TMP_WGET_UNPACK_FILE_NAME=`echo "$TMP_WGET_UNPACK_DIST_URL" | awk -F'/' '{print $NF}'`
 
 	cd ${DOWN_DIR}
 
@@ -577,7 +577,7 @@ function wget_unpack_dist()
 		wget -c --tries=0 --timeout=60 $TMP_WGET_UNPACK_DIST_URL
 	fi
 
-	TMP_WGET_UNPACK_DIST_FILE_EXT=`echo ${TMP_WGET_UNPACK_FILE_NAME##*.}`
+	local TMP_WGET_UNPACK_DIST_FILE_EXT=`echo ${TMP_WGET_UNPACK_FILE_NAME##*.}`
 	if [ "$TMP_WGET_UNPACK_DIST_FILE_EXT" = "zip" ]; then
 		TMP_WGET_PACK_DIR_LINE=`unzip -v $TMP_WGET_UNPACK_FILE_NAME | awk '/----/{print NR}' | awk 'NR==1{print}'`
 		TMP_WGET_UNPACK_FILE_NAME_NO_EXTS=`unzip -v $TMP_WGET_UNPACK_FILE_NAME | awk 'NR==LINE{print $NF}' LINE=$((TMP_WGET_PACK_DIR_LINE+1)) | sed s@/@""@g`

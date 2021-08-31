@@ -12,6 +12,9 @@
 # config:
 # https://linuxops.org/blog/kong/config.html
 #
+# https://www.jianshu.com/p/5049b3bb4b80
+# https://docs.konghq.com/install/centos/?_ga=2.110225728.474733574.1547721700-1679220384.1547721700
+#
 # ???待修改引入psql安装逻辑，暂时不适配单机情况下安装
 # kong新增配置文件无DB模式：https://docs.konghq.com/install/centos/
 # konga新增配置文件选择模式进行配置
@@ -93,6 +96,7 @@ function setup_kong()
 	rm -rf ${TMP_KNG_SETUP_LOGS_DIR}
 	mv /usr/local/openresty/nginx/logs ${TMP_KNG_SETUP_LNK_LOGS_DIR}
     
+	ln -sf ${TMP_KNG_SETUP_LNK_LOGS_DIR} /usr/local/openresty/logs
 	ln -sf ${TMP_KNG_SETUP_LNK_LOGS_DIR} /usr/local/openresty/nginx/logs
 	ln -sf ${TMP_KNG_SETUP_LNK_LOGS_DIR} ${TMP_KNG_SETUP_LOGS_DIR}
 
@@ -153,7 +157,7 @@ function conf_kong()
 	cd ${TMP_KNG_SETUP_DIR}
 	
 	local TMP_KNG_SETUP_LNK_ETC_DIR=${ATT_DIR}/kong
-	local TMP_KNG_SETUP_LNK_SELF_ETC_DIR=${TMP_KNG_SETUP_LNK_ETC_DIR}/kong
+	local TMP_KNG_SETUP_LNK_GLOBAL_ETC_DIR=${TMP_KNG_SETUP_LNK_ETC_DIR}/global
 	local TMP_KNG_SETUP_LNK_NGX_ETC_DIR=${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx
 	local TMP_KNG_SETUP_ETC_DIR=${TMP_KNG_SETUP_DIR}/etc
 
@@ -161,15 +165,17 @@ function conf_kong()
     path_not_exits_create ${TMP_KNG_SETUP_LNK_ETC_DIR}
     mv .kong_env ${TMP_KNG_SETUP_LNK_ETC_DIR}/
     mv nginx*.conf ${TMP_KNG_SETUP_LNK_ETC_DIR}/
-    ln -sf /etc/kong ${TMP_KNG_SETUP_LNK_SELF_ETC_DIR}
+    ln -sf /etc/kong ${TMP_KNG_SETUP_LNK_GLOBAL_ETC_DIR}
     mv /usr/local/openresty/nginx/conf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR}
     
     ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/.kong_env `pwd`/.kong_env
     ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx.conf `pwd`/nginx.conf
     ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong.conf `pwd`/nginx-kong.conf
     ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong-stream.conf `pwd`/nginx-kong-stream.conf
-	ln -sf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR} /usr/local/openresty/nginx/conf
 	ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR} ${TMP_KNG_SETUP_ETC_DIR}
+    
+	ln -sf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR} /usr/local/openresty/conf
+	ln -sf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR} /usr/local/openresty/nginx/conf
 	
     # 开始配置
     # -- 初始化数据库，并设置密码
@@ -263,32 +269,43 @@ EOF
 function rouse_openresty()
 {
 	local TMP_KNG_SETUP_DIR=${1}
+
+    cd ${TMP_KNG_SETUP_DIR}
+
+    # 先引用环境变量，调取信息
+    source /etc/profile
+
+    # 指向openresty到安装目录
 	local TMP_KNG_SETUP_ORST_DIR=`dirname ${TMP_KNG_SETUP_DIR}`/openresty
     if [ ! -d "${TMP_KNG_SETUP_ORST_DIR}" ]; then
         ln -sf /usr/local/openresty ${TMP_KNG_SETUP_ORST_DIR}
     fi
     
+    if [ -z "${OPENRESTY_HOME}" ] || [ ! -f "/usr/bin/openresty" ] || [ ! -f "/usr/local/bin/openresty" ]; then
+        echo "OPENRESTY_HOME=${TMP_KNG_SETUP_ORST_DIR}" >> /etc/profile
+	    echo 'PATH=$OPENRESTY_HOME/bin:$PATH' >> /etc/profile
+    fi
+    
+    # 指向nginx到安装目录
 	local TMP_KNG_SETUP_ORST_NGX_DIR=`dirname ${TMP_KNG_SETUP_DIR}`/nginx
     if [ ! -d "${TMP_KNG_SETUP_ORST_NGX_DIR}" ]; then
         ln -sf /usr/local/openresty/nginx ${TMP_KNG_SETUP_ORST_NGX_DIR}
     fi
-
-    local TMP_KNG_SETUP_ORST_NGX_SBIN_DIR="${TMP_KNG_SETUP_ORST_NGX_DIR}/sbin"
-    local TMP_KNG_SETUP_ORST_NGX_SBIN_NGX_PATH="${TMP_KNG_SETUP_ORST_NGX_SBIN_DIR}/nginx"
-    if [ ! -f "${TMP_KNG_SETUP_ORST_NGX_SBIN_NGX_PATH}" ]; then
-        TMP_KNG_SETUP_ORST_NGX_SBIN_NGX_PATH=`sudo find / -name nginx | grep 'openresty/nginx/sbin'`
-    fi
-
-    local TMP_KNG_SETUP_NGX_DIR=`dirname ${TMP_KNG_SETUP_ORST_NGX_SBIN_NGX_PATH%/*}`
-    if [ ! -f "/usr/bin/nginx" ]; then
-        ln -sf ${TMP_KNG_SETUP_ORST_NGX_SBIN_NGX_PATH} /usr/bin/nginx
+    
+    if [ -z "${NGINX_SBIN}" ] || [ ! -f "/usr/bin/nginx" ] || [ ! -f "/usr/local/bin/nginx" ]; then
+        echo "NGINX_SBIN=${TMP_KNG_SETUP_ORST_NGX_DIR}/sbin" >> /etc/profile
+	    echo 'PATH=$NGINX_SBIN:$PATH' >> /etc/profile
         
         # 修改默认nginx配置性能瓶颈问题
-        local TMP_KNG_SETUP_NGINX_CONF_PATH=${TMP_KNG_SETUP_NGX_DIR}/conf/nginx.conf
+        local TMP_KNG_SETUP_ORST_NGX_CONF_PATH=${TMP_KNG_SETUP_ORST_NGX_DIR}/conf/nginx.conf
+        
+        # 备份初始文件
+        mv ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH} ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH}.bak
 
-sudo tee ${TMP_KNG_SETUP_NGINX_CONF_PATH} <<-'EOF'
+        # 覆写优化配置(???相关参数待优化为按机器计算数值)
+        sudo tee ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH} <<-'EOF'
 user  kong;
-worker_processes  auto
+worker_processes  auto;
 
 #更改Nginx进程的最大打开文件数限制，理论值应该是最多打开文件数（ulimit -n）与nginx进程数相除，该值控制 “too many open files” 的问题
 worker_rlimit_nofile 65535;  #此处为65535/4
@@ -525,29 +542,39 @@ http {
 }
 
 EOF
+        local TMP_KNG_SETUP_NGX_CONF_WORKER_RLIMIT_NOFILE=$(($(ulimit -n)/4))
+        sed -i "s@^worker_rlimit_nofile.*@worker_rlimit_nofile ${TMP_KNG_SETUP_NGX_CONF_WORKER_RLIMIT_NOFILE};@g" ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH}
     fi
-    nginx -v
-    
-    local TMP_KNG_SETUP_ORST_BIN_DIR="${TMP_KNG_SETUP_ORST_DIR}/bin"
-    local TMP_KNG_SETUP_ORST_RESTY_PATH="${TMP_KNG_SETUP_ORST_BIN_DIR}/resty"
-    if [ ! -f "${TMP_KNG_SETUP_ORST_RESTY_PATH}" ]; then
-        TMP_KNG_SETUP_ORST_RESTY_PATH=`sudo find / -name resty | grep 'openresty/bin'`
-    fi
-    
-    if [ ! -f "/usr/bin/resty" ]; then
-        ln -sf ${TMP_KNG_SETUP_ORST_RESTY_PATH} /usr/bin/resty 
-    fi
-    resty -v
 
-    local TMP_KNG_SETUP_ORST_LUAJIT_BIN_DIR="${TMP_KNG_SETUP_ORST_DIR}/luajit/bin"
-    local TMP_KNG_SETUP_ORST_LUAJIT_PATH="${TMP_KNG_SETUP_ORST_LUAJIT_BIN_DIR}/luajit"
-    if [ ! -f "${TMP_KNG_SETUP_ORST_LUAJIT_PATH}" ]; then
-        TMP_KNG_SETUP_ORST_LUAJIT_PATH=`sudo find / -name luajit | grep 'openresty/luajit/bin'`
+    ##########################################################################################
+    # 指向resty到环境变量
+    if [ -z "${RESTY_BIN}" ] || [ ! -f "/usr/bin/resty" ] || [ ! -f "/usr/local/bin/resty" ]; then
+        echo "RESTY_BIN=${TMP_KNG_SETUP_ORST_DIR}/bin" >> /etc/profile
+	    echo 'PATH=$RESTY_BIN:$PATH' >> /etc/profile
+    fi
+    ##########################################################################################
+    # 指向luajit到安装目录及环境变量    
+	local TMP_KNG_SETUP_ORST_LJ_DIR=`dirname ${TMP_KNG_SETUP_DIR}`/luajit
+    if [ ! -d "${TMP_KNG_SETUP_ORST_LJ_DIR}" ]; then
+        ln -sf /usr/local/openresty/luajit ${TMP_KNG_SETUP_ORST_LJ_DIR}
     fi
     
-    if [ ! -f "/usr/bin/luajit" ]; then
-        ln -sf ${TMP_KNG_SETUP_ORST_LUAJIT_PATH} /usr/bin/luajit 
+    if [ -z "${LUAJIT_HOME}" ] || [ ! -f "/usr/bin/luajit" ] || [ ! -f "/usr/local/bin/luajit" ]; then
+        echo "LUAJIT_HOME=${TMP_KNG_SETUP_ORST_LJ_DIR}/luajit" >> /etc/profile
+        echo 'LUAJIT_LIB=${LUAJIT_HOME}/lib' >> /etc/profile
+        echo 'LUAJIT_INC=${LUAJIT_HOME}/include/luajit-2.1' >> /etc/profile
+	    echo 'PATH=$LUAJIT_HOME/bin:$PATH' >> /etc/profile
     fi
+    ##########################################################################################
+    
+	echo 'export PATH' >> /etc/profile
+
+    # 重新加载profile文件
+	source /etc/profile
+
+    openresty -v
+    nginx -v
+    resty -v
     luajit -v
 
 	return $?
@@ -756,6 +783,10 @@ function down_plugin_kong()
 # 安装驱动/插件
 function setup_plugin_kong()
 {
+	cd ${__DIR}
+	
+    source scripts/web/openresty_frame.sh
+
 	return $?
 }
 
@@ -786,7 +817,7 @@ function exec_step_kong()
     
     rouse_openresty "${TMP_KNG_SETUP_DIR}"
 
-    # down_plugin_kong "${TMP_KNG_SETUP_DIR}"
+    setup_plugin_kong "${TMP_KNG_SETUP_DIR}"
 
 	boot_kong "${TMP_KNG_SETUP_DIR}"
 

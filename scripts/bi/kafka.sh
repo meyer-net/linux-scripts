@@ -5,7 +5,7 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 # 安装标题：Kafka
-# 相关命令：
+# 相关命令（https://blog.csdn.net/Kim_Weir/article/details/103337059）：
 # bash bin/kafka-topics.sh --create --zookeeper 192.168.1.100:12233,192.168.1.109:12233,192.168.1.110:12233 --replication-factor 2 --partitions 100 --topic test
 # bash bin/kafka-topics.sh  --describe  --zookeeper  192.168.1.185:12233 –-topic test
 # bash bin/kafka-console-producer.sh --broker-list 192.168.1.100:19092,192.168.1.109:19092,192.168.1.110:19092 --topic test

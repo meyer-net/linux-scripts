@@ -15,7 +15,7 @@
 # 1-配置环境
 function set_environment()
 {
-    soft_yum_check_setup "make gcc gcc-c++ kernel-devel m4 ncurses-devel openssl-devel unixODBC unixODBC-devel httpd python-simplejson"
+    soft_yum_check_setup "make,gcc,gcc-c++,kernel-devel,m4,ncurses-devel,openssl-devel,unixODBC,unixODBC-devel,httpd,python-simplejson"
 
 	return $?
 }
@@ -29,6 +29,8 @@ function setup_erlang()
 	# 编译模式  --enable-sctp
 	./configure --prefix=${TMP_ERL_SETUP_DIR} --enable-smp-support --enable-threads --enable-kernel-poll --enable-hipe --with-ssl --without-javac
 	make -j4 && make -j4 install
+
+	cd ${TMP_ERL_SETUP_DIR}
 
 	# 环境变量或软连接
 	echo "ERLANG_HOME=${TMP_ERL_SETUP_DIR}" >> /etc/profile
@@ -85,7 +87,7 @@ function exec_step_erlang()
 function down_erlang()
 {
     #http://erlang.org/download/otp_src_24.0.tar.gz
-	TMP_ERL_SETUP_NEWER="otp_src_24.0.tar.gz"
+	local TMP_ERL_SETUP_NEWER="otp_src_24.0.tar.gz"
     local TMP_ERL_DOWN_URL_BASE="http://erlang.org/download/"
 	set_url_list_newer_href_link_filename "TMP_ERL_SETUP_NEWER" "${TMP_ERL_DOWN_URL_BASE}" "otp_src_().tar.gz"
 	exec_text_format "TMP_ERL_SETUP_NEWER" "${TMP_ERL_DOWN_URL_BASE}%s"
