@@ -83,6 +83,10 @@ function setup_python()
 	#pip freeze > requirements.txt
 	#pip install -r requirements.txt
 	rm -rf ${PYTHON_CURRENT_DIR}
+	
+    # 创建源码目录
+    path_not_exists_create "${PY_DIR}"
+    path_not_exists_create "${PYA_DIR}"
 
 	return $?
 }

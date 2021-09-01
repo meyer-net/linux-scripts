@@ -39,6 +39,8 @@ function setup_java()
 	echo "export PATH JAVA_HOME JAVA_BIN JRE_HOME CLASSPATH" >> /etc/profile
 	
 	source /etc/profile
+	
+    path_not_exists_create "${JV_DIR}"
 
 	return $?
 }

@@ -63,9 +63,7 @@ function setup_logstash()
 
 	# 授权权限，否则无法写入
 	create_user_if_not_exists elk elk
-	chgrp -R elk ${TMP_ELK_LS_SETUP_DIR}
-	chgrp -R elk ${TMP_ELK_LS_SETUP_LNK_LOGS_DIR}
-	chgrp -R elk ${TMP_ELK_LS_SETUP_LNK_DATA_DIR}
+	chown -R elk:elk ${TMP_ELK_LS_SETUP_DIR}
 	chown -R elk:elk ${TMP_ELK_LS_SETUP_LNK_LOGS_DIR}
 	chown -R elk:elk ${TMP_ELK_LS_SETUP_LNK_DATA_DIR}
 	
@@ -100,7 +98,6 @@ function conf_logstash()
     sed -i "s@port => 5044@port => ${TMP_ELK_LS_SETUP_PORT}@g" config/logstash.conf
     sed -i "s@localhost:9200@${TMP_ELK_LS_SETUP_ES_HOST}:${TMP_ELK_LS_SETUP_ES_HTTP_PORT}@g" config/logstash.conf
 	
-	chgrp -R elk ${TMP_ELK_LS_SETUP_LNK_ETC_DIR}
 	chown -R elk:elk ${TMP_ELK_LS_SETUP_LNK_ETC_DIR}
 
 	return $?

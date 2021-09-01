@@ -44,6 +44,7 @@ function setup_frp()
 
 	ln -sf ${TMP_FRP_LNK_LOGS_DIR} ${TMP_FRP_LOGS_DIR}
   
+    # 安装初始
     # -- 自定义
 	cd ${TMP_FRP_SETUP_DIR}
     mkdir bin

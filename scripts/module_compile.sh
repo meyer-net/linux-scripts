@@ -79,8 +79,6 @@ function setup_$soft_name()
 
 	# 授权权限，否则无法写入
 	# create_user_if_not_exists $setup_owner $setup_owner_group
-	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
-	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 
@@ -123,7 +121,6 @@ function conf_$soft_name()
 	# 开始配置
 
 	# 授权权限，否则无法写入
-	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
 
 	return $?

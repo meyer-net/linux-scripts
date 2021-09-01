@@ -62,7 +62,6 @@ function mkdirs()
     path_not_exists_create "${WWW_DIR}"
     path_not_exists_create "${APP_DIR}"
     path_not_exists_create "${BOOT_DIR}"
-    path_not_exists_create "${HTML_DIR}"
     
     path_not_exists_create "${DATA_DIR}"
     path_not_exists_action "${LOGS_DIR}" "link_logs"

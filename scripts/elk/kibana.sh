@@ -60,9 +60,7 @@ function setup_kibana()
 
 	# 授权权限，否则无法写入
 	create_user_if_not_exists elk elk
-	chgrp -R elk ${TMP_ELK_KBN_SETUP_DIR}
-	chgrp -R elk ${TMP_ELK_KBN_SETUP_LNK_LOGS_DIR}
-	chgrp -R elk ${TMP_ELK_KBN_SETUP_LNK_DATA_DIR}
+	chown -R elk:elk ${TMP_ELK_KBN_SETUP_DIR}
 	chown -R elk:elk ${TMP_ELK_KBN_SETUP_LNK_LOGS_DIR}
 	chown -R elk:elk ${TMP_ELK_KBN_SETUP_LNK_DATA_DIR}
 	
@@ -103,7 +101,6 @@ function conf_kibana()
     sed -i "s@[#]*elasticsearch\.username:.*@elasticsearch.username: \"${TMP_ELK_KBN_SETUP_ES_USER}\"@g" config/kibana.yml
     sed -i "s@[#]*elasticsearch\.password:.*@elasticsearch.password: \"${TMP_ELK_KBN_SETUP_ES_PASSWD}\"@g" config/kibana.yml
 	
-	chgrp -R elk ${TMP_ELK_KBN_SETUP_LNK_ETC_DIR}
 	chown -R elk:elk ${TMP_ELK_KBN_SETUP_LNK_ETC_DIR}
 
 	return $?

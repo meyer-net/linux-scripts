@@ -45,9 +45,6 @@ function setup_webhook()
 
     cd ${TMP_WBH_SETUP_DIR}
 
-    mkdir bin
-    mv webhook bin/
-
 	# 创建日志软链
 	local TMP_WBH_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/webhook
 	local TMP_WBH_SETUP_LNK_DATA_DIR=${DATA_DIR}/webhook
@@ -68,9 +65,17 @@ function setup_webhook()
 	echo 'PATH=$WEBHOOK_HOME/bin:$PATH' >> /etc/profile
 	echo "export PATH WEBHOOK_HOME" >> /etc/profile
 
+	# 移动bin
+    mkdir bin
+    mv webhook bin/
+    
     # 重新加载profile文件
     source /etc/profile
-	# ln -sf ${TMP_WBH_SETUP_DIR}/bin/webhook /usr/bin/webhook
+    
+    # 安装初始
+
+    # 创建源码目录
+    path_not_exists_create "${HTML_DIR}"
 
 	return $?
 }

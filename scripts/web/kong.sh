@@ -106,6 +106,10 @@ function setup_kong()
 	chown -R kong:kong ${TMP_KNG_SETUP_LNK_LOGS_DIR}
 
     # 安装初始
+    # 创建源码目录
+    path_not_exists_create "${NGINX_DIR}"
+    path_not_exists_create "${HTML_DIR}"
+    path_not_exists_create "${OR_DIR}"
 
 	return $?
 }
@@ -143,7 +147,6 @@ function setup_konga()
     npm install
     nrm use ${TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT}
     
-
 	return $?
 }
 

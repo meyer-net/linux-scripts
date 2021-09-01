@@ -38,12 +38,14 @@ CRTB_LOGS_DIR=${LOGS_DIR}/crontab
 SYNC_DIR=${MOUNT_DIR}/svr_sync
 WWW_DIR=${SYNC_DIR}/wwwroot
 APP_DIR=${SYNC_DIR}/applications
+PYA_DIR=${APP_DIR}/py
 BOOT_DIR=${SYNC_DIR}/boots
 PRJ_DIR=${WWW_DIR}/prj/www
 OR_DIR=${PRJ_DIR}/or
 PY_DIR=${PRJ_DIR}/py
+JV_DIR=${PRJ_DIR}/java
 HTML_DIR=${PRJ_DIR}/html
-NGINX_DIR=${PRJ_DIR}/nginx
+NGINX_DIR=${BOOT_DIR}/nginx
 DOCKER_DIR=${DATA_DIR}/docker
 
 JAVA_HOME=${SETUP_DIR}/java

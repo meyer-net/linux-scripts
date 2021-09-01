@@ -58,8 +58,7 @@ function setup_elasticsearch()
 
 	# 授权权限，否则无法写入
 	create_user_if_not_exists elk elk
-	chgrp -R elk ${TMP_ELK_ES_SETUP_DIR}
-	chgrp -R elk ${TMP_ELK_ES_SETUP_LNK_LOGS_DIR}
+	chown -R elk:elk ${TMP_ELK_ES_SETUP_DIR}
 	chown -R elk:elk ${TMP_ELK_ES_SETUP_LNK_LOGS_DIR}
 	
     # 安装初始
@@ -95,7 +94,6 @@ function conf_elasticsearch()
 	echo 'http.cors.enabled: true' >> config/elasticsearch.yml
 	echo 'http.cors.allow-origin: "*"' >> config/elasticsearch.yml
 	
-	chgrp -R elk ${TMP_ELK_ES_SETUP_LNK_ETC_DIR}
 	chown -R elk:elk ${TMP_ELK_ES_SETUP_LNK_ETC_DIR}
 
 	return $?

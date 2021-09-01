@@ -89,6 +89,11 @@ function setup_openresty()
 	# 移除源文件
 	rm -rf ${TMP_ORST_CURRENT_DIR}
 
+    # 创建源码目录
+    path_not_exists_create "${NGINX_DIR}"
+    path_not_exists_create "${HTML_DIR}"
+    path_not_exists_create "${OR_DIR}"
+
 	return $?
 }
 

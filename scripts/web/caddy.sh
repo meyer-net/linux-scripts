@@ -87,6 +87,8 @@ function setup_caddy()
 	chown -R caddy:caddy ${TMP_CDY_SETUP_LNK_DATA_DIR}
 	
     # 安装初始
+    # 创建源码目录
+    path_not_exists_create "${HTML_DIR}"
 
 	return $?
 }

@@ -651,9 +651,16 @@ function while_wget()
 
 	local TMP_SOFT_WGET_COMMAND="wget -c --tries=0 --timeout=60 ${TMP_SOFT_WGET_TRUE_URL} -O ${TMP_SOFT_WGET_FILE_DEST_NAME}"
 	echo "${TMP_SOFT_WGET_COMMAND}"
+
 	while [ ! -f "${TMP_SOFT_WGET_FILE_DEST_NAME}" ]; do
 		#https://wenku.baidu.com/view/64f7d302b52acfc789ebc936.html
 		${TMP_SOFT_WGET_COMMAND}
+
+		# 网络错误大小为0则清空文件
+		local TMP_SOFT_WGET_FILE_SIZE=`ls -l ${TMP_SOFT_WGET_FILE_DEST_NAME} | awk '{ print $5 }'`
+		if [ ${TMP_SOFT_WGET_FILE_SIZE} -eq 0 ]; then
+			rm -rf ${TMP_SOFT_WGET_FILE_DEST_NAME}
+		fi
 	done
 
 	if [ ${#TMP_SOFT_WGET_SCRIPT} -gt 0 ]; then
@@ -700,6 +707,11 @@ function while_curl()
 	while [ ! -f "${TMP_SOFT_CURL_FILE_DEST_NAME}" ]; do
 		${TMP_SOFT_CURL_COMMAND}
 		
+		# 网络错误大小为0则清空文件
+		local TMP_SOFT_CURL_FILE_SIZE=`ls -l ${TMP_SOFT_CURL_FILE_DEST_NAME} | awk '{ print $5 }'`
+		if [ ${TMP_SOFT_CURL_FILE_SIZE} -eq 0 ]; then
+			rm -rf ${TMP_SOFT_CURL_FILE_DEST_NAME}
+		fi
 	done
 
 	if [ ${#TMP_SOFT_CURL_SCRIPT} -gt 0 ]; then

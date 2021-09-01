@@ -5,3 +5,4 @@
 *5：重整mysql等安装。
 *6：重整kafka
 elk自动引用java环境变量
+== 修改为 set_if_equals
