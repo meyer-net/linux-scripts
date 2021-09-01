@@ -394,7 +394,8 @@ EOF
     fi
     
     if [ -z "${LUAJIT_HOME}" ] || [ ! -f "/usr/bin/luajit" ] || [ ! -f "/usr/local/bin/luajit" ]; then
-        echo "LUAJIT_HOME=${TMP_ORST_SETUP_LJ_DIR}/luajit" >> /etc/profile
+        echo "LUAJIT_HOME=${TMP_ORST_SETUP_LJ_DIR}" >> /etc/profile
+        echo "LUALIB_HOME=${TMP_ORST_SETUP_DIR}/lualib" >> /etc/profile
         echo 'LUAJIT_LIB=${LUAJIT_HOME}/lib' >> /etc/profile
         echo 'LUAJIT_INC=${LUAJIT_HOME}/include/luajit-2.1' >> /etc/profile
 	    echo 'PATH=$LUAJIT_HOME/bin:$PATH' >> /etc/profile

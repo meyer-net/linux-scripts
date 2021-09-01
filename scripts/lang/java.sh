@@ -5,11 +5,16 @@
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
 
+
+##########################################################################################################
+
 # 1-配置环境
 function set_env_java()
 {	
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 function setup_java()
@@ -23,10 +28,10 @@ function setup_java()
 
 	mv ${TMP_LANG_JAVA_CURRENT_DIR} ${TMP_LANG_JAVA_SETUP_DIR}
 
-    path_not_exists_action "/usr/lib/jvm/java-1.8.0" "mkdir -pv /usr/lib/jvm && ln -sf ${JAVA_HOME} /usr/lib/jvm/java-1.8.0"
+    path_not_exists_action "/usr/lib/jvm/java-1.8.0" "mkdir -pv /usr/lib/jvm && ln -sf ${JAVA_HOME:-${TMP_LANG_JAVA_SETUP_DIR}} /usr/lib/jvm/java-1.8.0"
 
 	# 环境变量
-	echo "JAVA_HOME=${JAVA_HOME}" >> /etc/profile
+	echo "JAVA_HOME=${JAVA_HOME:-${TMP_LANG_JAVA_SETUP_DIR}}" >> /etc/profile
 	echo 'JRE_HOME=$JAVA_HOME/jre' >> /etc/profile
 	echo 'CLASSPATH=$JAVA_HOME/lib:$JRE_HOME/lib' >> /etc/profile
 	echo 'JAVA_BIN=$JAVA_HOME/bin' >> /etc/profile
@@ -38,6 +43,8 @@ function setup_java()
 	return $?
 }
 
+##########################################################################################################
+
 # 3-设置软件
 function conf_java()
 {
@@ -45,6 +52,8 @@ function conf_java()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 4-启动软件
 function boot_java()
@@ -128,6 +137,8 @@ function exec_step_java()
 	return $?
 }
 
+##########################################################################################################
+
 # x1-下载软件
 function down_java()
 {
@@ -143,6 +154,8 @@ function down_java()
 
 	return $?
 }
+
+##########################################################################################################
 
 #安装主体
 setup_soft_basic "java" "down_java"

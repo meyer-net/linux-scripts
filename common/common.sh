@@ -1017,8 +1017,8 @@ function set_if_empty()
 
 #设置变量值函数如果相同
 #参数1：需要设置的变量名
-#参数1：需要对比的变量名/值
-#参数2：需要对比的变量值
+#参数2：需要对比的变量名/值
+#参数3：需要对比的变量值
 function set_if_equals()
 {
 	if [ $? -ne 0 ]; then
@@ -1056,13 +1056,13 @@ function input_if_empty()
 	local TMP_NOTICE=$2
 	local INPUT_CURRENT=""
 
-	TMP_DFT=`eval echo '$'$TMP_VAR_NAME`
-	echo "$TMP_NOTICE, default '${green}$TMP_DFT${reset}'"
+	local TMP_DFT=`eval echo '$'$TMP_VAR_NAME`
+	echo "${TMP_NOTICE}, default '${green}`eval echo ${TMP_DFT}`${reset}'"
 	read -e INPUT_CURRENT
 	echo ""
 
-	if [ -n "$INPUT_CURRENT" ]; then
-		eval ${1}='$INPUT_CURRENT'
+	if [ -n "${INPUT_CURRENT}" ]; then
+		eval ${1}='${INPUT_CURRENT}'
 	fi
 
 	return $?

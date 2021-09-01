@@ -8,7 +8,7 @@
 #          https://linux.cn/article-5730-1.html
 #------------------------------------------------
 local TMP_MYSQL_SETUP_PORT=13306
-local TMP_MYSQL_SETUP_PWD="mysql@DB!m${LOCAL_ID}_"
+local TMP_MYSQL_SETUP_PWD="mysql%DB!m${LOCAL_ID}_"
 
 # 1-配置环境
 function set_environment()

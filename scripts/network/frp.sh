@@ -114,7 +114,7 @@ function conf_frps()
     input_if_empty "TMP_FRPS_SETUP_DASHBOARD_USER" "Frp-Server: Please sure ${red}dashboard user${reset}"
     sed -i "s@^dashboard_user =.*@dashboard_user = ${TMP_FRPS_SETUP_DASHBOARD_USER}@g" etc/frps.ini
     
-    local TMP_FRPS_SETUP_DASHBOARD_PWD="dashboard\@FRPS!w${LOCAL_ID}_"
+    local TMP_FRPS_SETUP_DASHBOARD_PWD="dashboard%FRPS!w${LOCAL_ID}_"
     input_if_empty "TMP_FRPS_SETUP_DASHBOARD_PWD" "Frp-Server: Please sure ${red}dashboard password${reset}"
     sed -i "s@^dashboard_pwd =.*@dashboard_pwd = ${TMP_FRPS_SETUP_DASHBOARD_PWD}@g" etc/frps.ini
 
@@ -164,7 +164,7 @@ function conf_frpc()
     input_if_empty "TMP_FRPC_SETUP_ADMIN_USER" "Frp-Client: Please sure ${red}admin user${reset}"
     sed -i "s@^admin_user =.*@admin_user = ${TMP_FRPC_SETUP_ADMIN_USER}@g" etc/frpc.ini
     
-    local TMP_FRPC_SETUP_ADMIN_PWD="admin\@FRPC!w${LOCAL_ID}_"
+    local TMP_FRPC_SETUP_ADMIN_PWD="admin%FRPC!w${LOCAL_ID}_"
     input_if_empty "TMP_FRPC_SETUP_ADMIN_PWD" "Frp-Client: Please sure ${red}admin password${reset}"
     sed -i "s@^admin_pwd =.*@admin_pwd = ${TMP_FRPC_SETUP_ADMIN_PWD}@g" etc/frpc.ini
 

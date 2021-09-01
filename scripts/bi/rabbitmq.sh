@@ -16,8 +16,10 @@ local TMP_RBT_SETUP_LISTENERS_TCP_PORT=56721
 local TMP_RBT_SETUP_MQTT_LISTENERS_SSL_PORT=18883
 local TMP_RBT_SETUP_MQTT_LISTENERS_TCP_PORT=28883
 
+##########################################################################################################
+
 # 1-配置环境
-function set_environment()
+function set_env_rabbit()
 {
     cd ${__DIR}
     
@@ -26,6 +28,8 @@ function set_environment()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 function setup_rabbitmq()
@@ -57,6 +61,8 @@ function setup_rabbitmq()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 3-设置软件
 function conf_rabbitmq()
@@ -113,6 +119,8 @@ function conf_rabbitmq()
 	return $?
 }
 
+##########################################################################################################
+
 # 4-启动软件
 function boot_rabbitmq()
 {
@@ -152,7 +160,7 @@ function exec_step_rabbitmq()
 	local TMP_RBT_MQ_SETUP_DIR=${1}
 	local TMP_RBT_MQ_CURRENT_DIR=`pwd`
     
-	set_environment "${TMP_RBT_MQ_SETUP_DIR}"
+	set_env_rabbit "${TMP_RBT_MQ_SETUP_DIR}"
 
 	setup_rabbitmq "${TMP_RBT_MQ_SETUP_DIR}" "${TMP_RBT_MQ_CURRENT_DIR}"
 
@@ -175,6 +183,8 @@ function down_rabbitmq()
 
 	return $?
 }
+
+##########################################################################################################
 
 #安装主体
 setup_soft_basic "RabbitMQ" "down_rabbitmq"

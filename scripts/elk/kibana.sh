@@ -4,112 +4,197 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 相关参考：
+#		  
+#------------------------------------------------
+local TMP_ELK_KBN_SETUP_HTTP_PORT=15601
+local TMP_ELK_KBN_SETUP_ES_PORT=19200
+
+##########################################################################################################
 
 # 1-配置环境
-function set_environment()
+function set_env_kibana()
 {
-	create_user_if_not_exists elk elk
+    cd ${__DIR}
 
     # 安装插件需要提前安装nodejs
-    source ${__DIR}/scripts/lang/nodejs.sh
+    # source scripts/lang/nodejs.sh
 
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 function setup_kibana()
 {
-	local TMP_ELK_KBN_SETUP_DIR=${1}
-	local TMP_ELK_KBN_CURRENT_DIR=`pwd`
+	## 直装模式
+	cd `dirname ${TMP_ELK_KBN_CURRENT_DIR}`
 
-	cd ..
-	mv ${TMP_ELK_KBN_CURRENT_DIR:-} ${TMP_ELK_KBN_SETUP_DIR}
-	
-	local TMP_ELK_KBN_LNK_LOGS_DIR=${LOGS_DIR}/kibana
-	local TMP_ELK_KBN_LNK_DATA_DIR=${DATA_DIR}/kibana
-	local TMP_ELK_KBN_LOGS_DIR=${TMP_ELK_KBN_SETUP_DIR}/logs
-	local TMP_ELK_KBN_DATA_DIR=${TMP_ELK_KBN_SETUP_DIR}/data
+	mv ${TMP_ELK_KBN_CURRENT_DIR} ${TMP_ELK_KBN_SETUP_DIR}
+
+	cd ${TMP_ELK_KBN_SETUP_DIR}
+
+	# 创建日志软链
+	local TMP_ELK_KBN_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/kibana
+	local TMP_ELK_KBN_SETUP_LNK_DATA_DIR=${DATA_DIR}/kibana
+	local TMP_ELK_KBN_SETUP_LOGS_DIR=${TMP_ELK_KBN_SETUP_DIR}/logs
+	local TMP_ELK_KBN_SETUP_DATA_DIR=${TMP_ELK_KBN_SETUP_DIR}/data
 
 	# 先清理文件，再创建文件
-	rm -rf ${TMP_ELK_KBN_LOGS_DIR}
-	rm -rf ${TMP_ELK_KBN_DATA_DIR}
-	mkdir -pv ${TMP_ELK_KBN_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_ELK_KBN_LNK_DATA_DIR}
+	rm -rf ${TMP_ELK_KBN_SETUP_LOGS_DIR}
+	rm -rf ${TMP_ELK_KBN_SETUP_DATA_DIR}
+	mkdir -pv ${TMP_ELK_KBN_SETUP_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_ELK_KBN_SETUP_LNK_DATA_DIR}
+	
+	ln -sf ${TMP_ELK_KBN_SETUP_LNK_LOGS_DIR} ${TMP_ELK_KBN_SETUP_LOGS_DIR}
+	ln -sf ${TMP_ELK_KBN_SETUP_LNK_DATA_DIR} ${TMP_ELK_KBN_SETUP_DATA_DIR}
 
-	ln -sf ${TMP_ELK_KBN_LNK_LOGS_DIR} ${TMP_ELK_KBN_LOGS_DIR}
-	ln -sf ${TMP_ELK_KBN_LNK_DATA_DIR} ${TMP_ELK_KBN_DATA_DIR}
+	# 环境变量或软连接
+	echo "KIBANA_HOME=${TMP_ELK_KBN_SETUP_DIR}" >> /etc/profile
+	echo 'PATH=$KIBANA_HOME/bin:$PATH' >> /etc/profile
+	echo 'export PATH KIBANA_HOME' >> /etc/profile
+
+    # 重新加载profile文件
+	source /etc/profile
 
 	# 授权权限，否则无法写入
-	chown -R elk:elk ${TMP_ELK_KBN_SETUP_DIR}
-	chown -R elk:elk ${TMP_ELK_KBN_LNK_LOGS_DIR}
-	chown -R elk:elk ${TMP_ELK_KBN_LNK_DATA_DIR}
-
-    echo_soft_port 5601
+	create_user_if_not_exists elk elk
+	chgrp -R elk ${TMP_ELK_KBN_SETUP_DIR}
+	chgrp -R elk ${TMP_ELK_KBN_SETUP_LNK_LOGS_DIR}
+	chgrp -R elk ${TMP_ELK_KBN_SETUP_LNK_DATA_DIR}
+	chown -R elk:elk ${TMP_ELK_KBN_SETUP_LNK_LOGS_DIR}
+	chown -R elk:elk ${TMP_ELK_KBN_SETUP_LNK_DATA_DIR}
+	
+    # 安装初始
 
 	return $?
 }
+
+##########################################################################################################
 
 # 3-设置软件
-function set_kibana()
+function conf_kibana()
 {
-	cd ${1}
+	cd ${TMP_ELK_KBN_SETUP_DIR}
+	
+	local TMP_ELK_KBN_SETUP_LNK_ETC_DIR=${ATT_DIR}/kibana
+	local TMP_ELK_KBN_SETUP_ETC_DIR=${TMP_ELK_KBN_SETUP_DIR}/config
 
-	local TMP_ELK_KBN_ES_HOST=${LOCAL_HOST}
-    input_if_empty "TMP_ELK_KBN_ES_HOST" "Kibana: Please ender your ${red}elasticsearch host address${reset} like '${LOCAL_HOST}'"
-	set_if_equals "TMP_ELK_KBN_ES_HOST" "LOCAL_HOST" "127.0.0.1"
+	# ①-Y：存在配置文件：原路径文件放给真实路径
+	mv ${TMP_ELK_KBN_SETUP_ETC_DIR} ${TMP_ELK_KBN_SETUP_LNK_ETC_DIR}
 
-	local TMP_ELK_KBN_ES_USER="root"
-    input_if_empty "TMP_ELK_KBN_ES_USER" "Kibana: Please ender your ${red}elasticsearch user${reset} of '${TMP_ELK_KBN_ES_HOST}'"
+	ln -sf ${TMP_ELK_KBN_SETUP_LNK_ETC_DIR} ${TMP_ELK_KBN_SETUP_ETC_DIR}
 
-	local TMP_ELK_KBN_ES_PASSWD="es12345"
-    input_if_empty "TMP_ELK_KBN_ES_PASSWD" "Kibana: Please ender your ${red}elasticsearch password${reset} of '${TMP_ELK_KBN_ES_HOST}'"
+	# 开始配置
+	local TMP_ELK_KBN_SETUP_ES_HOST="${LOCAL_HOST}"
+    input_if_empty "TMP_ELK_KBN_SETUP_ES_HOST" "Kibana: Please ender your ${red}elasticsearch host address${reset} like '${LOCAL_HOST}'"
+	set_if_equals "TMP_ELK_KBN_SETUP_ES_HOST" "LOCAL_HOST" "127.0.0.1"
 
-    sed -i "s@[#]*server\.port@server.port@g" config/kibana.yml
+	local TMP_ELK_KBN_SETUP_ES_USER="root"
+    input_if_empty "TMP_ELK_KBN_SETUP_ES_USER" "Kibana: Please ender your ${red}elasticsearch user${reset} of '${TMP_ELK_KBN_SETUP_ES_HOST}'"
+
+	local TMP_ELK_KBN_SETUP_ES_PASSWD="es%DB!m${LOCAL_ID}_"
+    input_if_empty "TMP_ELK_KBN_SETUP_ES_PASSWD" "Kibana: Please ender your ${red}elasticsearch password${reset} of '${TMP_ELK_KBN_SETUP_ES_HOST}'"
+
+    sed -i "s@[#]*server\.port@.*server.port: ${TMP_ELK_KBN_SETUP_HTTP_PORT}@g" config/kibana.yml
     sed -i "s@[#]*server\.host.*@server.host: \"0.0.0.0\"@g" config/kibana.yml
-    sed -i "s@[#]*elasticsearch\.hosts:.*@elasticsearch.hosts: \"[http://${TMP_ELK_KBN_ES_HOST}:9200]\"@g" config/kibana.yml
-    sed -i "s@[#]*elasticsearch\.username:.*@elasticsearch.username: \"${TMP_ELK_KBN_ES_USER}\"@g" config/kibana.yml
-    sed -i "s@[#]*elasticsearch\.password:.*@elasticsearch.password: \"${TMP_ELK_KBN_ES_PASSWD}\"@g" config/kibana.yml
+    sed -i "s@[#]*elasticsearch\.hosts:.*@elasticsearch.hosts: \"[http://${TMP_ELK_KBN_SETUP_ES_HOST}:${TMP_ELK_KBN_SETUP_ES_PORT}]\"@g" config/kibana.yml
+    sed -i "s@[#]*elasticsearch\.username:.*@elasticsearch.username: \"${TMP_ELK_KBN_SETUP_ES_USER}\"@g" config/kibana.yml
+    sed -i "s@[#]*elasticsearch\.password:.*@elasticsearch.password: \"${TMP_ELK_KBN_SETUP_ES_PASSWD}\"@g" config/kibana.yml
+	
+	chgrp -R elk ${TMP_ELK_KBN_SETUP_LNK_ETC_DIR}
+	chown -R elk:elk ${TMP_ELK_KBN_SETUP_LNK_ETC_DIR}
 
 	return $?
 }
+
+##########################################################################################################
 
 # 4-启动软件
 function boot_kibana()
 {
-	local TMP_ELK_KBN_SETUP_DIR=${1}
-
-	su - elk -c "cd ${TMP_ELK_KBN_SETUP_DIR} && nohup bash bin/kibana &"
+	cd ${TMP_ELK_KBN_SETUP_DIR}
 	
-    echo_startup_config "kibana" "${TMP_ELK_KBN_SETUP_DIR}" "bash bin/kibana" "" "3" "" "elk"
+	# 验证安装
+    bin/kibana -V --allow-root
+
+	# 当前启动命令
+	su - elk -c "cd ${TMP_ELK_KBN_SETUP_DIR} && nohup bin/kibana > logs/boot.log 2>&1 &"
+	
+    # 等待启动
+    echo "Starting kibana，Waiting for a moment"
+    echo "--------------------------------------------"
+    sleep 15
+
+    cat logs/boot.log
+    echo "--------------------------------------------"
+
+	# 启动状态检测
+	lsof -i:${TMP_ELK_KBN_SETUP_HTTP_PORT}
+
+	# 添加系统启动命令
+    echo_startup_config "kibana" "${TMP_ELK_KBN_SETUP_DIR}" "bin/kibana" "" "3" "" "elk"
+	
+	# 授权iptables端口访问
+	echo_soft_port ${TMP_ELK_KBN_SETUP_HTTP_PORT}
 
 	return $?
 }
 
-# x-执行步骤
+##########################################################################################################
+
+# 下载驱动/插件
+function down_plugin_kibana()
+{
+	return $?
+}
+
+# 安装驱动/插件
+function setup_plugin_kibana()
+{
+	return $?
+}
+
+##########################################################################################################
+
+# x2-执行步骤
 function exec_step_kibana()
 {
+	# 变量覆盖特性，其它方法均可读取
 	local TMP_ELK_KBN_SETUP_DIR=${1}
+	local TMP_ELK_KBN_CURRENT_DIR=`pwd`
+    
+	set_env_kibana 
 
-	set_environment "${TMP_ELK_KBN_SETUP_DIR}"
+	setup_kibana 
 
-	setup_kibana "${TMP_ELK_KBN_SETUP_DIR}"
+	conf_kibana 
 
-	set_kibana "${TMP_ELK_KBN_SETUP_DIR}"
+    # down_plugin_kibana 
+    # setup_plugin_kibana 
 
-	boot_kibana "${TMP_ELK_KBN_SETUP_DIR}"
+	boot_kibana 
+
+	# reconf_kibana 
 
 	return $?
 }
 
-# x-下载软件
+##########################################################################################################
+
+# x1-下载软件
 function down_kibana()
-{	
-	ELK_KBN_SETUP_NEWER="7.8.0"
-	set_github_soft_releases_newer_version "ELK_KBN_SETUP_NEWER" "elastic/kibana"
-	exec_text_format "ELK_KBN_SETUP_NEWER" "https://artifacts.elastic.co/downloads/kibana/kibana-%s-linux-x86_64.tar.gz"
-    setup_soft_wget "kibana" "$ELK_KBN_SETUP_NEWER" "exec_step_kibana"
+{
+	local TMP_ELK_KBN_SETUP_NEWER="7.8.0"
+	set_github_soft_releases_newer_version "TMP_ELK_KBN_SETUP_NEWER" "elastic/kibana"
+	exec_text_format "TMP_ELK_KBN_SETUP_NEWER" "https://artifacts.elastic.co/downloads/kibana/kibana-%s-linux-x86_64.tar.gz"
+    setup_soft_wget "kibana" "${TMP_ELK_KBN_SETUP_NEWER}" "exec_step_kibana"
 
 	return $?
 }
 
+##########################################################################################################
+
+#安装主体
 setup_soft_basic "Kibana" "down_kibana"

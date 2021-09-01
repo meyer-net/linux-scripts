@@ -96,16 +96,14 @@ function boot_openresty_frame_lor()
 # 下载驱动/插件
 function down_plugin_openresty_frame_lor_baseapp()
 {
-	local TMP_LR_SETUP_LUALIB_DIR=`dirname ${LUAJIT_HOME}`/lualib
-	
     # cd ${TMP_LR_SETUP_DIR}/lib/luarocks/rocks
     # git clone https://github.com/juce/lua-resty-shell
-	wget_unpack_dist "https://github.com/doujiang24/lua-resty-kafka/archive/master.zip" "lib/resty" "${TMP_LR_SETUP_LUALIB_DIR}"
+	wget_unpack_dist "https://github.com/doujiang24/lua-resty-kafka/archive/master.zip" "lib/resty" "${LUALIB_HOME}"
 	
 	local TMP_LR_SETUP_LPEG_OFFICIAL_STABLE_LINK=`curl -s http://www.inf.puc-rio.br/~roberto/lpeg/\#download | egrep "source code." | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g'`
 	echo "LPEG: The newer stable link is ${TMP_LR_SETUP_LPEG_OFFICIAL_STABLE_LINK}"
     
-    wget_unpack_dist "${TMP_LR_SETUP_LPEG_OFFICIAL_STABLE_LINK}" "lpeg.so" "${TMP_LR_SETUP_LUALIB_DIR}" "
+    wget_unpack_dist "${TMP_LR_SETUP_LPEG_OFFICIAL_STABLE_LINK}" "lpeg.so" "${LUALIB_HOME}" "
         sed -i 's@LUADIR =.*@LUADIR = ${LUAJIT_INC}@g' makefile
         sudo make -j4
     "
@@ -118,7 +116,7 @@ function down_plugin_openresty_frame_lor_baseapp()
 # x2-执行步骤
 function exec_step_openresty_frame_lor()
 {
-	local TMP_ORST_FWS_LOR_SETUP_DIR=${OR_DIR}/lor
+	local TMP_ORST_FWS_LOR_SETUP_DIR=${OR_DIR}
 	local TMP_ORST_FWS_LOR_CURRENT_DIR=`pwd`
 
     set_env_openresty_frame_lor "${TMP_ORST_FWS_LOR_SETUP_DIR}"

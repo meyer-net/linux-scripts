@@ -20,6 +20,8 @@ local TMP_WBH_SETUP_KNG_API_HTTP_PORT=18000
 local TMP_WBH_SETUP_KNG_HOST="127.0.0.1"
 local TMP_SETUP_CDY_HOST="127.0.0.1"
 
+##########################################################################################################
+
 # 1-配置环境
 function set_environment()
 {
@@ -27,6 +29,8 @@ function set_environment()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 function setup_webhook()
@@ -40,7 +44,7 @@ function setup_webhook()
 	mv ${TMP_WBH_CURRENT_DIR} ${TMP_WBH_SETUP_DIR}
 
     cd ${TMP_WBH_SETUP_DIR}
-    
+
     mkdir bin
     mv webhook bin/
 
@@ -71,6 +75,8 @@ function setup_webhook()
 	return $?
 }
 
+##########################################################################################################
+
 # 3-设置软件
 function conf_webhook()
 {
@@ -90,8 +96,8 @@ function conf_webhook()
 
     # 本机装有caddy
     local TMP_WBH_SETUP_CDY_HOOKS_JSON="{}"
-    local TMP_IS_CDY_LOCAL=`lsof -i:${TMP_WBH_SETUP_CDY_API_HTTP_PORT}`
-    if [ -n "${TMP_IS_CDY_LOCAL}" ]; then    
+    local TMP_WBH_SETUP_IS_CDY_LOCAL=`lsof -i:${TMP_WBH_SETUP_CDY_API_HTTP_PORT}`
+    if [ -n "${TMP_WBH_SETUP_IS_CDY_LOCAL}" ]; then    
         TMP_WBH_SETUP_CDY_HOOKS_JSON="{
             \"id\": \"cor-caddy-api\",  \
             \"execute-command\": \"${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/cor-caddy-api.sh\",  \
@@ -107,11 +113,7 @@ function conf_webhook()
         conf_webhook_cor_caddy_api "${TMP_WBH_SETUP_DIR}"
     fi
 
-    # 本机装有kong
-    local TMP_WBH_SETUP_KNG_HOOKS_JSON="{}"
-    local TMP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
-    if [ -n "${TMP_IS_KNG_LOCAL}" ]; then    
-        TMP_WBH_SETUP_KNG_HOOKS_JSON="{
+    local TMP_WBH_SETUP_KNG_HOOKS_JSON="{
             \"id\": \"async-caddy-cert-to-kong\",  \
             \"execute-command\": \"${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/buffer_for_request_host.sh\",  \
             \"http-methods\": [\"Post \"],  \
@@ -129,15 +131,16 @@ function conf_webhook()
                 }]  \
             }  \
         }"
-        
-        conf_webhook_sync_caddy_cert_to_kong "${TMP_WBH_SETUP_DIR}"
-    fi
+
+    conf_webhook_buffer_for_request_host "${TMP_WBH_SETUP_DIR}"
+
+    exec_yn_action "conf_webhook_sync_caddy_cert_to_kong" "Webhook.AutoHttps: Please sure if u want to ${green}configuare auto https here${reset}?"
 
     local TMP_WBH_BOOT_HOOKS_JSON=`echo "[${TMP_WBH_SETUP_CDY_HOOKS_JSON},${TMP_WBH_SETUP_KNG_HOOKS_JSON}]" | jq | sed 's@{},*@@g'`
     
     echo "##############################################################" 
     # "source": "entire-payload" #通过此打印全部
-sudo tee ${TMP_WBH_SETUP_DATA_HOOKS_DIR}/webhook_boot.json <<-EOF
+    sudo tee ${TMP_WBH_SETUP_DATA_HOOKS_DIR}/webhook_boot.json <<-EOF
 ${TMP_WBH_BOOT_HOOKS_JSON}
 EOF
     echo "##############################################################" 
@@ -157,13 +160,13 @@ function conf_webhook_cor_caddy_api()
     
 	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
 	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
-    local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
+    # local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
     local TMP_WBH_SETUP_DATA_SCRIPTS_DIR=${TMP_WBH_SETUP_DATA_DIR}/scripts
 	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
 
     echo "+--------------------------------------------------------------+" 
     
-sudo tee ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/cor-caddy-api.sh <<-EOF
+    sudo tee ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/cor-caddy-api.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook script for cor caddy api
@@ -211,9 +214,9 @@ EOF
 	return $?
 }
 
-# 配置webhook，辅助caddy未有api
+# 配置用来缓存的脚本，辅助autohttps记录请求域名等
 # 参数1：安装目录
-function conf_webhook_sync_caddy_cert_to_kong()
+function conf_webhook_buffer_for_request_host()
 {
 	local TMP_WBH_SETUP_DIR=${1}
 
@@ -221,15 +224,9 @@ function conf_webhook_sync_caddy_cert_to_kong()
     
 	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
 	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
-    local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
+    # local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
     local TMP_WBH_SETUP_DATA_SCRIPTS_DIR=${TMP_WBH_SETUP_DATA_DIR}/scripts
 	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
-
-    # 不在本机的情况下，需要输入地址
-    local TMP_SETUP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
-    if [ -z "${TMP_SETUP_IS_KNG_LOCAL}" ]; then    
-    	input_if_empty "TMP_WBH_SETUP_KNG_HOST" "Webhook.Kong.Host: Please ender ${red}your kong host address${reset}"
-    fi
 
     echo "+--------------------------------------------------------------+" 
     # 用于记录证书已刷新，记录域名的脚本（接收内容时触发，相当于简单的生产者，buffer）
@@ -265,6 +262,32 @@ function execute() {
 execute "\$1"
 echo
 EOF
+    echo "+--------------------------------------------------------------+" 
+
+	return $?
+}
+
+# 配置webhook，辅助caddy同步其证书至kong
+function conf_webhook_sync_caddy_cert_to_kong()
+{
+	cd ${TMP_WBH_SETUP_DIR}
+    
+	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
+	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
+    # local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
+    local TMP_WBH_SETUP_DATA_SCRIPTS_DIR=${TMP_WBH_SETUP_DATA_DIR}/scripts
+	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
+
+    # Caddy 不在本机，则重新确认host
+    if [ -z "${TMP_WBH_SETUP_IS_CDY_LOCAL}" ]; then
+    	input_if_empty "TMP_SETUP_CDY_HOST" "Webhook.Caddy.Host: Please ender ${green}your caddy host address${reset}"
+    fi
+
+    # Kong 不在本机的情况下，则重新确认host
+    local TMP_WBH_SETUP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
+    if [ -z "${TMP_WBH_SETUP_IS_KNG_LOCAL}" ]; then    
+    	input_if_empty "TMP_WBH_SETUP_KNG_HOST" "Webhook.Kong.Host: Please ender ${green}your kong host address${reset}"
+    fi
 
     # 用于同步证书内容，删除记录域名的脚本（每天定时3次触发，相当于消费者，消费buffer）
     sudo tee ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh <<-EOF
@@ -388,6 +411,8 @@ EOF
 	return $?
 }
 
+##########################################################################################################
+
 # 4-启动软件
 function boot_webhook()
 {
@@ -457,6 +482,8 @@ function down_webhook()
 
 	return $?
 }
+
+##########################################################################################################
 
 #安装主体
 setup_soft_basic "Webhook" "down_webhook"

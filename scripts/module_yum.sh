@@ -23,7 +23,7 @@ function set_env_$soft_name()
 {
     cd ${__DIR}
 
-    soft_yum_check_setup ""
+    # soft_yum_check_setup ""
 
 	return $?
 }
@@ -33,8 +33,6 @@ function set_env_$soft_name()
 # 2-安装软件
 function setup_$soft_name()
 {
-	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
-
 	## 源模式
 	sudo tee /etc/yum.repos.d/$setup_name.repo <<-'EOF'
 [$setup_name]
@@ -55,6 +53,9 @@ EOF
 
 	# 先清理文件，再创建文件
 	path_not_exists_create ${TMP_$soft_upper_short_name_SETUP_DIR}
+	
+	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
+	
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
@@ -94,8 +95,6 @@ EOF
 # 3-设置软件
 function conf_$soft_name()
 {
-	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
-
 	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
 	
 	local TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR=${ATT_DIR}/$setup_name
@@ -118,6 +117,10 @@ function conf_$soft_name()
 	
     # 开始配置
 
+	# 授权权限，否则无法写入
+	# chgrp -R $setup_owner ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
+	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
+
 	return $?
 }
 
@@ -126,8 +129,6 @@ function conf_$soft_name()
 # 4-启动软件
 function boot_$soft_name()
 {
-	local TMP_$soft_upper_short_name_SETUP_DIR=${1}
-
 	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
 	
 	# 验证安装
@@ -136,13 +137,13 @@ function boot_$soft_name()
 	# 当前启动命令
     sudo systemctl daemon-reload
     sudo systemctl enable $setup_name.service
-    sudo systemctl start $setup_name.service
 	# nohup bin/$setup_name > logs/boot.log 2>&1 &
 
     # 等待启动
     echo "Starting $soft_name，Waiting for a moment"
     echo "--------------------------------------------"
-    sleep 15
+    sudo systemctl start $setup_name.service
+    sleep 5
 
     # cat logs/boot.log
     cat /var/log/$setup_name/$setup_name.log
@@ -177,17 +178,21 @@ function setup_plugin_$soft_name()
 # x2-执行步骤
 function exec_step_$soft_name()
 {
+	# 变量覆盖特性，其它方法均可读取
 	local TMP_$soft_upper_short_name_SETUP_DIR=${SETUP_DIR}/$setup_name
     
-	set_env_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
+	set_env_$soft_name 
 
-	setup_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
+	setup_$soft_name 
 
-	conf_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
+	conf_$soft_name 
 
-    # down_plugin_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
+    # down_plugin_$soft_name 
+    # setup_plugin_$soft_name 
 
-	boot_$soft_name "${TMP_$soft_upper_short_name_SETUP_DIR}"
+	boot_$soft_name 
+
+	# reconf_$soft_name 
 
 	return $?
 }
