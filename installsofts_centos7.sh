@@ -102,7 +102,8 @@ function from_clean()
 
 function lang()
 {
-    exec_if_choice "TMP_CHOICE_LANG" "Please choice which env lang you need to setup" "...,Python,Java,Scala,ERLang,Php,NodeJs,Exit" "${TMP_SPLITER}" "scripts/lang"
+    # ,Scala
+    exec_if_choice "TMP_CHOICE_LANG" "Please choice which env lang you need to setup" "...,Python,Java,ERLang,Php,NodeJs,Exit" "${TMP_SPLITER}" "scripts/lang"
 
 	return $?
 }
@@ -123,7 +124,8 @@ function cluster()
 
 function elk()
 {
-    exec_if_choice "TMP_CHOICE_ELK" "Please choice which ELK compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Flume,Exit" "${TMP_SPLITER}" "scripts/elk"
+    # ,Flume
+    exec_if_choice "TMP_CHOICE_ELK" "Please choice which ELK compoment you want to setup" "...,ElasticSearch,LogStash,Kibana,FileBeat,Exit" "${TMP_SPLITER}" "scripts/elk"
 	
     return $?
 }
@@ -165,7 +167,7 @@ function ha()
 
 function network()
 {
-	exec_if_choice "TMP_CHOICE_NETWORK" "Please choice which network compoment you want to setup" "...,N2N,Frp,OpenClash,Shadowsocks,Exit" "${TMP_SPLITER}" "scripts/network"
+	exec_if_choice "TMP_CHOICE_NETWORK" "Please choice which network compoment you want to setup" "...,Frp,N2N,OpenClash,Shadowsocks,Exit" "${TMP_SPLITER}" "scripts/network"
 	
     return $?
 }
@@ -234,6 +236,10 @@ function ssh_redirect()
     local TMP_SSH_REDIR_SCRIPTS="ssh -C -f -N -${TMP_SSH_REDIR_TUNNEL_MODE} ${TMP_SSH_REDIR_TUNNEL_PORT}:${TMP_SSH_REDIR_DEST_NATIVE_ADDRESS}:${TMP_SSH_REDIR_DEST_NATIVE_PORT}  ${TMP_SSH_REDIR_DEST_USER}@${TMP_SSH_REDIR_DEST_ADDRESS}"
     
     ${TMP_SSH_REDIR_SCRIPTS}
+
+    if [ "${TMP_SSH_REDIR_TUNNEL_MODE}" == "L" ]; then
+        echo_soft_port ${TMP_SSH_REDIR_TUNNEL_PORT} 
+    fi
 
     echo
     echo "SSH-Redirect：Done -> (${TMP_SSH_REDIR_SCRIPTS})"

@@ -17,9 +17,7 @@ local TMP_ZK_SETUP_ADMIN_SERVER_PORT=18080
 # 1-配置环境
 function set_env_zookeeper()
 {
-    cd ${__DIR}
-
-    source scripts/lang/java.sh
+    cd ${__DIR} && source scripts/lang/java.sh
 
 	return $?
 }
@@ -46,10 +44,6 @@ function setup_zookeeper()
 	rm -rf ${TMP_ZK_DATA_DIR}
 	mkdir -pv ${TMP_ZK_LNK_LOGS_DIR}
 	mkdir -pv ${TMP_ZK_LNK_DATA_DIR}
-	
-	# 特殊多层结构下使用
-    # mkdir -pv `dirname ${TMP_ZK_LOGS_DIR}`
-    # mkdir -pv `dirname ${TMP_ZK_DATA_DIR}`
 
 	ln -sf ${TMP_ZK_LNK_LOGS_DIR} ${TMP_ZK_LOGS_DIR}
 	ln -sf ${TMP_ZK_LNK_DATA_DIR} ${TMP_ZK_DATA_DIR}
@@ -64,6 +58,8 @@ function setup_zookeeper()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 3-设置软件，集群分开装，只管配置本机与其它集群许可
 function conf_zookeeper()
@@ -112,6 +108,8 @@ function conf_zookeeper()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 4-启动软件
 function boot_zookeeper()
@@ -175,6 +173,8 @@ function exec_step_zookeeper()
 	return $?
 }
 
+##########################################################################################################
+
 # x1-下载软件
 function down_zookeeper()
 {
@@ -186,6 +186,8 @@ function down_zookeeper()
 
 	return $?
 }
+
+##########################################################################################################
 
 #安装主体
 setup_soft_basic "Zookeeper" "down_zookeeper"

@@ -134,7 +134,7 @@ function boot_$soft_name()
 	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
 	
 	# 验证安装
-    $setup_name -v
+    bin/$setup_name -v
 
 	# 当前启动命令
 	nohup bin/$setup_name > logs/boot.log 2>&1 &

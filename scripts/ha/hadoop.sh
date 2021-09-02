@@ -18,15 +18,17 @@ local TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT=18090
 
 local TMP_HDOP_WAS_SETUPED=0
 
-# 1-配置环境
-function set_environment()
-{
-    cd ${__DIR}
+##########################################################################################################
 
-	source scripts/lang/java.sh
+# 1-配置环境
+function set_env_hadoop()
+{
+    cd ${__DIR} && source scripts/lang/java.sh
 
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 # 因采用主拷贝从的方式安装，所以默认本机为安装的情况均为主节点
@@ -71,6 +73,8 @@ function setup_hadoop()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 3-设置软件
 function conf_hadoop()
@@ -415,6 +419,8 @@ function conf_hadoop_cluster()
 	return $?
 }
 
+##########################################################################################################
+
 # 4-启动软件
 function boot_hadoop()
 {
@@ -474,7 +480,7 @@ function exec_step_hadoop()
 	local TMP_HDOP_SETUP_DIR=${1}
 	local TMP_HDOP_CURRENT_DIR=`pwd`
     
-	set_environment "${TMP_HDOP_SETUP_DIR}"
+	set_env_hadoop "${TMP_HDOP_SETUP_DIR}"
 
 	setup_hadoop "${TMP_HDOP_SETUP_DIR}" "${TMP_HDOP_CURRENT_DIR}"
 
@@ -489,6 +495,8 @@ function exec_step_hadoop()
 	return $?
 }
 
+##########################################################################################################
+
 # x1-下载软件
 function down_hadoop()
 {
@@ -500,6 +508,8 @@ function down_hadoop()
 
 	return $?
 }
+
+##########################################################################################################
 
 # 安装主体
 setup_soft_basic "Hadoop" "down_hadoop"

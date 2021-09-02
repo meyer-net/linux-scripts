@@ -4,70 +4,83 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 相关参考：
+#		  https://blog.csdn.net/qq_41453285/article/details/105984928
+#------------------------------------------------
+local TMP_ZMQ_SETUP_PORT=11234
+
+##########################################################################################################
 
 # 1-配置环境
 function set_env_zeromq()
-{	
+{
+    cd ${__DIR}
+
+    # soft_yum_check_setup ""
+
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 function setup_zeromq()
 {
-	local TMP_ZEROMQ_SETUP_DIR=${1}
-	local TMP_ZEROMQ_CURRENT_DIR=`pwd`
+	cd ${TMP_ZMQ_CURRENT_DIR}
 
 	# 编译模式
-	./configure --prefix=${TMP_ZEROMQ_SETUP_DIR} --without-libsodium
-	sudo make -j4 && make -j4 install
+	./configure --prefix=${TMP_ZMQ_SETUP_DIR} --without-libsodium
+	make -j4 && make -j4 install
 
-	cd ${TMP_ZEROMQ_SETUP_DIR}
-
-	# # 创建日志软链
-	# local TMP_BI_ZM_LNK_LOGS_DIR=${LOGS_DIR}/zeromq
-	# local TMP_BI_ZM_LNK_DATA_DIR=${DATA_DIR}/zeromq
-	# local TMP_BI_ZM_LOGS_DIR=${TMP_BI_ZM_SETUP_DIR}/logs
-	# local TMP_BI_ZM_DATA_DIR=${TMP_BI_ZM_SETUP_DIR}/data
-
-	# # 先清理文件，再创建文件
-	# rm -rf ${TMP_BI_ZM_LOGS_DIR}
-	# rm -rf ${TMP_BI_ZM_DATA_DIR}
-	# mkdir -pv ${TMP_BI_ZM_LNK_LOGS_DIR}
-	# mkdir -pv ${TMP_BI_ZM_LNK_DATA_DIR}
-
-	# ln -sf ${TMP_BI_ZM_LNK_LOGS_DIR} ${TMP_BI_ZM_LOGS_DIR}
-	# ln -sf ${TMP_BI_ZM_LNK_DATA_DIR} ${TMP_BI_ZM_DATA_DIR}
+	cd ${TMP_ZMQ_SETUP_DIR}
 	
-	# # 环境变量或软连接
-	# echo "ZEROMQ_HOME=${TMP_ZEROMQ_SETUP_DIR}" >> /etc/profile
-	# echo 'PATH=$ZEROMQ/bin:$PATH' >> /etc/profile
-	# echo "export PATH ZEROMQ_HOME" >> /etc/profile
-	# source /etc/profile
-	# ln -sf ${TMP_BI_ZM_SETUP_DIR}/bin/zeromq /usr/bin/zeromq
+	# 环境变量或软连接
+	echo "ZEROMQ_HOME=${TMP_ZMQ_SETUP_DIR}" >> /etc/profile
+	echo 'PATH=$ZEROMQ_HOME/bin:$PATH' >> /etc/profile
+	echo 'export PATH ZEROMQ_HOME' >> /etc/profile
+
+    # 重新加载profile文件
+	source /etc/profile
 
 	# 移除源文件
-	rm -rf ${TMP_ZEROMQ_CURRENT_DIR}
+	rm -rf ${TMP_ZMQ_CURRENT_DIR}
+	
+    # 安装初始
 
 	return $?
 }
+
+##########################################################################################################
 
 # 3-设置软件
 function conf_zeromq()
 {
-	cd ${1}
-
+	cd ${TMP_ZMQ_SETUP_DIR}
+	
 	return $?
 }
+
+##########################################################################################################
 
 # 4-启动软件
 function boot_zeromq()
 {
-	local TMP_BI_ZM_SETUP_DIR=${1}
+	cd ${TMP_ZMQ_SETUP_DIR}
+	
+	return $?
+}
 
-	cd ${TMP_BI_ZM_SETUP_DIR}
+##########################################################################################################
 
-    # echo_startup_config "zeromq" "${TMP_BI_ZM_SETUP_DIR}" "bin/zeromq" "" "100"
+# 下载驱动/插件
+function down_plugin_zeromq()
+{
+	return $?
+}
 
+# 安装驱动/插件
+function setup_plugin_zeromq()
+{
 	return $?
 }
 
@@ -76,30 +89,40 @@ function boot_zeromq()
 # x2-执行步骤
 function exec_step_zeromq()
 {
-	local TMP_BI_ZM_SETUP_DIR=${1}
+	# 变量覆盖特性，其它方法均可读取
+	local TMP_ZMQ_SETUP_DIR=${1}
+	local TMP_ZMQ_CURRENT_DIR=`pwd`
     
-	set_env_zeromq "${TMP_BI_ZM_SETUP_DIR}"
+	set_env_zeromq 
 
-	setup_zeromq "${TMP_BI_ZM_SETUP_DIR}"
+	setup_zeromq 
 
-	conf_zeromq "${TMP_BI_ZM_SETUP_DIR}"
+	conf_zeromq 
 
-	boot_zeromq "${TMP_BI_ZM_SETUP_DIR}"
+    # down_plugin_zeromq 
+    # setup_plugin_zeromq 
+
+	boot_zeromq 
+
+	# reconf_zeromq 
 
 	return $?
 }
+
+##########################################################################################################
 
 # x1-下载软件
 function down_zeromq()
 {
-	TMP_BI_ZM_SETUP_NEWER="4.3.0"
-	set_github_soft_releases_newer_version "TMP_BI_ZM_SETUP_NEWER" "zeromq/libzmq"
-    
-	exec_text_format "TMP_BI_ZM_SETUP_NEWER" "https://github.com/zeromq/libzmq/releases/download/v%s/zeromq-%s.tar.gz"
-    setup_soft_wget "zeromq" "${TMP_BI_ZM_SETUP_NEWER}" "exec_step_zeromq"
+	local TMP_ZMQ_SETUP_NEWER="4.3.0"
+	set_github_soft_releases_newer_version "TMP_ZMQ_SETUP_NEWER" "zeromq/libzmq"
+	exec_text_format "TMP_ZMQ_SETUP_NEWER" "https://github.com/zeromq/libzmq/releases/download/v%s/zeromq-%s.tar.gz"
+    setup_soft_wget "zeromq" "${TMP_ZMQ_SETUP_NEWER}" "exec_step_zeromq"
 
 	return $?
 }
+
+##########################################################################################################
 
 #安装主体
 setup_soft_basic "ZeroMQ" "down_zeromq"

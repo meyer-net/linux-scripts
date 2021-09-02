@@ -1677,7 +1677,7 @@ function exec_while_read_json()
 	TMP_ITEM_LEN=${#arr[@]}
 	for i in $(seq 99);
 	do
-		echo "Please sure you Will Input Items By '${red}yes(y) or enter key/no(n)${reset}'"
+		echo "Please sure you will input items by '${red}yes(y) or enter key/no(n)${reset}'"
 		read -n 1 Y_N
 		echo ""
 

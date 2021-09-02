@@ -432,5 +432,7 @@ function print_kafka_eagle()
 	return $?
 }
 
+##########################################################################################################
+
 #安装主体
 exec_if_choice "TMP_KFK_SETUP_CHOICE" "Please choice which kafka compoment you want to setup" "...,Kafka,Kafka_Eagle,Exit" "${TMP_SPLITER}" "print_"
