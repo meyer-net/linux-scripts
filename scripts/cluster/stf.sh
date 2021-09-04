@@ -113,15 +113,15 @@ function boot_stf()
 	boot_stf_rethinkdb ${1}
 
 	local TMP_CL_STF_SETUP_DIR=${1}
-	local TMP_CL_STF_NODE_VERSION=${2}
+	local TMP_CL_STF_NODE_VERS=${2}
 
 	cd ${TMP_CL_STF_SETUP_DIR}
 
 	stf doctor
 
-	nvm use ${TMP_CL_STF_NODE_VERSION} && bin/stf local --public-ip 0.0.0.0 --allow-remote &
+	nvm use ${TMP_CL_STF_NODE_VERS} && bin/stf local --public-ip ${LOCAL_HOST} --allow-remote &
 
-    echo_startup_config "stf" "${TMP_CL_STF_SETUP_DIR}" "nvm use ${TMP_CL_STF_NODE_VERSION} && bin/stf local --public-ip 0.0.0.0 --allow-remote &" "" "100"
+    echo_startup_config "stf" "${TMP_CL_STF_SETUP_DIR}" "nvm use ${TMP_CL_STF_NODE_VERS} && bin/stf local --public-ip ${LOCAL_HOST} --allow-remote &" "" "100"
 
 	return $?
 }
@@ -182,7 +182,7 @@ function setup_android_tools()
 function exec_step_stf()
 {
 	local TMP_CL_STF_SETUP_DIR=${1}
-	local TMP_CL_STF_NODE_VERSION=${2}
+	local TMP_CL_STF_NODE_VERS=${2}
     
 	set_env_stf "${TMP_CL_STF_SETUP_DIR}"
 
@@ -192,7 +192,7 @@ function exec_step_stf()
 
 	set_stf "${TMP_CL_STF_SETUP_DIR}"
 
-	boot_stf "${TMP_CL_STF_SETUP_DIR}" "${TMP_CL_STF_NODE_VERSION}"
+	boot_stf "${TMP_CL_STF_SETUP_DIR}" "${TMP_CL_STF_NODE_VERS}"
 
 	return $?
 }

@@ -52,9 +52,8 @@ function setup_$soft_name()
 	# 先清理文件，再创建文件
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
-	# mv /var/log/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
+	path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}"
+	path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}"
 	# mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	## cp /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} -Rp
     ## mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}_empty
@@ -64,7 +63,6 @@ function setup_$soft_name()
     # path_not_exists_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}`
 
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
-	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} /var/log/$setup_name
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} /var/lib/$setup_name
 	
@@ -108,7 +106,7 @@ function conf_$soft_name()
 
 	# ①-N：不存在配置文件：
 	# rm -rf ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
-	# mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
+	# path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}"
 	
 	# 特殊多层结构下使用
     # path_not_exists_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}`
@@ -135,13 +133,13 @@ function boot_$soft_name()
 	
 	# 验证安装
     bin/$setup_name -v
-
-	# 当前启动命令
-	nohup bin/$setup_name > logs/boot.log 2>&1 &
 	
-    # 等待启动
+    # 当前启动命令 && 等待启动
+	echo
     echo "Starting $soft_name，Waiting for a moment"
     echo "--------------------------------------------"
+	# -- 当前启动命令
+	nohup bin/$setup_name > logs/boot.log 2>&1 &
     sleep 15
 
     cat logs/boot.log
@@ -204,9 +202,9 @@ function exec_step_$soft_name()
 # x1-下载软件
 function down_$soft_name()
 {
-	# local TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://www.xxx.com`
-	# echo "$title_name: The newer stable version is ${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
-    # local TMP_$soft_upper_short_name_SETUP_NEWER="${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
+	# local TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERS=`curl -s https://www.xxx.com`
+	# echo "$title_name: The newer stable version is ${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERS}"
+    # local TMP_$soft_upper_short_name_SETUP_NEWER="${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERS}"
 
 	# setup_soft_git "$setup_name" "https://github.com/${git_repo}" "exec_step_$soft_name"
 	local TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"

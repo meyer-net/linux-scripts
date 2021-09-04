@@ -41,7 +41,7 @@ function remove_ignores() {
 function exec_program()
 {
     # 当前本地版本
-    local TMP_CURRENT_LOCAL_VERSION=v`date "+%Y%m%d.%H%M%S"`
+    local TMP_CURRENT_LOCAL_VERS=v`date "+%Y%m%d.%H%M%S"`
 
     # 匹配包含.svn路径的根目录，意图探索包含何种项目
     echo "SvnPackager：Start to find the path of '${SVN_PACKAGE_CHECK_LOCAL_ROOT_DIR}', please waitting."
@@ -61,34 +61,34 @@ function exec_program()
         local TMP_DIR_DONE_PERCENT=`printf "%d%%" $(($I*100/$TMP_SVN_LOCAL_DIRS_COUNT))`
     
         # 上一次行至版本
-        local WORK_PACKAGE_PREV_VERSION=`[ -f prev_version ] && cat prev_version`
+        local WORK_PACKAGE_PREV_VERS=`[ -f prev_version ] && cat prev_version`
         
         # 查询当前项目最开始的版本号
-        if [ "${#WORK_PACKAGE_PREV_VERSION}" -eq 0 ]; then
-            WORK_PACKAGE_PREV_VERSION=`svn log -q | grep "|" | awk 'END {print}' | awk '{print $1}'`
+        if [ "${#WORK_PACKAGE_PREV_VERS}" -eq 0 ]; then
+            WORK_PACKAGE_PREV_VERS=`svn log -q | grep "|" | awk 'END {print}' | awk '{print $1}'`
         fi
 
         # 获取当前版本信息
         local TMP_CURRENT_INFO=`$SVN_PATH info`
-        local TMP_CURRENT_VERSION=`echo "$TMP_CURRENT_INFO" | grep -E -o "最后修改的版本: [0-9]+" | awk '{print $2}'`
+        local TMP_CURRENT_VERS=`echo "$TMP_CURRENT_INFO" | grep -E -o "最后修改的版本: [0-9]+" | awk '{print $2}'`
 
         # 获取上次版本与本次版本的差异文件清单
-        local TMP_CURRENT_DIFF_LIST=`$SVN_PATH diff -r $WORK_PACKAGE_PREV_VERSION:HEAD --summarize | grep -E "\.\w*$" | grep -vE "^$" | grep -vE "${SVN_PACKAGE_IGNORE_FINAL_FILES}"`
+        local TMP_CURRENT_DIFF_LIST=`$SVN_PATH diff -r $WORK_PACKAGE_PREV_VERS:HEAD --summarize | grep -E "\.\w*$" | grep -vE "^$" | grep -vE "${SVN_PACKAGE_IGNORE_FINAL_FILES}"`
         local TMP_CURRENT_DIFF_COUNT=`echo "$TMP_CURRENT_DIFF_LIST" | grep -vE "^$" | wc -l`
         
         # 通知信息        
-        echo "SvnPackager：Version '${SVN_LOCAL_NAME}@${WORK_PACKAGE_PREV_VERSION}:${TMP_CURRENT_VERSION}' takes ${TMP_CURRENT_DIFF_COUNT} different files."
+        echo "SvnPackager：Version '${SVN_LOCAL_NAME}@${WORK_PACKAGE_PREV_VERS}:${TMP_CURRENT_VERS}' takes ${TMP_CURRENT_DIFF_COUNT} different files."
         echo "---------------------------------------------------"
 
         if [ ${TMP_CURRENT_DIFF_COUNT} -gt 0 ]; then
-            slack ">Start package svn project '${SVN_LOCAL_NAME}@${WORK_PACKAGE_PREV_VERSION}:${TMP_CURRENT_VERSION}', it takes ${TMP_CURRENT_DIFF_COUNT} differents, percent ${TMP_DIR_DONE_PERCENT}."
+            slack ">Start package svn project '${SVN_LOCAL_NAME}@${WORK_PACKAGE_PREV_VERS}:${TMP_CURRENT_VERS}', it takes ${TMP_CURRENT_DIFF_COUNT} differents, percent ${TMP_DIR_DONE_PERCENT}."
 
             # 当前文件夹名称
             local TMP_CURRENT_RELATIVE_DIR=`echo $SVN_LOCAL_DIR | sed "s@${SVN_PACKAGE_CHECK_LOCAL_ROOT_DIR}@@g"`
             #local TMP_CURRENT_ABSOLUTE_DIR="${WORK_HOLDER_DIR}${TMP_CURRENT_RELATIVE_DIR}"
 
             # 脚本工作目录，以时间戳为基准，作为针对上个版本的更新
-            local WORK_HOLDER_DIR=`dirname "${SVN_PACKAGE_CHECK_LOCAL_ROOT_DIR}"`/packages/$TMP_CURRENT_LOCAL_VERSION
+            local WORK_HOLDER_DIR=`dirname "${SVN_PACKAGE_CHECK_LOCAL_ROOT_DIR}"`/packages/$TMP_CURRENT_LOCAL_VERS
             local WORK_HOLDER_PATCH_DIR="$WORK_HOLDER_DIR/patch${TMP_CURRENT_RELATIVE_DIR}"
             local WORK_HOLDER_RESTORE_DIR="$WORK_HOLDER_DIR/restore${TMP_CURRENT_RELATIVE_DIR}"
 
@@ -103,7 +103,7 @@ function exec_program()
 #------------------------------------------------
 #  Project Patch Script
 #  Telegram: meyer_com
-#  PatchVersion：${TMP_CURRENT_LOCAL_VERSION}
+#  PatchVersion：${TMP_CURRENT_LOCAL_VERS}
 #  Generate by svn_package.sh
 #------------------------------------------------
 __script_dir="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
@@ -117,7 +117,7 @@ EOF
             cat >> ${WORK_HOLDER_DIR}/patch.sh <<EOF
 `echo "$TMP_CURRENT_INFO" | sed "s@^@# @g"`
 #------------------------------------------------
-`echo "# 上一版本：$WORK_PACKAGE_PREV_VERSION"`
+`echo "# 上一版本：$WORK_PACKAGE_PREV_VERS"`
 `echo "# 更新文件清单："`
 `echo "$TMP_CURRENT_DIFF_LIST" | sed "s@^@# @g"`
 rsync -av patch${TMP_CURRENT_RELATIVE_DIR} ${SVN_LOCAL_PARENT_DIR}
@@ -143,7 +143,7 @@ EOF
             cat >> ${WORK_HOLDER_DIR}/restore.sh <<EOF
 `echo "$TMP_CURRENT_INFO" | sed "s@^@# @g"`
 #------------------------------------------------
-`echo "# 上一版本：$WORK_PACKAGE_PREV_VERSION"`
+`echo "# 上一版本：$WORK_PACKAGE_PREV_VERS"`
 `echo "# 更新文件清单："`
 `echo "$TMP_CURRENT_DIFF_LIST" | sed "s@^@# @g"`
 rsync -av restore${TMP_CURRENT_RELATIVE_DIR} ${SVN_LOCAL_PARENT_DIR}
@@ -194,7 +194,7 @@ EOF
                 echo "---------------------------------------------------"
             done
             
-            slack ">Svn project '${SVN_LOCAL_NAME}@${WORK_PACKAGE_PREV_VERSION}:${TMP_CURRENT_VERSION}', package done."
+            slack ">Svn project '${SVN_LOCAL_NAME}@${WORK_PACKAGE_PREV_VERS}:${TMP_CURRENT_VERS}', package done."
 
             # 删除升级包软连接
             remove_slink $WORK_HOLDER_PATCH_DIR
@@ -203,13 +203,13 @@ EOF
             cp -r . $WORK_HOLDER_RESTORE_DIR
 
             # 保存当前版本号
-            echo "$TMP_CURRENT_VERSION" > prev_version
+            echo "$TMP_CURRENT_VERS" > prev_version
             
             # 删除还原包软连接
             remove_slink $WORK_HOLDER_RESTORE_DIR
 
             # 存储上一版（更新到上一次打包版本号）
-            cd $WORK_HOLDER_RESTORE_DIR && $SVN_PATH update -r $WORK_PACKAGE_PREV_VERSION
+            cd $WORK_HOLDER_RESTORE_DIR && $SVN_PATH update -r $WORK_PACKAGE_PREV_VERS
 
             # 删除还原包排除文件
             remove_ignores $WORK_HOLDER_RESTORE_DIR

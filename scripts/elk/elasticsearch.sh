@@ -86,7 +86,7 @@ function conf_elasticsearch()
     sed -i "s@^#node\.name:.*@node.name: es-node-${LOCAL_ID}@g" config/elasticsearch.yml
     sed -i "s@^#cluster\.initial_master_nodes:.*@cluster.initial_master_nodes: [\"es-node-${LOCAL_ID}\"]@g" config/elasticsearch.yml
 	
-    sed -i "s@^#network\.host:.*@network.host: 0.0.0.0@g" config/elasticsearch.yml
+    sed -i "s@^#network\.host:.*@network.host: ${LOCAL_HOST}@g" config/elasticsearch.yml
     sed -i "s@^#http\.port:.*@http.port: ${TMP_ELK_ES_SETUP_HTTP_PORT}@g" config/elasticsearch.yml
     sed -i "/http\.port/a transport.port: ${TMP_ELK_ES_SETUP_TRANS_PORT}" config/elasticsearch.yml
     sed -i "s@^discovery\.seed_hosts:.*@discovery.seed_hosts: [\"[::1]\"]@g" config/elasticsearch.yml

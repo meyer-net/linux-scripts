@@ -19,6 +19,7 @@ local TMP_FLK_SETUP_HDOP_PORT=13000
 function set_env_flink()
 {
     cd ${__DIR} && source scripts/lang/java.sh
+    cd ${__DIR} && source scripts/lang/python.sh
     
     local TMP_IS_FLK_HDOP_LOCAL=`lsof -i:${TMP_FLK_SETUP_HDOP_PORT}`
     if [ -z "${TMP_IS_FLK_HDOP_LOCAL}" ]; then 
@@ -210,10 +211,10 @@ function exec_step_flink()
 # x1-下载软件
 function down_flink()
 {
-	local TMP_FLK_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://flink.apache.org/downloads.html | egrep "Apache Flink® .+ is our latest stable release" | awk -F' ' '{print $3}'`
-	echo "Flink: The newer stable version is ${TMP_FLK_SETUP_OFFICIAL_STABLE_VERSION}"
+	local TMP_FLK_SETUP_OFFICIAL_STABLE_VERS=`curl -s https://flink.apache.org/downloads.html | egrep "Apache Flink® .+ is our latest stable release" | awk -F' ' '{print $3}'`
+	echo "Flink: The newer stable version is ${TMP_FLK_SETUP_OFFICIAL_STABLE_VERS}"
     
-    local TMP_FLK_SETUP_NEWER="${TMP_FLK_SETUP_OFFICIAL_STABLE_VERSION}"
+    local TMP_FLK_SETUP_NEWER="${TMP_FLK_SETUP_OFFICIAL_STABLE_VERS}"
 	exec_text_format "TMP_FLK_SETUP_NEWER" "https://archive.apache.org/dist/flink/flink-%s/flink-%s-bin-scala_2.12.tgz"
     setup_soft_wget "flink" "${TMP_FLK_SETUP_NEWER}" "exec_step_flink"
 

@@ -82,9 +82,13 @@ function choice_type()
 
 function update_libs()
 {
-    source scripts/os${OS_VERSION}/optimize.sh
-    source scripts/os${OS_VERSION}/epel.sh
-    source scripts/os${OS_VERSION}/libs.sh
+    #---------- CHANGE ---------- {
+    sudo hostnamectl set-hostname ${SYS_NEW_NAME}
+    #---------- CHANGE ---------- }
+
+    source scripts/os${OS_VERS}/optimize.sh
+    source scripts/os${OS_VERS}/epel.sh
+    source scripts/os${OS_VERS}/libs.sh
     
     source scripts/softs/supervisor.sh
     
@@ -146,7 +150,7 @@ function servicemesh()
 
 function database()
 {
-	exec_if_choice "TMP_CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,MySql,PostgresQL,ClickHouse,RethinkDB,Exit" "${TMP_SPLITER}" "scripts/database"
+	exec_if_choice "TMP_CHOICE_DATABASE" "Please choice which database compoment you want to setup" "...,MySql,PostgresQL,ClickHouse,MongoDB,RethinkDB,Exit" "${TMP_SPLITER}" "scripts/database"
 	
     return $?
 }
@@ -174,7 +178,7 @@ function network()
 
 function softs()
 {
-	exec_if_choice "TMP_CHOICE_SOFTS" "Please choice which soft you want to setup" "...,Supervisor,Exit" "${TMP_SPLITER}" "scripts/softs"
+	exec_if_choice "TMP_CHOICE_SOFTS" "Please choice which soft you want to setup" "...,Supervisor,Rocket.Chat,Exit" "${TMP_SPLITER}" "scripts/softs"
 	
     return $?
 }
@@ -266,11 +270,6 @@ function bootstrap() {
     #}
 
     bash -c "yum versionlock clear"
-    #---------- CHANGE ---------- {
-    SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
-    SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"
-    sudo hostnamectl set-hostname ${SYS_NEW_NAME}
-    #---------- CHANGE ---------- }
 
     mkdirs
  

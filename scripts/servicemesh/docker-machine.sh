@@ -26,12 +26,12 @@ function setup_docker_machine()
     echo "-----------------------------------------------------------"
     echo "DockerMachine: System start find the newer official version"
     echo "-----------------------------------------------------------"
-	local TMP_DOCKER_MACHINE_NEWER_VERSION=`curl -s https://github.com/docker/machine/releases | grep "/docker/machine/releases/tag/" | sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | awk '{sub("^ *","");sub(" *$","");print}' | awk NR==1`
-    echo "DockerMachine: The newer official version is $TMP_DOCKER_MACHINE_NEWER_VERSION"
+	local TMP_DOCKER_MACHINE_NEWER_VERS=`curl -s https://github.com/docker/machine/releases | grep "/docker/machine/releases/tag/" | sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | awk '{sub("^ *","");sub(" *$","");print}' | awk NR==1`
+    echo "DockerMachine: The newer official version is $TMP_DOCKER_MACHINE_NEWER_VERS"
     echo "-----------------------------------------------------------"
 
     mkdir -pv $TMP_SETUP_DOCKER_MACHINE_DIR
-    curl -L https://github.com/docker/machine/releases/download/${TMP_DOCKER_MACHINE_NEWER_VERSION}/docker-machine-`uname -s`-`uname -m` > $TMP_SETUP_DOCKER_MACHINE_PATH
+    curl -L https://github.com/docker/machine/releases/download/${TMP_DOCKER_MACHINE_NEWER_VERS}/docker-machine-`uname -s`-`uname -m` > $TMP_SETUP_DOCKER_MACHINE_PATH
 
     chmod +x $TMP_SETUP_DOCKER_MACHINE_PATH
     

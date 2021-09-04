@@ -55,7 +55,7 @@ function setup_epel()
     mkdir -pv rpms/system/epel
     cd rpms/system/epel
 
-    while_wget "--content-disposition https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm" "rpm -ivh epel-release-latest-7.noarch.rpm"
+    while_wget "--content-disposition https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OS_VERS}.noarch.rpm" "rpm -ivh epel-release-latest-${OS_VERS}.noarch.rpm"
 
     return $?
 }
@@ -176,7 +176,7 @@ function setup_shadowsocks()
     echo "--------------------------------------------------------------------------"
 	sudo tee /etc/shadowsocks-libev/config.server.json <<-EOF
 {
-	"server": ["[::0]", "0.0.0.0"],
+	"server": ["[::0]", "${LOCAL_HOST}"],
 	"server_port": $TMP_CURR_SHADOWSOCK_SERVERPORT,
 	"password": "$TMP_CURR_SHADOWSOCK_SERVERPASSWD",
     "timeout": 60,
@@ -193,7 +193,7 @@ EOF
 {
 	"server": "$LOCAL_IPV4",
 	"server_port": $TMP_CURR_SHADOWSOCK_SERVERPORT,
-	"local_address": "0.0.0.0",
+	"local_address": "${LOCAL_HOST}",
 	"local_port": $TMP_CURR_SHADOWSOCK_LOCALPORT,
 	"password": "$TMP_CURR_SHADOWSOCK_SERVERPASSWD",
     "timeout": 600,

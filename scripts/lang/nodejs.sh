@@ -57,21 +57,17 @@ function setup_nodejs()
     echo "---------------------------------------------------"
     echo "NodeJs: System start find the newer popular version"
     echo "---------------------------------------------------"
-	local TMP_NVM_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://nodejs.org/en/ | grep "https://nodejs.org/dist" | awk -F'\"' '{print $2}' | awk -F'/' '{print $(NF-1)}' | awk NR==1 | sed 's@v@@'`
-	echo "NodeJs: The newer popular version is ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERSION}"
+	local TMP_NVM_SETUP_OFFICIAL_STABLE_VERS=`curl -s https://nodejs.org/en/ | grep "https://nodejs.org/dist" | awk -F'\"' '{print $2}' | awk -F'/' '{print $(NF-1)}' | awk NR==1 | sed 's@v@@'`
+	echo "NodeJs: The newer popular version is ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERS}"
     echo "--------------------------------------------------"
 	
 	#如果没加载到最新版，则默认使用稳定版（防止官方展示规则变动的情况）
-	set_if_empty "TMP_NVM_SETUP_OFFICIAL_STABLE_VERSION" "stable"
+	set_if_empty "TMP_NVM_SETUP_OFFICIAL_STABLE_VERS" "stable"
 
 	#安装并指定新版本
-	if [ -n "${TMP_NVM_SETUP_OFFICIAL_STABLE_VERSION}" ]; then
-		nvm install ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERSION}
-		nvm use ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERSION}
-		nvm alias default ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERSION}
-	else
-		nvm use node
-	fi
+	nvm install ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERS}
+	nvm use ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERS}
+	nvm alias default ${TMP_NVM_SETUP_OFFICIAL_STABLE_VERS}
 
     echo "---------------------------------"
 	echo "NodeJs: Local list"
@@ -154,6 +150,7 @@ function boot_nodejs()
 	cd ${TMP_NVM_SETUP_DIR}
 	
 	# 验证安装
+	nvm --version
 	nvm current
 
 	# 添加系统启动命令（RPM还是需要）

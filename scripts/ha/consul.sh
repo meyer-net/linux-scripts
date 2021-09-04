@@ -18,8 +18,8 @@ local TMP_CSL_SETUP_SERF_WAN_PORT=18302
 local TMP_CSL_SETUP_HTTP_API_PORT=18500
 local TMP_CSL_SETUP_DNS_PORT=18600
 
-local TMP_CSL_SETUP_CLUSTER_LEADER_ADDR="${LOCAL_HOST}"
-local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR="${LOCAL_HOST}"
+local TMP_CSL_SETUP_CLUSTER_LEADER_HOST="${LOCAL_HOST}"
+local TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST="${LOCAL_HOST}"
 
 ##########################################################################################################
 
@@ -99,7 +99,7 @@ function conf_consul()
     #-advertise：通知展现地址用来改变我们给集群中的其他节点展现的地址，一般情况下-bind地址就是展现地址
     #-bootstrap：用来控制一个server是否在bootstrap模式，在一个datacenter中只能有一个server处于bootstrap模式，当一个server处于bootstrap模式时，可以自己选举为raft leader。
     #-bootstrap-expect：在一个datacenter中期望提供的server节点数目，当该值提供的时候，consul一直等到达到指定sever数目的时候才会引导整个集群，该标记不能和bootstrap公用
-    #-bind：该地址用来在集群内部的通讯，集群内的所有节点到地址都必须是可达的，默认是0.0.0.0
+    #-bind：该地址用来在集群内部的通讯，集群内的所有节点到地址都必须是可达的，默认是${LOCAL_HOST}
     #-client：consul绑定在哪个client地址上，这个地址提供HTTP、DNS、RPC等服务，默认是127.0.0.1
     #-config-file：明确的指定要加载哪个配置文件
     #-config-dir：配置文件目录，里面所有以.json结尾的文件都会被加载
@@ -123,9 +123,9 @@ function conf_consul()
     echo "The Keygen Used：'${red}${TMP_CSL_SETUP_KEYGEN}${reset}', Please ${green}copy${reset} it use for other cluster host"
     echo 
 
-    input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_ADDR" "Consul.Cluster: Please ender cluster of ${green}leader host${reset}"
+    input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_HOST" "Consul.Cluster: Please ender cluster of ${green}leader host${reset}"
 
-    exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR" "Consul.Cluster: Please ender cluster child.\$I host like '${LOCAL_HOST}'" "%s" "
+    exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST" "Consul.Cluster: Please ender cluster child.\$I host like '${LOCAL_HOST}'" "%s" "
         echo \"Port of ${TMP_CSL_SETUP_RPC_PORT} allowed for '\${CURRENT}'\"
         echo_soft_port ${TMP_CSL_SETUP_RPC_PORT} \${CURRENT}
         echo \"Port of ${TMP_CSL_SETUP_SERF_LAN_PORT} allowed for '\${CURRENT}'\"
@@ -149,7 +149,7 @@ function conf_consul()
 	"log_level": "INFO",
 	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
-        "http": "0.0.0.0"
+        "http": "${LOCAL_HOST}"
     },
 	"ports": {
 		"server": ${TMP_CSL_SETUP_RPC_PORT},
@@ -174,7 +174,7 @@ EOF
 	"log_level": "INFO",
 	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
-        "http": "0.0.0.0"
+        "http": "${LOCAL_HOST}"
     },
 	"ports": {
 		"server": ${TMP_CSL_SETUP_RPC_PORT},
@@ -184,7 +184,7 @@ EOF
 		"dns": ${TMP_CSL_SETUP_DNS_PORT}
   	},
 	"enable_syslog": true,
-	"start_join": ["${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR}"]
+	"start_join": ["${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST}"]
 }
 EOF
 
@@ -199,7 +199,7 @@ EOF
 	"log_level": "INFO",
 	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
-        "http": "0.0.0.0"
+        "http": "${LOCAL_HOST}"
     },
 	"ports": {
 		"server": ${TMP_CSL_SETUP_RPC_PORT},
@@ -209,7 +209,7 @@ EOF
 		"dns": ${TMP_CSL_SETUP_DNS_PORT}
   	},
 	"enable_syslog": true,
-	"start_join": ["${TMP_CSL_SETUP_CLUSTER_LEADER_ADDR}"]
+	"start_join": ["${TMP_CSL_SETUP_CLUSTER_LEADER_HOST}"]
 }
 EOF
 
@@ -229,7 +229,7 @@ function boot_consul()
     consul -v
 
     # 当前启动命令,判断如果是主节点
-    if [ "${TMP_CSL_SETUP_CLUSTER_LEADER_ADDR}" = "${LOCAL_HOST}" ]; then
+    if [ "${TMP_CSL_SETUP_CLUSTER_LEADER_HOST}" = "${LOCAL_HOST}" ]; then
         echo "Consul：Exec bootstrap mode"
         start_bootstrap
     else
@@ -255,11 +255,11 @@ function start_bootstrap()
 	local TMP_CSL_SETUP_DIR=`pwd`
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
 
-    local TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT=`echo ${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR} | grep -o "," | wc -l`
-    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT} > logs/boot.log 2>&1 &
+    local TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST_COUNT=`echo ${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST} | grep -o "," | wc -l`
+    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST_COUNT} > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
-    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_ADDR_COUNT}" "" "1"
+    echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST_COUNT}" "" "1"
 
     return $?
 }

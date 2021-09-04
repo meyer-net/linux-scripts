@@ -57,7 +57,8 @@ SUPERVISOR_ATT_DIR=${ATT_DIR}/supervisor
 
 CHOICE_CTX="x"
 TMP_SPLITER="------------------------------------------------------"
-TMP_SPLITER_LEN=${#TMP_SPLITER}-2
+TMP_FILL_RIGHT_TITLE_FORMAT="|${green}%${reset}|"
+TMP_FILL_RIGHT_ITEM_FORMAT="|%|"
 
 function echo_title()
 {
@@ -75,8 +76,8 @@ function echo_title()
     echo "Current script __conf：${__CONF}"
     
 	clear
-    TMP_FILL_RIGHT_TITLE_FORMAT="|${green}%${reset}|"
-    TMP_FILL_RIGHT_ITEM_FORMAT="|%|"
+
+    local TMP_SPLITER_LEN=${#TMP_SPLITER}-2
 
     echo ${TMP_SPLITER}
     echo_fill_right "Function Boots Of Centos7" "" ${TMP_SPLITER_LEN} ${TMP_FILL_RIGHT_TITLE_FORMAT}
@@ -85,7 +86,7 @@ function echo_title()
     
     echo_fill_right "System Name: ${SYS_NAME}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
     echo_fill_right "Product Name: ${SYS_PRODUCT_NAME}(${SYSTEMD_DETECT_VIRT})" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
-    echo_fill_right "OS Version: CentOS.${OS_VERSION}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
+    echo_fill_right "OS Version: CentOS.${OS_VERS}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
     echo_fill_right "Localhost: ${LOCAL_HOST}(${LOCAL_ID})" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
     echo_fill_right "IpV4: ${LOCAL_IPV4}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT
     echo_fill_right "IpV6: ${LOCAL_IPV6}" "" ${TMP_SPLITER_LEN} $TMP_FILL_RIGHT_ITEM_FORMAT

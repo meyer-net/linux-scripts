@@ -702,7 +702,7 @@ function while_curl()
 	echo "-------------------------------------------------------------------------------------------------------------------------"
 
 	cd ${CURL_DIR}
-	local TMP_SOFT_CURL_COMMAND="curl -4sSkL ${TMP_SOFT_CURL_TRUE_URL} -o- ${TMP_SOFT_CURL_FILE_DEST_NAME}"
+	local TMP_SOFT_CURL_COMMAND="curl -4sSkL ${TMP_SOFT_CURL_TRUE_URL} -o ${TMP_SOFT_CURL_FILE_DEST_NAME}"
 	echo "${TMP_SOFT_CURL_COMMAND}"
 	while [ ! -f "${TMP_SOFT_CURL_FILE_DEST_NAME}" ]; do
 		${TMP_SOFT_CURL_COMMAND}
@@ -889,24 +889,23 @@ function setup_soft_git()
 	return $?
 }
 
-#安装软件下载模式
-#参数1：软件安装名称
-#参数2：软件下载后执行函数名称
+# PIP安装软件下载模式
+# 参数1：软件安装名称
+# 参数2：软件下载后执行函数名称
+# 参数3：pip版本，默认2
 function setup_soft_pip() 
 {
 	if [ $? -ne 0 ]; then
 		return $?
 	fi
 
-	TMP_SOFT_PIP_NAME=`echo "$1" | awk -F',' '{print $1}'`
-	TMP_SOFT_PIP_PATH=`echo "$1" | awk -F',' '{print $NF}'`
-	TMP_SOFT_PIP_SETUP_FUNC=$2
+	local TMP_SOFT_PIP_NAME=`echo "${1}" | awk -F',' '{print $1}'`
+	local TMP_SOFT_PIP_PATH=`echo "${1}" | awk -F',' '{print $NF}'`
+	local TMP_SOFT_PIP_SETUP_FUNC=${2}
+	local TMP_SOFT_PIP_VERS=${3:-2}
 	
-	typeset -l TMP_SOFT_LOWER_NAME
-	local TMP_SOFT_LOWER_NAME=${TMP_SOFT_PIP_NAME}
-	local TMP_SOFT_SETUP_PATH=`pip show ${TMP_SOFT_LOWER_NAME} | grep "Location" | awk -F' ' '{print $2}' | xargs -I {} echo "{}/${TMP_SOFT_LOWER_NAME}"`
-
-	if [ ! -f "/usr/bin/pip" ]; then
+	# 版本2为linux系统默认自带，所以未装py3时判断
+	if [ ${TMP_SOFT_PIP_VERS} -eq 2 ] && [ ! -f "/usr/bin/pip" ]; then
 		while_curl "https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py" "python get-pip.py && rm -rf get-pip.py"
 		pip install --upgrade pip
 		pip install --upgrade setuptools
@@ -915,6 +914,10 @@ function setup_soft_pip()
 		mv ${TMP_PY_DFT_SETUP_PATH} ${PY_PKGS_SETUP_DIR}
 		ln -sf ${PY_PKGS_SETUP_DIR} ${TMP_PY_DFT_SETUP_PATH}
 	fi
+
+	typeset -l TMP_SOFT_LOWER_NAME
+	local TMP_SOFT_LOWER_NAME=${TMP_SOFT_PIP_NAME}
+	local TMP_SOFT_SETUP_PATH=`pip show ${TMP_SOFT_LOWER_NAME} | grep "Location" | awk -F' ' '{print $2}' | xargs -I {} echo "{}/${TMP_SOFT_LOWER_NAME}"`
 
 	# pip show supervisor
 	# pip freeze | grep "supervisor=="
@@ -947,7 +950,7 @@ function setup_soft_npm()
 	local TMP_SOFT_NPM_SETUP_NAME=`echo "$1" | awk -F',' '{print $1}'`
 	local TMP_SOFT_NPM_SETUP_PATH=`echo "$1" | awk -F',' '{print $NF}'`
 	local TMP_SOFT_NPM_SETUP_FUNC=$2
-	local TMP_SOFT_NPM_NODE_VERSION=$3
+	local TMP_SOFT_NPM_NODE_VERS=$3
 	
 	typeset -l TMP_SOFT_NPM_SETUP_NAME_LOWER
 	local TMP_SOFT_NPM_SETUP_NAME_LOWER=${TMP_SOFT_NPM_SETUP_NAME}
@@ -959,16 +962,16 @@ function setup_soft_npm()
 	npm audit fix
 
 	# 指定版本
-	if [ -n "${TMP_SOFT_NPM_NODE_VERSION}" ]; then
-		nvm install ${TMP_SOFT_NPM_NODE_VERSION}
-		nvm use ${TMP_SOFT_NPM_NODE_VERSION}
+	if [ -n "${TMP_SOFT_NPM_NODE_VERS}" ]; then
+		nvm install ${TMP_SOFT_NPM_NODE_VERS}
+		nvm use ${TMP_SOFT_NPM_NODE_VERS}
 	else
-		TMP_SOFT_NPM_NODE_VERSION=`nvm current`
+		TMP_SOFT_NPM_NODE_VERS=`nvm current`
 	fi
 
 	local TMP_SOFT_NPM_SETUP_INFO=`npm list -g --depth 0 | grep -o ${TMP_SOFT_NPM_SETUP_NAME_LOWER}.*`
 	# 在当前指定安装版本的目录下找是否安装
-	local TMP_SOFT_NPM_SETUP_DIR=`dirname $(npm config get prefix)`/${TMP_SOFT_NPM_NODE_VERSION}/lib/node_modules/${TMP_SOFT_NPM_SETUP_NAME_LOWER}
+	local TMP_SOFT_NPM_SETUP_DIR=`dirname $(npm config get prefix)`/${TMP_SOFT_NPM_NODE_VERS}/lib/node_modules/${TMP_SOFT_NPM_SETUP_NAME_LOWER}
 
 	if [ -z "${TMP_SOFT_NPM_SETUP_INFO}" ]; then
 		npm update
@@ -984,7 +987,7 @@ function setup_soft_npm()
 		echo "Npm installed ${TMP_SOFT_NPM_SETUP_NAME}"
 
 		#安装后配置函数
-		${TMP_SOFT_NPM_SETUP_FUNC} "${TMP_SOFT_NPM_SETUP_DIR}" "${TMP_SOFT_NPM_NODE_VERSION}"
+		${TMP_SOFT_NPM_SETUP_FUNC} "${TMP_SOFT_NPM_SETUP_DIR}" "${TMP_SOFT_NPM_NODE_VERS}"
 	else
     	echo ${TMP_SOFT_NPM_SETUP_INFO}
 
@@ -1011,10 +1014,6 @@ function setup_soft_npm()
 #参数2：需要设置的变量值
 function set_if_empty()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	TMP_VAR_NAME=$1
 	TMP_VAR_VAL=$2
 
@@ -1033,10 +1032,6 @@ function set_if_empty()
 #参数3：需要对比的变量值
 function set_if_equals()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_SOURCE_VAR_NAME=$1
 	local TMP_COMPARE_VAR_NAME=$2
 	local TMP_SET_VAR_VAL=$3
@@ -1089,10 +1084,6 @@ function input_if_empty()
 # 	set_url_list_newer_date_link_filename "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-.*.x86_64.rpm"
 function set_url_list_newer_date_link_filename()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_VAR_NAME=$1
 	local TMP_VAR_FIND_URL=$2
 	local TMP_VAR_KEY_WORDS=$3
@@ -1119,10 +1110,6 @@ function set_url_list_newer_date_link_filename()
 # 	set_url_list_newer_href_link_filename "TMP_NEWER_LINK" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
 function set_url_list_newer_href_link_filename()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_VAR_NAME=$1
 	local TMP_VAR_FIND_URL=$2
 	local TMP_VAR_KEY_WORDS=$(echo ${3} | sed 's@()@[0-9.-]*@g')  #‘gradle-()-bin.zip’ -> 'gradle-.*-bin.zip'
@@ -1136,8 +1123,8 @@ function set_url_list_newer_href_link_filename()
 	# local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
 
 	# 清除字母开头： | tr -d "a-zA-Z-"
-    local TMP_NEWER_VERSION=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | sort -rV | awk 'NR==1'`
-	local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${TMP_NEWER_VERSION}.*@g")
+    local TMP_NEWER_VERS=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | sort -rV | awk 'NR==1'`
+	local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${TMP_NEWER_VERS}.*@g")
     local TMP_NEWER_LINK_FILENAME=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
 
 	if [ -n "${TMP_NEWER_LINK_FILENAME}" ]; then
@@ -1151,17 +1138,13 @@ function set_url_list_newer_href_link_filename()
 #参数1：需要设置的变量名
 #参数2：Github仓储/项目，例如meyer-net/linux_scripts
 #示例：
-#	TMP_ELASTICSEARCH_NEWER_VERSION="0.0.1"
-#	set_github_soft_releases_newer_version "TMP_ELASTICSEARCH_NEWER_VERSION" "elastic/elasticsearch"
-#	echo "The github soft of 'elastic/elasticsearch' releases newer version is $TMP_ELASTICSEARCH_NEWER_VERSION"
+#	TMP_ELASTICSEARCH_NEWER_VERS="0.0.1"
+#	set_github_soft_releases_newer_version "TMP_ELASTICSEARCH_NEWER_VERS" "elastic/elasticsearch"
+#	echo "The github soft of 'elastic/elasticsearch' releases newer version is $TMP_ELASTICSEARCH_NEWER_VERS"
 # ??? 兼容没有tag标签的情况，类似filebeat
 function set_github_soft_releases_newer_version() 
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
-	TMP_GITHUB_SOFT_NEWER_VERSION_VAR_NAME=$1
+	local TMP_GITHUB_SOFT_NEWER_VERS_VAR_NAME=$1
 	local TMP_GITHUB_SOFT_PATH=$2
 
 	local TMP_GITHUB_SOFT_HTTPS_PATH="https://github.com/${TMP_GITHUB_SOFT_PATH}/releases"
@@ -1169,15 +1152,15 @@ function set_github_soft_releases_newer_version()
 
 	# 提取href中值，如需提取标签内值，则使用： sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | awk '{sub("^ *","");sub(" *$","");print}' | awk NR==1
 	
-	local TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL=`eval echo '$'${TMP_GITHUB_SOFT_NEWER_VERSION_VAR_NAME}`
+	local TMP_GITHUB_SOFT_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${TMP_GITHUB_SOFT_NEWER_VERS_VAR_NAME}`
 
     echo $TMP_SPLITER
-    echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}', default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERSION_VAR_YET_VAL}${reset}'"
-	local TMP_GITHUB_SOFT_NEWER_VERSION=`curl -s $TMP_GITHUB_SOFT_HTTPS_PATH | grep "$TMP_GITHUB_SOFT_TAG_PATH" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.*", "");print}' | awk NR==1`
+    echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}', default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERS_VAR_YET_VAL}${reset}'"
+	local TMP_GITHUB_SOFT_NEWER_VERS=`curl -s $TMP_GITHUB_SOFT_HTTPS_PATH | grep "$TMP_GITHUB_SOFT_TAG_PATH" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.*", "");print}' | awk NR==1`
 
-	if [ -n "$TMP_GITHUB_SOFT_NEWER_VERSION" ]; then
-		echo "Upgrade the soft in github repos of '${red}$TMP_GITHUB_SOFT_PATH${reset}' releases newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERSION}${reset}'"
-		eval ${1}=`echo '$TMP_GITHUB_SOFT_NEWER_VERSION'`
+	if [ -n "$TMP_GITHUB_SOFT_NEWER_VERS" ]; then
+		echo "Upgrade the soft in github repos of '${red}$TMP_GITHUB_SOFT_PATH${reset}' releases newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERS}${reset}'"
+		eval ${1}=`echo '$TMP_GITHUB_SOFT_NEWER_VERS'`
 	fi
     echo $TMP_SPLITER
 	
@@ -1190,10 +1173,6 @@ function set_github_soft_releases_newer_version()
 #参数3：查找关键字
 function find_content_list_first_line()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_VAR_NAME=$1
 	local TMP_VAR_FIND_CONTENT=$2
 	local TMP_VAR_KEY_WORDS=$3
@@ -1213,14 +1192,14 @@ function find_content_list_first_line()
 #参数3：总长度
 function fill_right()
 {
-	TMP_VAR_NAME=$1
-	TMP_VAR_VAL=`eval echo '$'$TMP_VAR_NAME`
-	TMP_FILL_CHR=$2
-	TMP_TOTAL_LEN=$3
+	local TMP_VAR_NAME=$1
+	local TMP_VAR_VAL=`eval echo '$'$TMP_VAR_NAME`
+	local TMP_FILL_CHR=$2
+	local TMP_TOTAL_LEN=$3
 
-	TMP_ITEM_LEN=${#TMP_VAR_VAL}
-	TMP_OUTPUT_SPACE_COUNT=$((TMP_TOTAL_LEN-TMP_ITEM_LEN))	
-	TMP_SPACE_STR=`eval printf %.s'$TMP_FILL_CHR' {1..$TMP_OUTPUT_SPACE_COUNT}`
+	local TMP_ITEM_LEN=${#TMP_VAR_VAL}
+	local TMP_OUTPUT_SPACE_COUNT=$((TMP_TOTAL_LEN-TMP_ITEM_LEN))	
+	local TMP_SPACE_STR=`eval printf %.s'$TMP_FILL_CHR' {1..$TMP_OUTPUT_SPACE_COUNT}`
 	
 	eval $TMP_VAR_NAME='$'TMP_VAR_VAL'$'TMP_SPACE_STR
 	
@@ -1235,7 +1214,7 @@ function fill_right()
 #参数4：格式化字符
 function echo_fill_right()
 {
-	TMP_VAR_FILL_RIGHT=$1
+	local TMP_VAR_FILL_RIGHT=$1
 	fill_right "TMP_VAR_FILL_RIGHT" $2 $3
 
 	if [ -n "$4" ]; then
@@ -1254,10 +1233,6 @@ function echo_fill_right()
 #参数4：自定义的Spliter
 function set_if_choice()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_VAR_NAME=$1
 	local TMP_NOTICE=$2
 	local TMP_CHOICE=$3
@@ -1727,10 +1702,6 @@ function exec_while_read_json()
 #参数7：运行所需的用户，默认root
 function echo_startup_config()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-	
 	set_if_empty "SUPERVISOR_ATT_DIR" "${ATT_DIR}/supervisor"
 
 	local TMP_STARTUP_SUPERVISOR_NAME=${1}
@@ -1773,14 +1744,21 @@ function echo_startup_config()
 
 	TMP_STARTUP_SUPERVISOR_PRIORITY="priority = ${TMP_STARTUP_SUPERVISOR_PRIORITY}"
 	
-	local TMP_SFT_SUPERVISOR_CONF_DIR="${SUPERVISOR_ATT_DIR}/conf"
-	local TMP_SFT_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH=${TMP_SFT_SUPERVISOR_CONF_DIR}/${TMP_STARTUP_SUPERVISOR_FILENAME}
+	local TMP_STARTUP_SUPERVISOR_CONF_DIR=${SUPERVISOR_ATT_DIR}/etc/conf
+	local TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH=${TMP_STARTUP_SUPERVISOR_CONF_DIR}/${TMP_STARTUP_SUPERVISOR_FILENAME}
     local TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
+	
+	path_not_exists_create `dirname ${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}`
 	path_not_exists_create "${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}"
 
-	cat >$TMP_SFT_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH<<EOF
+	echo
+    echo ${TMP_SPLITER}
+	if [ ! -f "${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}" ]; then
+		echo "Supervisor：Gen startup config of '${green}${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}${reset}'"
+		echo
+		sudo tee ${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH} <<-EOF
 [program:${TMP_STARTUP_SUPERVISOR_NAME}]
-command = /bin/bash -c 'source "\$0" && exec "\$@"' $TMP_STARTUP_SUPERVISOR_SOURCE $TMP_STARTUP_SUPERVISOR_COMMAND ; 启动命令，可以看出与手动在命令行启动的命令是一样的
+command = /bin/bash -c 'source "\$0" && exec "\$@"' ${TMP_STARTUP_SUPERVISOR_SOURCE} ${TMP_STARTUP_SUPERVISOR_COMMAND} ; 启动命令，可以看出与手动在命令行启动的命令是一样的
 autostart = true                                                                     ; 在 supervisord 启动的时候也自动启动
 startsecs = 240                                                                      ; 启动 60 秒后没有异常退出，就当作已经正常启动了
 autorestart = true                                                                   ; 程序异常退出后自动重启
@@ -1790,14 +1768,22 @@ redirect_stderr = true                                                          
 stdout_logfile_maxbytes = 20MB                                                       ; stdout 日志文件大小，默认 50MB
 stdout_logfile_backups = 20                                                          ; stdout 日志文件备份数
 
-$TMP_STARTUP_SUPERVISOR_PRIORITY                                                     ; 启动优先级，默认999
-$TMP_STARTUP_SUPERVISOR_DIR                                                        
+${TMP_STARTUP_SUPERVISOR_PRIORITY}                                                     ; 启动优先级，默认999
+${TMP_STARTUP_SUPERVISOR_DIR}                                                        
 
-$TMP_STARTUP_SUPERVISOR_ENV                                                        
+${TMP_STARTUP_SUPERVISOR_ENV}                                                        
 
 stdout_logfile = ${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}/${TMP_STARTUP_SUPERVISOR_NAME}_stdout.log  ; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）
 numprocs = 1                                                                           ;
 EOF
+	else
+		echo "Supervisor：The startup config of '${red}${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}${reset}' exists"
+		echo
+		cat ${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}
+	fi
+
+    echo ${TMP_SPLITER}
+	echo
 
 	return $?
 }
@@ -1917,7 +1903,7 @@ function proxy_by_ss()
 }
 
 #---------- SYSTEM ---------- {
-MAJOR_VERSION=`grep -oE '[0-9]+\.[0-9]+' /etc/redhat-release | cut -d "." -f1`
+MAJOR_VERS=`grep -oE '[0-9]+\.[0-9]+' /etc/redhat-release | cut -d "." -f1`
 LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
 #---------- SYSTEM ---------- }
 
@@ -1932,7 +1918,7 @@ SYS_PRODUCT_NAME=`dmidecode -t system | grep "Product Name" | awk -F':' '{print 
 CPU_ARCHITECTURE=`lscpu | awk NR==1 | awk -F' ' '{print $NF}'`
 
 # 系统版本
-OS_VERSION=`cat /etc/redhat-release | awk -F'release' '{print $2}' | awk -F'.' '{print $1}' | awk -F' ' '{print $1}'`
+OS_VERS=`cat /etc/redhat-release | awk -F'release' '{print $2}' | awk -F'.' '{print $1}' | awk -F' ' '{print $1}'`
 
 # 处理器核心数
 PROCESSOR_COUNT=`cat /proc/cpuinfo | grep "processor"| wc -l`
@@ -1961,4 +1947,7 @@ LOCAL_HOST="0.0.0.0"
 get_iplocal "LOCAL_HOST"
 
 LOCAL_ID=`echo \${LOCAL_HOST##*.}`
+
+SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
+SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"
 #---------- HARDWARE ---------- }

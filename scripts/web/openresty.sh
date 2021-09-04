@@ -192,7 +192,7 @@ http {
                       '"method":"$request_method",'
                       '"request_uri":"$request_uri",'
                       '"url":"$uri",'
-                      '"app_version":"$HTTP_APP_VERSION",'
+                      '"app_version":"$HTTP_APP_VERS",'
                       '"referer":"$http_referer",'
                       '"agent":"$http_user_agent",'
                       '"status":"$status",'
@@ -488,10 +488,10 @@ function exec_step_openresty()
 # x1-下载软件
 function down_openresty()
 {
-	local TMP_ORST_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://openresty.org/en/download.html | egrep -o "OpenResty .+ Released" | awk NR==1 | awk -F' ' '{print $2}'`
-	echo "OpenResty: The newer stable version is ${TMP_ORST_SETUP_OFFICIAL_STABLE_VERSION}"
+	local TMP_ORST_SETUP_OFFICIAL_STABLE_VERS=`curl -s https://openresty.org/en/download.html | egrep -o "OpenResty .+ Released" | awk NR==1 | awk -F' ' '{print $2}'`
+	echo "OpenResty: The newer stable version is ${TMP_ORST_SETUP_OFFICIAL_STABLE_VERS}"
     
-    local TMP_ORST_SETUP_NEWER="${TMP_ORST_SETUP_OFFICIAL_STABLE_VERSION}"
+    local TMP_ORST_SETUP_NEWER="${TMP_ORST_SETUP_OFFICIAL_STABLE_VERS}"
 	exec_text_format "TMP_ORST_SETUP_NEWER" "https://openresty.org/download/openresty-%s.tar.gz"
     setup_soft_wget "openresty" "${TMP_ORST_SETUP_NEWER}" "exec_step_openresty"
 

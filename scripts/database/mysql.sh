@@ -28,7 +28,7 @@ function setup_mysql()
 	local TMP_MSQL_SETUP_DIR=${1}
 
 	## 源模式
-    local TMP_MSQL_SETUP_RPM_NAME="mysql57-community-release-el7-11.noarch.rpm"
+    local TMP_MSQL_SETUP_RPM_NAME="mysql57-community-release-el${OS_VERS}-11.noarch.rpm"
     while_wget "--content-disposition http://dev.mysql.com/get/${TMP_MSQL_SETUP_RPM_NAME}" "rpm -ivh ${TMP_MSQL_SETUP_RPM_NAME}"
 
     soft_yum_check_setup "mysql-community-server"

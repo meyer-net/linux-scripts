@@ -20,19 +20,19 @@ function setup_kubectl()
     echo "-----------------------------------------------------"
     echo "KubeCtl: System start find the newer official version"
     echo "-----------------------------------------------------"
-	local TMP_KUBECTL_NEWER_VERSION=`curl -s https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG.md#client-binaries-1 | grep "https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-" | awk -F'\"' '{print $2}' | awk -F'-' '{print $NF}' | sed 's@\.md@@g' | awk NR==1`
-    local TMP_KUBECTL_NEWER_VERSION_S_COUNT=`echo $TMP_KUBECTL_NEWER_VERSION | awk -F'.' '{print NF-1}'`
-    if [ $TMP_KUBECTL_NEWER_VERSION_S_COUNT -lt 2 ]; then
-        TMP_KUBECTL_NEWER_VERSION="${TMP_KUBECTL_NEWER_VERSION}.0"
+	local TMP_KUBECTL_NEWER_VERS=`curl -s https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG.md#client-binaries-1 | grep "https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-" | awk -F'\"' '{print $2}' | awk -F'-' '{print $NF}' | sed 's@\.md@@g' | awk NR==1`
+    local TMP_KUBECTL_NEWER_VERS_S_COUNT=`echo $TMP_KUBECTL_NEWER_VERS | awk -F'.' '{print NF-1}'`
+    if [ $TMP_KUBECTL_NEWER_VERS_S_COUNT -lt 2 ]; then
+        TMP_KUBECTL_NEWER_VERS="${TMP_KUBECTL_NEWER_VERS}.0"
     fi
 
-    echo "KubeCtl: The newer official version is $TMP_KUBECTL_NEWER_VERSION"
+    echo "KubeCtl: The newer official version is $TMP_KUBECTL_NEWER_VERS"
     echo "-----------------------------------------------------"
     echo "KubeCtl: System start find the fpm file from mirrors"
 
     #原方式，但dl.k8s.io无法访问，故改成中科镜像使用rpm方式安装
-    #local TMP_KUBECTL_DOWNLOAD_URL="https://dl.k8s.io/v$TMP_KUBECTL_NEWER_VERSION/kubernetes-client-linux-amd64.tar.gz"
-    local TMP_KUBECTL_NEWER_RPM_FILE_NAME=`curl -s https://mirrors.aliyun.com/kubernetes/yum/pool/ | grep "kubectl-${TMP_KUBECTL_NEWER_VERSION}\-[0-9]*\.x86_64\.rpm" | awk -F'\"' '{print $2}'`
+    #local TMP_KUBECTL_DOWNLOAD_URL="https://dl.k8s.io/v$TMP_KUBECTL_NEWER_VERS/kubernetes-client-linux-amd64.tar.gz"
+    local TMP_KUBECTL_NEWER_RPM_FILE_NAME=`curl -s https://mirrors.aliyun.com/kubernetes/yum/pool/ | grep "kubectl-${TMP_KUBECTL_NEWER_VERS}\-[0-9]*\.x86_64\.rpm" | awk -F'\"' '{print $2}'`
     local TMP_KUBECTL_NEWER_RPM_DOWN_URL="https://mirrors.aliyun.com/kubernetes/yum/pool/$TMP_KUBECTL_NEWER_RPM_FILE_NAME"
 
     echo "KubeCtl: Rpm finded \"$TMP_KUBECTL_NEWER_RPM_DOWN_URL\""

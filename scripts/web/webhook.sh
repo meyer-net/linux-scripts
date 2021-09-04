@@ -18,7 +18,7 @@ local TMP_WBH_SETUP_CDY_API_HTTP_PORT=12019
 local TMP_WBH_SETUP_KNG_API_HTTP_PORT=18000
 
 local TMP_WBH_SETUP_KNG_HOST="127.0.0.1"
-local TMP_SETUP_CDY_HOST="127.0.0.1"
+local TMP_WBH_SETUP_CDY_HOST="127.0.0.1"
 
 ##########################################################################################################
 
@@ -285,7 +285,7 @@ function conf_webhook_sync_caddy_cert_to_kong()
 
     # Caddy 不在本机，则重新确认host
     if [ -z "${TMP_WBH_SETUP_IS_CDY_LOCAL}" ]; then
-    	input_if_empty "TMP_SETUP_CDY_HOST" "Webhook.Caddy.Host: Please ender ${green}your caddy host address${reset}"
+    	input_if_empty "TMP_WBH_SETUP_CDY_HOST" "Webhook.Caddy.Host: Please ender ${green}your caddy host address${reset}"
     fi
 
     # Kong 不在本机的情况下，则重新确认host
@@ -351,7 +351,7 @@ function sync_crt() {
     local TMP_THIS_LOG_PATH=${TMP_WBH_SETUP_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`\
 
     #获取CADDY证书数据
-    local TMP_CERT_DATA_FROM_CDY=\`curl -s ${TMP_SETUP_CDY_HOST}:${TMP_WBH_SETUP_API_HTTP_PORT}/hooks/cor-caddy-api?host=\${TMP_ASYNC_CADDY_CERT_HOST}\`
+    local TMP_CERT_DATA_FROM_CDY=\`curl -s ${TMP_WBH_SETUP_CDY_HOST}:${TMP_WBH_SETUP_API_HTTP_PORT}/hooks/cor-caddy-api?host=\${TMP_ASYNC_CADDY_CERT_HOST}\`
     local TMP_CERT_DATA_KEY_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key"\`
 
     #获取KONG证书数据

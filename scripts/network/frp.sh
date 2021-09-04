@@ -55,7 +55,6 @@ function setup_frp()
 	# echo 'export PATH FRP_HOME' >> /etc/profile
 
     # -- 自定义
-	cd ${TMP_FRP_SETUP_DIR}
     mkdir bin
     mv frps bin/
     mv frpc bin/
@@ -134,15 +133,16 @@ function conf_frpc()
 {
 	cd ${TMP_FRP_SETUP_DIR}
 
-    local TMP_FRP_SETUP_CLT_SVR_HOST="127.0.0.1"
+    local TMP_FRP_SETUP_CLT_SVR_HOST="${LOCAL_HOST}"
     input_if_empty "TMP_FRP_SETUP_CLT_SVR_HOST" "Frp-Client: Please ender ${red}frps host address${reset}"
+    set_if_equals "TMP_FRP_SETUP_CLT_SVR_HOST" "LOCAL_HOST" "127.0.0.1"
     sed -i "s@^server_addr =.*@server_addr = ${TMP_FRP_SETUP_CLT_SVR_HOST}@g" etc/frpc.ini
     
     local TMP_FRP_SETUP_CLT_SERVER_PORT=${TMP_FRP_SETUP_SVR_BIND_PORT}
     input_if_empty "TMP_FRP_SETUP_CLT_SERVER_PORT" "Frp-Client: Please sure ${red}server port${reset} of '${red}${TMP_FRP_SETUP_CLT_SVR_HOST}${reset}'"
     sed -i "s@^server_port =.*@server_port = ${TMP_FRP_SETUP_CLT_SERVER_PORT}@g" etc/frpc.ini
         
-    sed -i "s@^admin_addr =.*@admin_addr = 0.0.0.0@g" etc/frpc.ini
+    sed -i "s@^admin_addr =.*@admin_addr = ${LOCAL_HOST}@g" etc/frpc.ini
     local TMP_FRP_SETUP_CLT_ADMIN_PORT=17400
     input_if_empty "TMP_FRP_SETUP_CLT_ADMIN_PORT" "Frp-Client: Please sure ${red}admin port${reset}"
     sed -i "s@^admin_port =.*@admin_port = ${TMP_FRP_SETUP_CLT_ADMIN_PORT}@g" etc/frpc.ini

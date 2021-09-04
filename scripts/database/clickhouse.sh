@@ -136,7 +136,7 @@ function conf_clickhouse()
     # sed -i "s@^CLICKHOUSE_LOGDIR_USER=.*@CLICKHOUSE_LOGDIR_USER=clickhouse@g" /etc/rc.d/init.d/clickhouse-server
 
     # 启动完成以后再修改配置文件
-    sed -i "/<yandex>/a     \\\    <listen_host>0.0.0.0</listen_host>" /etc/clickhouse-server/config.xml
+    sed -i "/<yandex>/a     \\\    <listen_host>${LOCAL_HOST}</listen_host>" /etc/clickhouse-server/config.xml
 
 	input_if_empty "TMP_CH_SETUP_HTTP_PORT" "Clickhouse-Server: Please ender ${red}http port${reset}"
     sed -i "0,/<http_port>[0-9]*<\/http_port>/{s@<http_port>[0-9]*</http_port>@<http_port>${TMP_CH_SETUP_HTTP_PORT}</http_port>@}" /etc/clickhouse-server/config.xml

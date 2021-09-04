@@ -22,13 +22,13 @@ function setup_kubeadm()
     echo "-----------------------------------------------------"
     echo "KubeAdm: System start find the newer official version"
     echo "-----------------------------------------------------"
-	local TMP_KUBEADM_NEWER_VERSION=`curl -s https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG.md#client-binaries-1 | grep "https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-" | awk -F'\"' '{print $2}' | awk -F'-' '{print $NF}' | sed 's@\.md@@g' | awk NR==1`
-    local TMP_KUBEADM_NEWER_VERSION_S_COUNT=`echo $TMP_KUBEADM_NEWER_VERSION | awk -F'.' '{print NF-1}'`
-    if [ $TMP_KUBEADM_NEWER_VERSION_S_COUNT -lt 2 ]; then
-        TMP_KUBEADM_NEWER_VERSION="${TMP_KUBEADM_NEWER_VERSION}.0"
+	local TMP_KUBEADM_NEWER_VERS=`curl -s https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG.md#client-binaries-1 | grep "https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-" | awk -F'\"' '{print $2}' | awk -F'-' '{print $NF}' | sed 's@\.md@@g' | awk NR==1`
+    local TMP_KUBEADM_NEWER_VERS_S_COUNT=`echo $TMP_KUBEADM_NEWER_VERS | awk -F'.' '{print NF-1}'`
+    if [ $TMP_KUBEADM_NEWER_VERS_S_COUNT -lt 2 ]; then
+        TMP_KUBEADM_NEWER_VERS="${TMP_KUBEADM_NEWER_VERS}.0"
     fi
 
-    echo "KubeAdm: The newer official version is $TMP_KUBEADM_NEWER_VERSION"
+    echo "KubeAdm: The newer official version is $TMP_KUBEADM_NEWER_VERS"
     echo "-----------------------------------------------------"
     echo "KubeAdm: System start find the fpm file from mirrors"
 
@@ -52,8 +52,8 @@ function setup_kubeadm()
     rpm -ivh --nodeps --force ${TMP_KUBELET_NEWER_FILE_NAME} ${TMP_KUBERNETES_CNI_NEWER_FILE_NAME}
 
     #原方式，但dl.k8s.io无法访问，故改成中科镜像使用rpm方式安装
-    #local TMP_KUBEADM_DOWNLOAD_URL="https://dl.k8s.io/v$TMP_KUBEADM_NEWER_VERSION/kubernetes-client-linux-amd64.tar.gz"
-    set_url_list_newer_date_link_filename "TMP_KUBEADM_NEWER_RPM_FILE_NAME" "$TMP_MIRRORS_URL" "kubeadm-${TMP_KUBEADM_NEWER_VERSION}\-[0-9]*\.$CPU_ARCHITECTURE"
+    #local TMP_KUBEADM_DOWNLOAD_URL="https://dl.k8s.io/v$TMP_KUBEADM_NEWER_VERS/kubernetes-client-linux-amd64.tar.gz"
+    set_url_list_newer_date_link_filename "TMP_KUBEADM_NEWER_RPM_FILE_NAME" "$TMP_MIRRORS_URL" "kubeadm-${TMP_KUBEADM_NEWER_VERS}\-[0-9]*\.$CPU_ARCHITECTURE"
     local TMP_KUBEADM_NEWER_RPM_DOWN_URL="${TMP_MIRRORS_URL}${TMP_KUBEADM_NEWER_RPM_FILE_NAME}"
     echo "KubeAdm: Rpm finded \"$TMP_KUBEADM_NEWER_RPM_DOWN_URL\""
     while_wget "--content-disposition $TMP_KUBEADM_NEWER_RPM_DOWN_URL" "rpm -ivh $TMP_KUBEADM_NEWER_RPM_FILE_NAME"

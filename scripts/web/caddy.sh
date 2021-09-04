@@ -172,7 +172,7 @@ function reconf_caddy()
 	sudo tee Caddyfile.json <<-EOF
 {
 	"admin": {
-		"listen": "0.0.0.0:${TMP_CDY_SETUP_API_PORT}"
+		"listen": "${LOCAL_HOST}:${TMP_CDY_SETUP_API_PORT}"
 	},
 	"apps": {
 		"http": {

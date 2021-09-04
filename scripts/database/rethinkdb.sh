@@ -36,9 +36,9 @@ function set_env_rethinkdb()
 # 1-配置环境
 function setup_jemalloc()
 {
-	local TMP_JML_SETUP_NEWER="jemalloc-3.6.0-1.el7.x86_64.rpm"
-	set_url_list_newer_href_link_filename "TMP_JML_SETUP_NEWER" "https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/j/" "jemalloc-().el7.x86_64.rpm"
-	while_wget "--content-disposition https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/j/${TMP_JML_SETUP_NEWER}" "rpm -ivh ${TMP_JML_SETUP_NEWER}"
+	local TMP_JML_SETUP_NEWER="jemalloc-3.6.0-1.el${OS_VERS}.x86_64.rpm"
+	set_url_list_newer_href_link_filename "TMP_JML_SETUP_NEWER" "https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/" "jemalloc-().el${OS_VERS}.x86_64.rpm"
+	while_wget "--content-disposition https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/${TMP_JML_SETUP_NEWER}" "rpm -ivh ${TMP_JML_SETUP_NEWER}"
 	
 	# 等待jemalloc生效，有待测试。同脚本，手动尝试反而OK（也有可能网络问题，编译会安装npm相关依赖包）
 	echo "RethinkDB：Watting for jemalloc active"

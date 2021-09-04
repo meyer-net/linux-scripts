@@ -99,7 +99,7 @@ function exec_program()
 
         # 获取当前版本信息
         local TMP_CURRENT_INFO=`$SVN_PATH info`
-        local TMP_CURRENT_VERSION=`echo $TMP_CURRENT_INFO | grep -E -o '最后修改的版本: [0-9]+' | awk '{print $2}'`
+        local TMP_CURRENT_VERS=`echo $TMP_CURRENT_INFO | grep -E -o '最后修改的版本: [0-9]+' | awk '{print $2}'`
 
         # 获取更新文件清单文件清单
         local TMP_CURRENT_UPDATE_LIST=`$SVN_PATH update | grep "\." | grep -v "升级" | grep -vE "^$"`
@@ -107,7 +107,7 @@ function exec_program()
 
         # 获取更新后的版本信息
         local TMP_CURRENT_NEWER_INFO=`$SVN_PATH info`
-        local TMP_CURRENT_NEWER_VERSION=`echo $TMP_CURRENT_NEWER_INFO | grep -E -o '最后修改的版本: [0-9]+' | awk '{print $2}'`
+        local TMP_CURRENT_NEWER_VERS=`echo $TMP_CURRENT_NEWER_INFO | grep -E -o '最后修改的版本: [0-9]+' | awk '{print $2}'`
 
         # 编写特定的命令，也可以使用hook的方式另起脚本，保持通用性，此处使用hook
         if [ ! -f "updater_hook.sh" ]; then
@@ -124,9 +124,9 @@ EOF
 
         # 通知信息
         echo "---------------------------------------------------"
-        echo "SvnUpdater：Version '${SVN_LOCAL_NAME}@${TMP_CURRENT_VERSION}:${TMP_CURRENT_NEWER_VERSION}' takes ${TMP_CURRENT_UPDATE_COUNT} updates."
+        echo "SvnUpdater：Version '${SVN_LOCAL_NAME}@${TMP_CURRENT_VERS}:${TMP_CURRENT_NEWER_VERS}' takes ${TMP_CURRENT_UPDATE_COUNT} updates."
         if [ ${TMP_CURRENT_UPDATE_COUNT} -gt 0 ]; then
-            slack ">Start update svn project '${SVN_LOCAL_NAME}@${TMP_CURRENT_VERSION}:${TMP_CURRENT_NEWER_VERSION}', it takes ${TMP_CURRENT_UPDATE_COUNT} updates, percent ${TMP_DIR_DONE_PERCENT}."
+            slack ">Start update svn project '${SVN_LOCAL_NAME}@${TMP_CURRENT_VERS}:${TMP_CURRENT_NEWER_VERS}', it takes ${TMP_CURRENT_UPDATE_COUNT} updates, percent ${TMP_DIR_DONE_PERCENT}."
         
 	        sudo tee ${SVN_UPDATE_LOCAL_ROOT_DIR}/logs/${SVN_LOCAL_NAME}_${TMP_CURRENT_TIME}.txt <<-EOF
 $TMP_CURRENT_UPDATE_LIST

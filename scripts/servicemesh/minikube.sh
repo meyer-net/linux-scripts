@@ -29,13 +29,13 @@ function setup_minikube()
 
     echo "------------------------------------------------------"
     echo "MiniKube: System start find the newer official version"
-	local TMP_MINIKUBE_NEWER_VERSION=`curl -s https://github.com/kubernetes/minikube/releases | grep "/kubernetes/minikube/releases/tag/" | sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | awk '{sub("^ *","");sub(" *$","");print}' | awk NR==1`
-    echo "MiniKube: The newer official version is ${green}${TMP_MINIKUBE_NEWER_VERSION}${reset}"
+	local TMP_MINIKUBE_NEWER_VERS=`curl -s https://github.com/kubernetes/minikube/releases | grep "/kubernetes/minikube/releases/tag/" | sed 's/="[^"]*[><][^"]*"//g;s/<[^>]*>//g' | awk '{sub("^ *","");sub(" *$","");print}' | awk NR==1`
+    echo "MiniKube: The newer official version is ${green}${TMP_MINIKUBE_NEWER_VERS}${reset}"
     echo "------------------------------------------------------"
     echo "MiniKube: System start find the rpm from github"
-	local TMP_MINIKUBE_NEWER_VERSION_TRIM_V=`echo $TMP_MINIKUBE_NEWER_VERSION | sed "s@^v@@g"`
-	local TMP_MINIKUBE_NEWER_RPM_FILE_NAME="minikube-${TMP_MINIKUBE_NEWER_VERSION_TRIM_V}.rpm"
-	local TMP_MINIKUBE_NEWER_RPM_DOWN_URL="https://github.com/kubernetes/minikube/releases/download/${TMP_MINIKUBE_NEWER_VERSION}/${TMP_MINIKUBE_NEWER_RPM_FILE_NAME}"
+	local TMP_MINIKUBE_NEWER_VERS_TRIM_V=`echo $TMP_MINIKUBE_NEWER_VERS | sed "s@^v@@g"`
+	local TMP_MINIKUBE_NEWER_RPM_FILE_NAME="minikube-${TMP_MINIKUBE_NEWER_VERS_TRIM_V}.rpm"
+	local TMP_MINIKUBE_NEWER_RPM_DOWN_URL="https://github.com/kubernetes/minikube/releases/download/${TMP_MINIKUBE_NEWER_VERS}/${TMP_MINIKUBE_NEWER_RPM_FILE_NAME}"
 
     echo "MiniKube: rpm finded \"${green}${TMP_MINIKUBE_NEWER_RPM_DOWN_URL}${reset}\""
     echo "------------------------------------------------------"

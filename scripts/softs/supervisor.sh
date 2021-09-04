@@ -4,85 +4,64 @@
 #      copyright https://echat.oshit.com/
 #      email: meyer_net@foxmail.com
 #------------------------------------------------
+# 相关参考：
+#		  
+#------------------------------------------------
+local TMP_SUP_SETUP_HTTP_PORT=19001
+
+##########################################################################################################
 
 # 1-配置环境
-function set_environment()
+function set_env_supervisor()
 {
-    # 需要提前安装Python
-    source ${__DIR}/scripts/lang/python.sh
+    cd ${__DIR}
+
+    # soft_yum_check_setup ""
 
 	return $?
 }
+
+##########################################################################################################
 
 # 2-安装软件
 function setup_supervisor()
 {
-    path_not_exists_create "${SUPERVISOR_ATT_DIR}"
-    path_not_exists_create "${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}"
-    
-	return $?
-}
+	## 直装模式
+	cd `dirname ${TMP_SUP_CURRENT_DIR}`
 
-# 3-设置软件
-function set_supervisor()
-{
-	local TMP_SFT_SUPERVISOR_CONF_PATH=${SUPERVISOR_ATT_DIR}/supervisor.conf
-    path_not_exists_action "${TMP_SFT_SUPERVISOR_CONF_PATH}" "set_supervisor_conf"
+	path_not_exists_create ${TMP_SUP_SETUP_DIR}
 
-    local TMP_SFT_SUPERVISOR_VTL_BIN_PATH=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/supervisor
-    path_not_exists_action "${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}" "set_supervisor_bin"
+	cd ${TMP_SUP_SETUP_DIR}
 
-	return $?
-}
+	# 创建日志软链
+	local TMP_SUP_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
+	local TMP_SUP_SETUP_LNK_DATA_DIR=${DATA_DIR}/supervisor
+	local TMP_SUP_SETUP_LOGS_DIR=${TMP_SUP_SETUP_DIR}/logs
+	local TMP_SUP_SETUP_DATA_DIR=${TMP_SUP_SETUP_DIR}/scripts
 
-function set_supervisor_conf()
-{
-    # 规范特殊安装的目录
-	local TMP_SFT_SUPERVISOR_CONF_PATH=${1}
-	local TMP_SFT_SUPERVISOR_VTL_SETUP_CONF_PATH=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/supervisor.conf
+	# 先清理文件，再创建文件
+	rm -rf ${TMP_SUP_SETUP_LOGS_DIR}
+	rm -rf ${TMP_SUP_SETUP_DATA_DIR}
+	mkdir -pv ${TMP_SUP_SETUP_LNK_LOGS_DIR}
+	mkdir -pv ${TMP_SUP_SETUP_LNK_DATA_DIR}
 
-    rm -rf /etc/supervisor.conf
-    rm -rf ${TMP_SFT_SUPERVISOR_VTL_SETUP_CONF_PATH}
-    sudo echo_supervisord_conf > ${TMP_SFT_SUPERVISOR_CONF_PATH}
+	ln -sf ${TMP_SUP_SETUP_LNK_LOGS_DIR} ${TMP_SUP_SETUP_LOGS_DIR}
+	ln -sf ${TMP_SUP_SETUP_LNK_DATA_DIR} ${TMP_SUP_SETUP_DATA_DIR}
 
-    ln -sf ${TMP_SFT_SUPERVISOR_CONF_PATH} /etc/supervisor.conf
-    ln -sf ${TMP_SFT_SUPERVISOR_CONF_PATH} ${TMP_SFT_SUPERVISOR_VTL_SETUP_CONF_PATH}
-    
-    # 规范日志的目录
-    local TMP_SFT_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
-	local TMP_SFT_SUPERVISOR_VTL_LOGS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/logs
+	# 环境变量或软连接
+	# echo "SUPERVISOR_HOME=${TMP_SUP_SETUP_DIR}" >> /etc/profile
+	# echo 'PATH=$SUPERVISOR_HOME/bin:$PATH' >> /etc/profile
+	# echo 'export PATH SUPERVISOR_HOME' >> /etc/profile
 
-    path_not_exists_create "${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}"
+	# 移动bin
+	mkdir bin
+    echo "" > bin/supervisor
 
-	rm -rf ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
-    ln -sf ${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR} ${TMP_SFT_SUPERVISOR_VTL_LOGS_DIR}
-
-    sed -i "s@^[;]*logfile=.*@logfile=${TMP_SFT_SUPERVISOR_LNK_LOGS_DIR}/supervisor.log@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
-    sed -i "s@^[;]*\[include\]@\[include\]@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
-    sed -i "s@^[;]*files = .*@files = ${SUPERVISOR_ATT_DIR}/conf/*.conf@g" ${TMP_SFT_SUPERVISOR_CONF_PATH}
-
-    # 规范后期配置文件及脚本存放路径
-	local TMP_SFT_SUPERVISOR_CONF_DIR="${SUPERVISOR_ATT_DIR}/conf"
-	local TMP_SFT_SUPERVISOR_SCRIPTS_DIR="${SUPERVISOR_ATT_DIR}/scripts"
-    local TMP_SFT_SUPERVISOR_VTL_CONF_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/conf
-    local TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR=${TMP_SFT_SUPERVISOR_VTL_SETUP_DIR}/scripts
-    
-	path_not_exists_create "${TMP_SFT_SUPERVISOR_CONF_DIR}"
-	path_not_exists_create "${TMP_SFT_SUPERVISOR_SCRIPTS_DIR}"
-
-    rm -rf ${TMP_SFT_SUPERVISOR_VTL_CONF_DIR}
-    rm -rf ${TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR}
-    ln -sf ${TMP_SFT_SUPERVISOR_CONF_DIR} ${TMP_SFT_SUPERVISOR_VTL_CONF_DIR}
-    ln -sf ${TMP_SFT_SUPERVISOR_SCRIPTS_DIR} ${TMP_SFT_SUPERVISOR_VTL_SCRIPTS_DIR}
-
-	return $?
-}
-
-function set_supervisor_bin()
-{
-    local TMP_SFT_SUPERVISOR_VTL_BIN_PATH=${1}
-
-    cat >${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}<<EOF
+    # # 重新加载profile文件
+	# source /etc/profile
+	
+    # 安装初始
+    cat >bin/supervisor<<EOF
 #!/bin/bash
 #
 # supervisord   This scripts turns supervisord on
@@ -121,7 +100,7 @@ if [ -e \$PIDFILE ]; then
     if [ -z "\$SUPERVISORD_RUNNING_DATA" ]; then
         echo "Clean pid & lock files"
         rm -rf /tmp/supervisor*
-        rm -rf $SUPERVISOR_ATT_DIR/logs/*
+        rm -rf ${TMP_SUP_SETUP_LOGS_DIR}/*
     fi
 fi
 
@@ -239,20 +218,59 @@ EOF
 
     #添加软链接与服务启动
     rm -rf /usr/bin/supervisor
-    ln -sf ${TMP_SFT_SUPERVISOR_VTL_BIN_PATH} /usr/bin/supervisor #/etc/init.d/supervisord
-    
-    chmod +x ${TMP_SFT_SUPERVISOR_VTL_BIN_PATH}
+    ln -sf `pwd`/bin/supervisor /usr/bin/supervisor #/etc/init.d/supervisord
+   
+    chmod +x bin/supervisor
 
 	return $?
 }
 
+##########################################################################################################
+
+# 3-设置软件
+function conf_supervisor()
+{
+	cd ${TMP_SUP_SETUP_DIR}
+	
+	local TMP_SUP_SETUP_LNK_ETC_DIR=${ATT_DIR}/supervisor
+	local TMP_SUP_SETUP_ETC_DIR=${TMP_SUP_SETUP_DIR}/etc
+
+	# ①-N：不存在配置文件：
+	rm -rf ${TMP_SUP_SETUP_ETC_DIR}
+    echo_supervisord_conf > /etc/supervisor.conf
+    path_not_exists_create "${TMP_SUP_SETUP_LNK_ETC_DIR}/conf"
+
+	# 替换原路径链接（存在etc下时，不能作为软连接存在）
+    ln -sf /etc/supervisor.conf ${TMP_SUP_SETUP_LNK_ETC_DIR}/supervisor.conf
+    ln -sf ${TMP_SUP_SETUP_LNK_ETC_DIR} ${TMP_SUP_SETUP_ETC_DIR}
+
+	# 开始配置
+    sed -i "s@9001@${TMP_SUP_SETUP_HTTP_PORT}@g" etc/supervisor.conf
+    sed -i "s@^[;]*logfile=.*@logfile=`pwd`/logs/supervisor.log@g" etc/supervisor.conf
+    sed -i "s@^[;]*\[include\]@\[include\]@g" etc/supervisor.conf
+    sed -i "s@^[;]*files = .*@files = `pwd`/etc/conf/*.conf@g" etc/supervisor.conf
+
+	# 授权权限，否则无法写入
+	# chown -R $setup_owner:$setup_owner_group ${TMP_SUP_SETUP_LNK_ETC_DIR}
+
+	return $?
+}
+
+##########################################################################################################
+
 # 4-启动软件
 function boot_supervisor()
 {
-    # 创建启动服务
-    cat >/lib/systemd/system/supervisord.service<<EOF
-# supervisord service for systemd (CentOS 7.0+)
+	cd ${TMP_SUP_SETUP_DIR}
+	
+	# 验证安装
+    supervisord -v
+	
+	# 启动配置加载
+	sudo tee /usr/lib/systemd/system/supervisor.service <<-EOF
+# Supervisord service for systemd (CentOS 7.0+)
 # https://github.com/Supervisor/initscripts
+
 [Unit]
 Description=Supervisor daemon
 After=rc-local.service
@@ -268,36 +286,70 @@ SysVStartPriority=99
 WantedBy=multi-user.target
 EOF
 
+    systemctl daemon-reload
+
+	# 设定启动运行
+    chkconfig supervisor on
+    chkconfig --list | grep supervisor
+    systemctl enable supervisor.service
+    systemctl start supervisor.service
+	
+	# 启动状态检测
+	# lsof -i:${TMP_SUP_SETUP_HTTP_PORT}
+
     rm -rf /tmp/supervisor*
-
-    chkconfig supervisord on
-    chkconfig --list | grep supervisord
-    systemctl enable supervisord.service
-    systemctl start supervisord.service
-
+    
+	# 授权iptables端口访问
+	echo_soft_port ${TMP_SUP_SETUP_HTTP_PORT}
+    
 	return $?
 }
 
-# x-执行步骤
+##########################################################################################################
+
+# 下载驱动/插件
+function down_plugin_supervisor()
+{
+	return $?
+}
+
+# 安装驱动/插件
+function setup_plugin_supervisor()
+{
+	return $?
+}
+
+##########################################################################################################
+
+# x2-执行步骤
 function exec_step_supervisor()
 {
-    # 全局变量，因supervisor本身非编译安装方式，所以创建虚拟路径
-    TMP_SFT_SUPERVISOR_VTL_SETUP_DIR=${SETUP_DIR}/supervisor
+	# 变量覆盖特性，其它方法均可读取
+	# local TMP_SUP_SETUP_DIR=${1} 
+    
+    # 默认pip安装的目录在packages中，此处不取用
+	local TMP_SUP_SETUP_DIR=${SETUP_DIR}/supervisor
+	local TMP_SUP_CURRENT_DIR=`pwd`
+    
+	set_env_supervisor 
 
-    # 局部变量，对supervisor来说，无效。因为其自身根据pip的路径进行安装 ??? 规范待改进
-	local TMP_SFT_SPV_SETUP_DIR=${1}
+	setup_supervisor 
 
-	set_environment "${TMP_SFT_SPV_SETUP_DIR}"
+	conf_supervisor 
 
-    setup_supervisor "${TMP_SFT_SPV_SETUP_DIR}"
+    # down_plugin_supervisor 
+    # setup_plugin_supervisor 
 
-    set_supervisor "${TMP_SFT_SPV_SETUP_DIR}"
+	boot_supervisor 
 
-	boot_supervisor "${TMP_SFT_SPV_SETUP_DIR}"
+	# reconf_supervisor 
 
 	return $?
 }
 
+##########################################################################################################
+
+# x1-下载软件
 function down_supervisor()
 {
     setup_soft_pip "supervisor" "exec_step_supervisor"
@@ -305,4 +357,7 @@ function down_supervisor()
 	return $?
 }
 
+##########################################################################################################
+
+#安装主体
 setup_soft_basic "Supervisor" "down_supervisor"

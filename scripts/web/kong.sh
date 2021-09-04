@@ -43,7 +43,9 @@ function set_env_kong()
     cd ${__DIR}
 
     #安装postgresql client包，便于初始化
-    while_wget "--content-disposition https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm" "rpm -ivh pgdg-redhat-repo-latest.noarch.rpm"
+    while_wget "--content-disposition https://download.postgresql.org/pub/repos/yum/reporpms/EL-${OS_VERS}-x86_64/pgdg-redhat-repo-latest.noarch.rpm" "rpm -ivh pgdg-redhat-repo-latest.noarch.rpm"
+
+    set_env_check_postgresql "Kong"
 
     soft_yum_check_setup "epel-release,postgresql11"
 
@@ -52,9 +54,9 @@ function set_env_kong()
 
 function set_env_konga()
 {
-    cd ${__DIR}
+    set_env_check_postgresql "KongA"
 
-    source scripts/lang/nodejs.sh
+    cd ${__DIR} && source scripts/lang/nodejs.sh
 
     # konga 只认可该版本以下
     nvm install lts/erbium && nvm use lts/erbium
@@ -64,7 +66,25 @@ function set_env_konga()
 	return $?
 }
 
+function set_env_check_postgresql()
+{	
+    local TMP_KNG_OR_KNGA_SETUP_TITLE=${1}
+    local TMP_IS_KNG_OR_KNGA_PSQL_LOCAL=`lsof -i:${TMP_KNG_SETUP_PSQL_PORT}`
+    if [ -z "${TMP_IS_KNG_OR_KNGA_PSQL_LOCAL}" ]; then 
+    	exec_yn_action "setup_postgresql" "${TMP_KNG_OR_KNGA_SETUP_TITLE}.PostgresQL: Can't find dependencies compment of ${red}postgresql${reset}，please sure if u want to get ${green}postgresql local${reset} or remote got?"
+	fi
+
+    return $?
+}
+
 ##########################################################################################################
+
+function setup_postgresql()
+{   
+    cd ${__DIR} && source scripts/database/postgresql.sh
+
+    return $?
+}
 
 # 2-安装软件
 function setup_kong()
@@ -82,7 +102,7 @@ function setup_kong()
     #通过Repository安装
     # 等效如下：
     # curl -s $(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/config.repo") | sudo tee /etc/yum.repos.d/kong.repo
-    # while_wget "https://bintray.com/kong/kong-rpm/rpm -O bintray-kong-kong-rpm.repo" "sed -i -e 's/baseurl.*/&\/centos\/'$MAJOR_VERSION''/ bintray-kong-kong-rpm.repo && sudo mv bintray-kong-kong-rpm.repo /etc/yum.repos.d/ && sudo yum install -y kong"
+    # while_wget "https://bintray.com/kong/kong-rpm/rpm -O bintray-kong-kong-rpm.repo" "sed -i -e 's/baseurl.*/&\/centos\/'$MAJOR_VERS''/ bintray-kong-kong-rpm.repo && sudo mv bintray-kong-kong-rpm.repo /etc/yum.repos.d/ && sudo yum install -y kong"
     # local TMP_KNG_SETUP_REPO_NEWER=$(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/config.repo")
     # while_wget "${TMP_KNG_SETUP_REPO_NEWER} -O kong.repo" "sed -i '2 aname=gateway-kong - $basearch' kong.repo && sudo mv kong.repo /etc/yum.repos.d/" 
     # soft_yum_check_setup "kong.repo"
@@ -183,6 +203,7 @@ function conf_kong()
     # 开始配置
     # -- 初始化数据库，并设置密码
 	input_if_empty "TMP_KNG_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${red}postgres host address${reset} for kong"
+    set_if_equals "TMP_KNG_SETUP_PSQL_HOST" "LOCAL_HOST" "127.0.0.1"
 	input_if_empty "TMP_KNG_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${red}postgres port${reset} of '${TMP_KNG_SETUP_PSQL_HOST}' for kong"
 	input_if_empty "TMP_KNG_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${red}postgres user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}' for kong"
     
@@ -203,7 +224,7 @@ EOF
     
     sed -i "s@^#log_level =.*@log_level = info@g" /etc/kong/kong.conf
     sed -i "s@^#proxy_listen =.*@proxy_listen = 0.0.0.0:80, 0.0.0.0:443 ssl@g" /etc/kong/kong.conf
-    sed -i "s@^#admin_listen =.*@admin_listen = 0.0.0.0:${TMP_KNG_SETUP_API_HTTP_PORT}, 0.0.0.0:${TMP_KNG_SETUP_API_HTTPS_PORT} ssl@g" /etc/kong/kong.conf
+    sed -i "s@^#admin_listen =.*@admin_listen = ${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}, ${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTPS_PORT} ssl@g" /etc/kong/kong.conf
     sed -i "s@^#real_ip_recursive =.*@real_ip_recursive = on@g" /etc/kong/kong.conf
     sed -i "s@^#client_max_body_size =.*@client_max_body_size = 20m@g" /etc/kong/kong.conf
     sed -i "s@^#client_body_buffer_size =.*@client_body_buffer_size = 64k@g" /etc/kong/kong.conf
@@ -618,8 +639,10 @@ function conf_konga()
     if [ -z "${TMP_KNGA_SETUP_IS_KONG_LOCAL}" ]; then
     	input_if_empty "TMP_KNGA_SETUP_KNG_HOST" "KongA.Kong.Host: Please ender ${red}your kong host address${reset}"
     fi
+    set_if_equals "TMP_KNGA_SETUP_KNG_HOST" "LOCAL_HOST" "127.0.0.1"
 
 	input_if_empty "TMP_KNGA_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${red}postgres host address${reset} for konga"
+    set_if_equals "TMP_KNGA_SETUP_PSQL_HOST" "LOCAL_HOST" "127.0.0.1"
 	input_if_empty "TMP_KNGA_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${red}postgres port${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}' for konga"
 	input_if_empty "TMP_KNGA_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${red}postgres user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}' for konga"
     
@@ -765,7 +788,7 @@ function boot_konga()
 	# 启动状态检测
 	lsof -i:${TMP_KNGA_SETUP_HTTP_PORT}
 
-	# 添加系统启动命令
+	# 添加系统启动命令(???重启会被默认的高级版本覆盖从而无法启动)
     local TMP_KNGA_SETUP_NPM_PATH=`npm config get prefix`
     # echo_startup_config "konga" "${TMP_KNGA_SETUP_DIR}" "nvm use lts/erbium && npm run production" "${TMP_KNGA_SETUP_NPM_PATH}/bin" "999" "${NVM_PATH}"
     echo_startup_config "konga" "${TMP_KNGA_SETUP_DIR}" "npm run production" "${TMP_KNGA_SETUP_NPM_PATH}/bin" "999" "${NVM_PATH}"

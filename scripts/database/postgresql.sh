@@ -12,7 +12,7 @@
 # 软件授权用户名称&组：postgres/postgres
 #------------------------------------------------
 local TMP_PSQL_SETUP_PORT=15432
-local TMP_PSQL_SETUP_STP_VER=11
+local TMP_PSQL_SETUP_STP_VERS=11
 
 ##########################################################################################################
 
@@ -32,12 +32,12 @@ function setup_postgresql()
 	local TMP_PSQL_SETUP_DIR=${1}
 
 	## 源模式
-    while_wget "--content-disposition https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm" "rpm -ivh pgdg-redhat-repo-latest.noarch.rpm"
+    while_wget "--content-disposition https://download.postgresql.org/pub/repos/yum/reporpms/EL-${OS_VERS}-x86_64/pgdg-redhat-repo-latest.noarch.rpm" "rpm -ivh pgdg-redhat-repo-latest.noarch.rpm"
 
-	input_if_empty "TMP_PSQL_SETUP_STP_VER" "PostgresQL: Please ender the ${red}version 10/11/12/13${reset} for needs"
+	input_if_empty "TMP_PSQL_SETUP_STP_VERS" "PostgresQL: Please ender the ${red}version 10/11/12/13${reset} for needs"
     
-	soft_yum_check_setup "postgresql${TMP_PSQL_SETUP_STP_VER}"
-	soft_yum_check_setup "postgresql${TMP_PSQL_SETUP_STP_VER}-server"
+	soft_yum_check_setup "postgresql${TMP_PSQL_SETUP_STP_VERS}"
+	soft_yum_check_setup "postgresql${TMP_PSQL_SETUP_STP_VERS}-server"
 
 	# 创建日志软链
 	local TMP_PSQL_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/postgresql
@@ -63,7 +63,7 @@ function setup_postgresql()
 	chown -R postgres:postgres ${TMP_PSQL_SETUP_LNK_DATA_DIR}
 
     # 初始配置
-    su - postgres -c "/usr/pgsql-${TMP_PSQL_SETUP_STP_VER}/bin/initdb -D ${TMP_PSQL_SETUP_LNK_DATA_DIR}"    
+    su - postgres -c "/usr/pgsql-${TMP_PSQL_SETUP_STP_VERS}/bin/initdb -D ${TMP_PSQL_SETUP_LNK_DATA_DIR}"    
     
 	rm -rf pgdg-redhat-repo-latest.noarch.rpm
 
@@ -112,7 +112,7 @@ function conf_postgresql()
     sed -i "s@^#data_directory =.*@data_directory = '${TMP_PSQL_SETUP_DATA_DIR}'@g" etc/postgresql.conf
 
     # -- 修改启动环境
-    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=${TMP_PSQL_SETUP_DATA_DIR}@g" /usr/lib/systemd/system/postgresql-${TMP_PSQL_SETUP_STP_VER}.service
+    sed -i "s@^Environment=PGDATA=.*@Environment=PGDATA=${TMP_PSQL_SETUP_DATA_DIR}@g" /usr/lib/systemd/system/postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
 
     # -- 修改认证
     echo "host    all             all              0.0.0.0/0              trust" >> etc/pg_hba.conf
@@ -165,7 +165,7 @@ psql -U postgres -h localhost -p ${TMP_PSQL_SETUP_PORT} -d postgres << EOF
 EOF
     
     #复制样例
-    cp /usr/pgsql-${TMP_PSQL_SETUP_STP_VER}/share/recovery.conf.sample etc/recovery.done
+    cp /usr/pgsql-${TMP_PSQL_SETUP_STP_VERS}/share/recovery.conf.sample etc/recovery.done
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" etc/recovery.done
@@ -183,7 +183,7 @@ EOF
     echo "${TMP_PSQL_SET_DB_MASTER_SLAVE}:${TMP_PSQL_SETUP_PORT}:replication:rep_user:reppsql%1475963&m" > ~/.pgpass
     chmod 0600 ~/.pgpass
 
-    systemctl restart postgresql-${TMP_PSQL_SETUP_STP_VER}.service
+    systemctl restart postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
 	echo "Config PostgresQL-Master Over。"
 	echo "-------------------------------"
 	echo "Set All Done"
@@ -205,7 +205,7 @@ function conf_postgresql_slave()
     input_if_empty "TMP_PSQL_SET_DB_SLAVE_MASTER" "PostgresQL: Please ender ${red}postgresql master address in internal${reset}"
 
     #复制样例
-    cp /usr/pgsql-${TMP_PSQL_SETUP_STP_VER}/share/recovery.conf.sample etc/recovery.conf
+    cp /usr/pgsql-${TMP_PSQL_SETUP_STP_VERS}/share/recovery.conf.sample etc/recovery.conf
     
     #
     sed -i "s@^#recovery_target_timeline =.*@recovery_target_timeline = 'latest'@g" etc/recovery.conf
@@ -235,7 +235,7 @@ function conf_postgresql_slave()
 
     rm -rf ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate
 
-    systemctl restart postgresql-${TMP_PSQL_SETUP_STP_VER}.service
+    systemctl restart postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
 	echo "Config PostgresQL-Slave Over。"
 	echo "------------------------------"
 	echo "Set All Done"
@@ -257,8 +257,8 @@ function boot_postgresql()
 
 	# 当前启动命令
     sudo systemctl daemon-reload
-    sudo systemctl enable postgresql-${TMP_PSQL_SETUP_STP_VER}.service
-    sudo systemctl start postgresql-${TMP_PSQL_SETUP_STP_VER}.service
+    sudo systemctl enable postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
+    sudo systemctl start postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
 	# nohup bin/postgresql > logs/boot.log 2>&1 &
 
     # 等待启动
@@ -273,8 +273,8 @@ psql -U postgres -h localhost -p ${TMP_PSQL_SETUP_PORT} -d postgres << EOF
     \password postgres;
 EOF
 
-	sudo systemctl status postgresql-${TMP_PSQL_SETUP_STP_VER}.service
-    sudo chkconfig postgresql-${TMP_PSQL_SETUP_STP_VER} on
+	sudo systemctl status postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
+    sudo chkconfig postgresql-${TMP_PSQL_SETUP_STP_VERS} on
     echo "-----------------------------------------"
 
 	# 授权iptables端口访问
@@ -337,8 +337,8 @@ function print_postgresql()
 
 function print_conf()
 {
-    TMP_PSQL_SETUP_STP_VER=`psql --version | awk -F' ' '{print $NF}' | awk -F'.' '{print $NR}'`
-    if [ -z "${TMP_PSQL_SETUP_STP_VER}" ]; then
+    TMP_PSQL_SETUP_STP_VERS=`psql --version | awk -F' ' '{print $NF}' | awk -F'.' '{print $NR}'`
+    if [ -z "${TMP_PSQL_SETUP_STP_VERS}" ]; then
         echo "PostgresQL：Could'nt find postgresql local，please sure u setup it?"
         return $?
     fi

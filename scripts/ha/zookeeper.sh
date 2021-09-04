@@ -101,7 +101,7 @@ function conf_zookeeper()
 		
         # 本机则开放全部授权
         if [ \${TMP_ZK_CLUSTER_INDEX_ID} == \${TMP_ZK_CLUSTER_LOCAL_ID} ]; then
-            CURRENT='0.0.0.0'
+            CURRENT='${LOCAL_HOST}'
         fi
 
         echo \"server.\${TMP_ZK_CLUSTER_INDEX_ID}=\${CURRENT}:14001:14002\" >> conf/zoo.cfg"

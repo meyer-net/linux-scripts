@@ -47,10 +47,11 @@ function conf_jumpserver_pre()
     sed -i "s@BOOTSTRAP_TOKEN=.*@BOOTSTRAP_TOKEN=${TMP_JMS_SETUP_TOKEN}@g" config-example.txt
 
     # 生成数据库表结构和初始化数据
-    local TMP_JMS_SETUP_DB_ADDRESS=""
-    input_if_empty "TMP_JMS_SETUP_DB_ADDRESS" "JumpServer.Mysql.Pre: Please ender ${red}mysql host address${reset}，or type enter to setup docker-image"
+    local TMP_JMS_SETUP_DB_HOST=""
+    input_if_empty "TMP_JMS_SETUP_DB_HOST" "JumpServer.Mysql.Pre: Please ender ${red}mysql host address${reset}，or type enter to setup docker-image"
+    set_if_equals "TMP_JMS_SETUP_DB_HOST" "LOCAL_HOST" "127.0.0.1"
 
-    if [ "${TMP_JMS_SETUP_DB_ADDRESS}" == "" ] ; then
+    if [ "${TMP_JMS_SETUP_DB_HOST}" == "" ] ; then
         echo "JumpServer.Mysql.Pre: Jumpserver typed local docker-image mode"
     else
         local TMP_JMS_SETUP_DBNAME="jumpserver"
@@ -58,18 +59,18 @@ function conf_jumpserver_pre()
         # 不能用&，否则会被识别成读取前一个值
         local TMP_JMS_SETUP_DBPWD="jms%SVR!m${LOCAL_ID}_"
 
-        input_if_empty "TMP_JMS_SETUP_DBNAME" "JumpServer.Mysql.Pre: Please ender ${red}mysql database name${reset} of '${TMP_JMS_SETUP_DB_ADDRESS}' for jumpserver"
-        input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql.Pre: Please ender ${red}mysql user name${reset} of '${TMP_JMS_SETUP_DB_ADDRESS}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
-        input_if_empty "TMP_JMS_SETUP_DBPWD" "JumpServer.Mysql.Pre: Please ender ${red}mysql password${reset} of '${TMP_JMS_SETUP_DBUNAME}@${TMP_JMS_SETUP_DB_ADDRESS}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
+        input_if_empty "TMP_JMS_SETUP_DBNAME" "JumpServer.Mysql.Pre: Please ender ${red}mysql database name${reset} of '${TMP_JMS_SETUP_DB_HOST}' for jumpserver"
+        input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql.Pre: Please ender ${red}mysql user name${reset} of '${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
+        input_if_empty "TMP_JMS_SETUP_DBPWD" "JumpServer.Mysql.Pre: Please ender ${red}mysql password${reset} of '${TMP_JMS_SETUP_DBUNAME}@${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
             
         local TMP_JMS_SETUP_SCRIPTS="CREATE DATABASE ${TMP_JMS_SETUP_DBNAME} DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;  \
         GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'%' identified by '${TMP_JMS_SETUP_DBPWD}';  \
         GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'localhost' identified by '${TMP_JMS_SETUP_DBPWD}';  \
         FLUSH PRIVILEGES;"
 
-        if [ "${TMP_JMS_SETUP_DB_ADDRESS}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_ADDRESS}" == "localhost" ] || [ "${TMP_JMS_SETUP_DB_ADDRESS}" == "${LOCAL_HOST}" ] ; then
+        if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "${LOCAL_HOST}" ] ; then
             echo "JumpServer.Mysql.Pre: Start to init jumpserver database by root user of mysql"
-            mysql -h ${TMP_JMS_SETUP_DB_ADDRESS} -uroot -e"
+            mysql -h ${TMP_JMS_SETUP_DB_HOST} -uroot -e"
             ${TMP_JMS_SETUP_SCRIPTS}
             exit" --connect-expired-password
         else
@@ -78,29 +79,30 @@ function conf_jumpserver_pre()
         fi
         
         sed -i "s@USE_EXTERNAL_MYSQL=0@USE_EXTERNAL_MYSQL=1@g" config-example.txt
-        sed -i "s@DB_HOST=.*@DB_HOST=${TMP_JMS_SETUP_DB_ADDRESS}@g" config-example.txt
+        sed -i "s@DB_HOST=.*@DB_HOST=${TMP_JMS_SETUP_DB_HOST}@g" config-example.txt
         sed -i "s@DB_USER=.*@DB_USER=${TMP_JMS_SETUP_DBUNAME}@g" config-example.txt
         sed -i "s@DB_PASSWORD=.*@DB_PASSWORD='${TMP_JMS_SETUP_DBPWD}'@g" config-example.txt
         sed -i "s@DB_NAME=.*@DB_NAME=${TMP_JMS_SETUP_DBNAME}@g" config-example.txt
     fi
 
     # 缓存Redis，???使用外置redis时依旧存在问题
-    local TMP_JMS_SETUP_REDIS_ADDRESS=""
-    input_if_empty "TMP_JMS_SETUP_REDIS_ADDRESS" "JumpServer.Redis.Pre: Please ender ${red}redis host address${reset}，or type enter to setup docker-image"
+    local TMP_JMS_SETUP_REDIS_HOST=""
+    input_if_empty "TMP_JMS_SETUP_REDIS_HOST" "JumpServer.Redis.Pre: Please ender ${red}redis host address${reset}，or type enter to setup docker-image"
+    set_if_equals "TMP_JMS_SETUP_REDIS_HOST" "LOCAL_HOST" "127.0.0.1"
     
-    if [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "" ] ; then
+    if [ "${TMP_JMS_SETUP_REDIS_HOST}" == "" ] ; then
         echo "JumpServer.Redis.Pre: Jumpserver typed local docker-image mode"
     else
-        if [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "localhost" ] || [ "${TMP_JMS_SETUP_REDIS_ADDRESS}" == "${LOCAL_HOST}" ] ; then
+        if [ "${TMP_JMS_SETUP_REDIS_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_REDIS_HOST}" == "localhost" ] || [ "${TMP_JMS_SETUP_REDIS_HOST}" == "${LOCAL_HOST}" ] ; then
             redis-cli config set stop-writes-on-bgsave-error no
         fi
 
         sed -i "s@USE_EXTERNAL_REDIS=0@USE_EXTERNAL_REDIS=1@g" config-example.txt
-        sed -i "s@REDIS_HOST=.*@REDIS_HOST=${TMP_JMS_SETUP_REDIS_ADDRESS}@g" config-example.txt
+        sed -i "s@REDIS_HOST=.*@REDIS_HOST=${TMP_JMS_SETUP_REDIS_HOST}@g" config-example.txt
             
         local TMP_JMS_SETUP_REDIS_PWD=""
         rand_str "TMP_JMS_SETUP_REDIS_PWD" 32
-        input_if_empty "TMP_JMS_SETUP_REDIS_PWD" "JumpServer.Redis.Pre: Please ender ${red}redis auth login password${reset} of host address '${green}${TMP_JMS_SETUP_REDIS_ADDRESS}${reset}'"
+        input_if_empty "TMP_JMS_SETUP_REDIS_PWD" "JumpServer.Redis.Pre: Please ender ${red}redis auth login password${reset} of host address '${green}${TMP_JMS_SETUP_REDIS_HOST}${reset}'"
         sed -i "s@REDIS_PASSWORD=.*@REDIS_PASSWORD=${TMP_JMS_SETUP_REDIS_PWD}@g" config-example.txt
     fi
     

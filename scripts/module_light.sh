@@ -51,9 +51,8 @@ function setup_$soft_name()
 	# 先清理文件，再创建文件
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
-	# mv /var/log/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
+	path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}"
+	path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}"
 	# mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	## cp /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} -Rp
     ## mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}_empty
@@ -63,7 +62,6 @@ function setup_$soft_name()
     # path_not_exists_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}`
 
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
-	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} /var/log/$setup_name
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} /var/lib/$setup_name
 
@@ -101,7 +99,7 @@ function conf_$soft_name()
 
 	# ①-N：不存在配置文件：
 	# rm -rf ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
-	# mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
+	# path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}"
 
 	# 特殊多层结构下使用
     # path_not_exists_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}`
@@ -113,7 +111,29 @@ function conf_$soft_name()
 
 	# 开始配置
 
-	# 授权权限，否则无法写入
+# 	# -- 服务配置加载
+# 	sudo tee /usr/lib/systemd/system/$setup_name.service <<-EOF
+# [Unit]
+# Description=$soft_upper_name Server Service
+# After=network.target
+
+# [Service]
+# Type=simple
+# User=$setup_owner
+# Restart=on-failure
+# RestartSec=5s
+# ExecStart=/usr/bin/$setup_name -c /etc/$setup_name/$setup_name.ini
+# LimitNOFILE=infinity
+# LimitNPROC=infinity
+# LimitCORE=infinity
+
+# [Install]
+# WantedBy=multi-user.target
+# EOF
+#
+#     systemctl daemon-reload
+
+	# -- 授权权限，否则无法写入
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
 
 	return $?
@@ -128,13 +148,15 @@ function boot_$soft_name()
 	
 	# 验证安装
     bin/$setup_name -v
-
-	# 当前启动命令
-	nohup bin/$setup_name > logs/boot.log 2>&1 &
 	
-    # 等待启动
+    # 当前启动命令 && 等待启动
+#     chkconfig $setup_name on
+#     chkconfig --list | grep $setup_name
+	echo
     echo "Starting $soft_name，Waiting for a moment"
     echo "--------------------------------------------"
+	nohup bin/$setup_name > logs/boot.log 2>&1 &
+#     nohup systemctl start $setup_name.service > logs/boot.log 2>&1 &
     sleep 15
 
     cat logs/boot.log
@@ -142,38 +164,13 @@ function boot_$soft_name()
     echo "--------------------------------------------"
 
 	# 启动状态检测
-	bin/$setup_name status  # lsof -i:${TMP_$soft_upper_short_name_SETUP_PORT}
+	# systemctl status $setup_name.service
+	# lsof -i:${TMP_$soft_upper_short_name_SETUP_PORT}
+	bin/$setup_name status  
 
 	# 添加系统启动命令
     echo_startup_config "$setup_name" "${TMP_$soft_upper_short_name_SETUP_DIR}" "bin/$setup_name" "" "100"
-	
-# 	# 启动配置加载
-# 	sudo tee /usr/lib/systemd/system/$soft_name.service <<-EOF
-# [Unit]
-# Description=$soft_upper_name Server Service
-# After=network.target
-
-# [Service]
-# Type=simple
-# User=$setup_owner
-# Restart=on-failure
-# RestartSec=5s
-# ExecStart=/usr/bin/$soft_name -c /etc/$soft_name/$soft_name.ini
-# LimitNOFILE=infinity
-# LimitNPROC=infinity
-# LimitCORE=infinity
-
-# [Install]
-# WantedBy=multi-user.target
-# EOF
-
-#     systemctl daemon-reload
-
-# 	# 设定启动运行
-#     chkconfig $soft_name on
-#     chkconfig --list | grep $soft_name
-#     systemctl enable $soft_name.service
-#     systemctl start $soft_name.service
+#     systemctl enable $setup_name.service
 	
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_$soft_upper_short_name_SETUP_PORT}
@@ -225,9 +222,9 @@ function exec_step_$soft_name()
 # x1-下载软件
 function down_$soft_name()
 {
-	# local TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION=`curl -s https://www.xxx.com`
-	# echo "$title_name: The newer stable version is ${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
-    # local TMP_$soft_upper_short_name_SETUP_NEWER="${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERSION}"
+	# local TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERS=`curl -s https://www.xxx.com`
+	# echo "$title_name: The newer stable version is ${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERS}"
+    # local TMP_$soft_upper_short_name_SETUP_NEWER="${TMP_$soft_upper_short_name_SETUP_OFFICIAL_STABLE_VERS}"
 
 	# setup_soft_git "$setup_name" "https://github.com/${git_repo}" "exec_step_$soft_name"
 	local TMP_$soft_upper_short_name_SETUP_NEWER="1.0.0"

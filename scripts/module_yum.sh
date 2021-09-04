@@ -34,13 +34,13 @@ function set_env_$soft_name()
 function setup_$soft_name()
 {
 	## 源模式
-	sudo tee /etc/yum.repos.d/$setup_name.repo <<-'EOF'
+	cat << EOF | sudo tee -a /etc/yum.repos.d/$setup_name.repo
 [$setup_name]
-name=$setup_name
-enabled=1
+name=$setup_name Repository
 baseurl=
 gpgkey=
 gpgcheck=1
+enabled=1
 EOF
 
 	soft_yum_check_setup "$soft_name"
@@ -58,9 +58,8 @@ EOF
 	
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
 	rm -rf ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
-	# mv /var/log/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
+	path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR}"
+	path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}"
 	# mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}
 	## cp /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} -Rp
     ## mv /var/lib/$setup_name ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}_empty
@@ -70,7 +69,6 @@ EOF
     path_not_exists_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR}`
 
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} ${TMP_$soft_upper_short_name_SETUP_LOGS_DIR}
-	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_LOGS_DIR} /var/log/$setup_name
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} ${TMP_$soft_upper_short_name_SETUP_DATA_DIR}
 	# ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_DATA_DIR} /var/lib/$setup_name
 
@@ -103,7 +101,7 @@ function conf_$soft_name()
 
 	# ①-N：不存在配置文件：
 	# rm -rf ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
-	# mkdir -pv ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
+	# path_not_exists_create "${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}"
 
 	# 特殊多层结构下使用
     # path_not_exists_create `dirname ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}`
@@ -114,6 +112,8 @@ function conf_$soft_name()
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
 	
     # 开始配置
+
+    systemctl daemon-reload
 
 	# 授权权限，否则无法写入
 	# chown -R $setup_owner:$setup_owner_group ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
@@ -129,26 +129,29 @@ function boot_$soft_name()
 	cd ${TMP_$soft_upper_short_name_SETUP_DIR}
 	
 	# 验证安装
-    $setup_name -v  # lsof -i:${TMP_$soft_upper_short_name_SETUP_PORT}
+    $setup_name -v
 
-	# 当前启动命令
-    sudo systemctl daemon-reload
-    sudo systemctl enable $setup_name.service
-	# nohup bin/$setup_name > logs/boot.log 2>&1 &
-
-    # 等待启动
+    # 当前启动命令 && 等待启动
+    chkconfig $setup_name on
+	chkconfig --list | grep $setup_name
+	echo
     echo "Starting $soft_name，Waiting for a moment"
     echo "--------------------------------------------"
-    sudo systemctl start $setup_name.service
+    nohup systemctl start $setup_name.service > logs/boot.log 2>&1 &
     sleep 5
 
-    # cat logs/boot.log
+    cat logs/boot.log
     cat /var/log/$setup_name/$setup_name.log
-	sudo systemctl status $setup_name.service
-    sudo chkconfig $setup_name on
     # journalctl -u $setup_name --no-pager | less
-    # sudo systemctl reload $setup_name.service
+    # systemctl reload $setup_name.service
     echo "--------------------------------------------"
+
+	# 启动状态检测
+	systemctl status $setup_name.service
+	lsof -i:${TMP_$soft_upper_short_name_SETUP_PORT}
+	
+	# 添加系统启动命令
+	systemctl enable $setup_name.service
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_$soft_upper_short_name_SETUP_PORT}

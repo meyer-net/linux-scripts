@@ -30,7 +30,7 @@ function set_env_kafka()
 	
     local TMP_IS_KFK_ZK_LOCAL=`lsof -i:${TMP_KFK_SETUP_ZK_PORT}`
     if [ -z "${TMP_IS_KFK_ZK_LOCAL}" ]; then 
-    	exec_yn_action "setup_zookeeper" "Kafka: Please sure if u want to get ${green}zookeeper local${reset}?"
+    	exec_yn_action "setup_zookeeper" "Kafka.Zookeeper: Can't find dependencies compment of ${red}zookeeper${reset}，please sure if u want to get ${green}zookeeper local${reset} or remote got?"
 	fi
 
 	return $?
@@ -44,7 +44,7 @@ function set_env_kafka_eagle()
 	
     local TMP_IS_KFK_EGL_MYSQL_LOCAL=`lsof -i:${TMP_KFK_EGL_SETUP_MYSQL_PORT}`
     if [ -z "${TMP_IS_KFK_EGL_MYSQL_LOCAL}" ]; then 
-    	exec_yn_action "setup_mysql" "KafkaEagle: Please sure if u want to get ${green}mysql local${reset}?"
+    	exec_yn_action "setup_mysql" "KafkaEagle.MySQL: Can't find dependencies compment of ${red}mysql${reset}，please sure if u want to get ${green}mysql local${reset} or remote got?"
 	fi
 
 	return $?
@@ -54,14 +54,14 @@ function set_env_kafka_eagle()
 
 function setup_zookeeper()
 {   
-    source scripts/ha/zookeeper.sh
+    cd ${__DIR} && source scripts/ha/zookeeper.sh
 
     return $?
 }
 
 function setup_mysql()
 {   
-    source scripts/database/mysql.sh
+    cd ${__DIR} && source scripts/database/mysql.sh
 
     return $?
 }
