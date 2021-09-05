@@ -157,7 +157,7 @@ function database()
 
 function web()
 {
-	exec_if_choice "TMP_CHOICE_WEB" "Please choice which web compoment you want to setup" "...,OpenResty,Caddy,Kong,Webhook,Exit" "${TMP_SPLITER}" "scripts/web"
+	exec_if_choice "TMP_CHOICE_WEB" "Please choice which web compoment you want to setup" "...,OpenResty,Kong,Caddy,Webhook,Exit" "${TMP_SPLITER}" "scripts/web"
 	
     return $?
 }

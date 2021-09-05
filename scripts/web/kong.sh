@@ -203,16 +203,16 @@ function conf_kong()
 	
     # 开始配置
     # -- 初始化数据库，并设置密码
-	input_if_empty "TMP_KNG_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${red}postgres host address${reset} for kong"
+	input_if_empty "TMP_KNG_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${green}postgres host address${reset} for kong"
     set_if_equals "TMP_KNG_SETUP_PSQL_HOST" "LOCAL_HOST" "127.0.0.1"
-	input_if_empty "TMP_KNG_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${red}postgres port${reset} of '${TMP_KNG_SETUP_PSQL_HOST}' for kong"
-	input_if_empty "TMP_KNG_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${red}postgres user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}' for kong"
+	input_if_empty "TMP_KNG_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${green}postgres port${reset} of '${TMP_KNG_SETUP_PSQL_HOST}' for kong"
+	input_if_empty "TMP_KNG_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${green}postgres user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}' for kong"
     
     local TMP_KNG_SETUP_PSQL_SELF_USRNAME="kong"
     local TMP_KNG_SETUP_PSQL_SELF_USRPWD="kng%DB!m${LOCAL_ID}_"
-	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_DATABASE" "Kong.PostgresQL: Please ender ${red}kong used database${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}'"
-	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_USRNAME" "Kong.PostgresQL: Please ender ${red}kong used user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}'"
-	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_USRPWD" "Kong.PostgresQL: Please ender ${red}kong used password${reset} of ${TMP_KNG_SETUP_PSQL_SELF_USRNAME}@${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}"
+	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_DATABASE" "Kong.PostgresQL: Please ender ${green}kong used database${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}'"
+	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_USRNAME" "Kong.PostgresQL: Please ender ${green}kong used user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}'"
+	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_USRPWD" "Kong.PostgresQL: Please ender ${green}kong used password${reset} of ${TMP_KNG_SETUP_PSQL_SELF_USRNAME}@${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}"
 
     # 创建初始DB
     psql -U ${TMP_KNG_SETUP_PSQL_USRNAME} -h ${TMP_KNG_SETUP_PSQL_HOST} -p ${TMP_KNG_SETUP_PSQL_PORT} -d postgres << EOF
@@ -244,7 +244,8 @@ EOF
 
     kong migrations bootstrap
 
-	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps: Please ender ${red}auto https valid api host for kong${reset} of 'caddy'"
+	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps: Please ender ${green}auto https valid api host for kong${reset} of '${green}caddy${reset}'"
+    set_if_equals "TMP_KNG_SETUP_CDY_API_HOST" "LOCAL_HOST" "127.0.0.1"
         
     # -- 添加kong-api的配置信息
     # 1：设置统一工作组ID
@@ -642,16 +643,16 @@ function conf_konga()
     fi
     set_if_equals "TMP_KNGA_SETUP_KNG_HOST" "LOCAL_HOST" "127.0.0.1"
 
-	input_if_empty "TMP_KNGA_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${red}postgres host address${reset} for konga"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${green}postgres host address${reset} for konga"
     set_if_equals "TMP_KNGA_SETUP_PSQL_HOST" "LOCAL_HOST" "127.0.0.1"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${red}postgres port${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}' for konga"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${red}postgres user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}' for konga"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${green}postgres port${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}' for konga"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${green}postgres user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}' for konga"
     
-	input_if_empty "TMP_KNGA_SETUP_DOMAIN" "KongA.Web.Domain: Please ender ${red}kong dashboard web domain${reset}"
-	input_if_empty "TMP_KNGA_SETUP_HTTP_PORT" "KongA.Web.Port: Please ender ${red}kong dashboard web local port${reset}, except '80'&'443'"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_SELF_DATABASE" "KongA.PostgreSql: Please ender ${red}kong dashboard database${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_SELF_USRNAME" "KongA.PostgreSql: Please ender ${red}kong dashboard user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_SELF_USRPWD" "KongA.PostgreSql: Please ender ${red}kong dashboard password${reset} of $TMP_KNGA_SETUP_PSQL_SELF_USRNAME@${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}"
+	input_if_empty "TMP_KNGA_SETUP_DOMAIN" "KongA.Web.Domain: Please ender ${green}kong dashboard web domain${reset}"
+	input_if_empty "TMP_KNGA_SETUP_HTTP_PORT" "KongA.Web.Port: Please ender ${green}kong dashboard web local port${reset}, except '80'&'443'"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_SELF_DATABASE" "KongA.PostgreSql: Please ender ${green}kong dashboard database${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_SELF_USRNAME" "KongA.PostgreSql: Please ender ${green}kong dashboard user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_SELF_USRPWD" "KongA.PostgreSql: Please ender ${green}kong dashboard password${reset} of $TMP_KNGA_SETUP_PSQL_SELF_USRNAME@${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}"
 
     #初始化配置
     local TMP_KONGA_TOKEN_SECURITY=`cat /proc/sys/kernel/random/uuid`

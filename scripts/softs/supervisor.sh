@@ -237,7 +237,7 @@ function conf_supervisor()
 
 	# ①-N：不存在配置文件：
 	rm -rf ${TMP_SUP_SETUP_ETC_DIR}
-    echo_supervisord_conf > /etc/supervisor.conf
+    path_not_exists_action "/etc/supervisor.conf" "echo_supervisord_conf > /etc/supervisor.conf"
     path_not_exists_create "${TMP_SUP_SETUP_LNK_ETC_DIR}/conf"
 
 	# 替换原路径链接（存在etc下时，不能作为软连接存在）
