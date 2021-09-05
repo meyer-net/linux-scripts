@@ -7,14 +7,31 @@
 # 相关参考：
 #		  
 #------------------------------------------------
-# 安装标题：MongoDB
-# 软件名称：mongodb
-# 软件端口：$soft_port
-# 软件大写分组与简称：MGDB
-# 软件安装名称：mongodb
-# 软件授权用户名称&组：mongod/mongod
+# show dbs：显示数据库列表 
+# show collections：显示当前数据库中的集合（类似关系数据库中的表） 
+# show users：显示用户
+# 
+# use <db name>：切换当前数据库，这和MS-SQL里面的意思一样 
+# db.help()：显示数据库操作命令，里面有很多的命令 
+# db.foo.help()：显示集合操作命令，同样有很多的命令，foo指的是当前数据库下，一个叫foo的集合，并非真正意义上的命令 
+# db.foo.find()：对于当前数据库中的foo集合进行数据查找（由于没有条件，会列出所有数据） 
+# db.foo.find( { a : 1 } )：对于当前数据库中的foo集合进行查找，条件是数据中有一个属性叫a，且a的值为1
+# 
+# MongoDB没有创建数据库的命令，但有类似的命令。
+# 如：如果你想创建一个“myTest”的数据库，先运行use myTest命令，之后就做一些操作（如：db.createCollection('user')）,这样就可以创建一个名叫“myTest”的数据库。
+# 
+# MongoDB中，集合相当于表的概念
+# 导出表数据：mongoexport -h localhost:27017 -d rocketchat -c rocketchat_message -o /tmp/rocketchat.json
+# 导入表数据：mongoimport -h localhost:27017 -d rocketchat -c rocketchat_message /tmp/rocketchat.json
+# 导出库数据：mongodump -h localhost:27017 -d rocketchat -o /tmp/mongodump/
+# 导入库数据：mongorestore -h localhost:27017 -d rocketchat --dir /tmp/mongodump/
+# 	这里需要注意三点：
+# 			 1、mongodump/ 目录下放的就是以数据库名命名的文件夹，最好不要再放其他文件夹或文件。
+# 			 2、数据库必须已经存在这个库。
+# 			 3、需要在授权时导入：如果执行失败，可以在服务里先关闭MongoDB服务，暂时用命令行启动MongoDB服务，再执行命令即可。
 #------------------------------------------------
 local TMP_MGDB_SETUP_PORT=27017
+local TMP_MGDB_SETUP_PWD="mongo%DB!m${LOCAL_ID}_"
 
 ##########################################################################################################
 
@@ -103,12 +120,33 @@ function conf_mongodb()
     sed -i "s@^#  engine:@  engine: mmapv1@" etc/mongod.conf
     sed -i "s@^#replication:@replication:\n  replSetName: rs01@" etc/mongod.conf 
 
-    sed -i "s@^  port:@  port: ${TMP_MGDB_SETUP_PORT}/" etc/mongod.conf
-    sed -i "s@^  bindIp:@  bindIp: ${LOCAL_HOST}/" etc/mongod.conf
+    sed -i "s@^  port:@  port: ${TMP_MGDB_SETUP_PORT}@" etc/mongod.conf
+    sed -i "s@^  bindIp:@  bindIp: ${LOCAL_HOST}@" etc/mongod.conf
 
 	# 授权权限，否则无法写入
 	# chown -R mongod:mongod ${TMP_MGDB_SETUP_LNK_ETC_DIR}
 
+	return $?
+}
+
+function reconf_mongodb()
+{
+	cd ${TMP_MGDB_SETUP_DIR}
+	
+	mongod --auth  # 启用认证
+
+	input_if_empty "TMP_MGDB_SETUP_PWD" "MongoDB: Please ender ${green}mongodb password${reset} of ${red}root user(admin)${reset} for auth"
+
+    cat > mongodb_init.js <<EOF
+use admin
+db.createUser({user:"admin",pwd:"${TMP_MGDB_SETUP_PWD}",roles:["root"]})
+db.auth("admin", "${TMP_MGDB_SETUP_PWD}")
+EOF
+
+	cat mongodb_init.js | mongo --shell
+
+	rm -rf mongodb_init.js
+	
 	return $?
 }
 
@@ -179,7 +217,7 @@ function exec_step_mongodb()
 
 	boot_mongodb 
 
-	# reconf_mongodb 
+	reconf_mongodb 
 
 	return $?
 }

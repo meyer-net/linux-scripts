@@ -8,7 +8,10 @@
 #		  https://docs.rocket.chat/installing-and-updating/manual-installation/centos
 #------------------------------------------------
 local TMP_RC_SETUP_PORT=13000
+local TMP_RC_SETUP_MGDB_HOST="${LOCAL_HOST}"
 local TMP_RC_SETUP_MGDB_PORT=27017
+local TMP_RC_SETUP_MGDB_USER="admin"
+local TMP_RC_SETUP_MGDB_PWD="mongo%DB!m${LOCAL_ID}_"
 
 ##########################################################################################################
 
@@ -19,7 +22,7 @@ function set_env_rocket_chat()
     if [ -z "${TMP_IS_RC_MGDB_LOCAL}" ]; then 
     	exec_yn_action "setup_mongodb" "RocketChat.MongoDB: Can't find dependencies compment of ${red}mongodb${reset}，please sure if u want to get ${green}mongodb local${reset} or remote got?"
 	fi
-
+	
     cd ${__DIR} && source scripts/lang/nodejs.sh
 
     soft_yum_check_setup "gcc-c++,epel-release,GraphicsMagick"
@@ -33,6 +36,8 @@ function setup_mongodb()
 {   
     cd ${__DIR} && source scripts/database/mongodb.sh
 
+	TMP_RC_SETUP_MGDB_HOST="127.0.0.1"
+
     return $?
 }
 
@@ -40,8 +45,7 @@ function setup_mongodb()
 function setup_rocket_chat()
 {
 	## 直装模式
-    
-    cd programs/server && npm install
+	cd ${TMP_RC_CURRENT_DIR}/programs/server && npm install
 
 	cd `dirname ${TMP_RC_CURRENT_DIR}`
 
@@ -101,11 +105,26 @@ function conf_rocket_chat()
 
 	input_if_empty "TMP_RC_SETUP_MGDB_HOST" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb host address${reset} for rocket.chat"
     set_if_equals "TMP_RC_SETUP_MGDB_HOST" "LOCAL_HOST" "127.0.0.1"
+	
+	input_if_empty "TMP_RC_SETUP_MGDB_PORT" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb host address port${reset} of '${TMP_RC_SETUP_MGDB_HOST}' for rocket.chat"
+	input_if_empty "TMP_RC_SETUP_MGDB_USER" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb user${reset} of '${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
+	input_if_empty "TMP_RC_SETUP_MGDB_PWD" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb password${reset} of '${TMP_RC_SETUP_MGDB_USER}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
     
 	local TMP_RC_SETUP_LOGS_DIR=${TMP_RC_SETUP_DIR}/logs
 	local TMP_RC_SETUP_NODE_PATH=`nvm which current`
 
 	# 启动配置加载(修改为其默认node版本启动)
+	# "MONGO_URL": "mongodb://<db_username>:<db_password>@<db_server_host>:<db_server_port>/<db_name>",
+	# "MONGO_OPLOG_URL": "mongodb://<oplog_username>:<oplog_password>@<db_server_host>:<db_server_port>/<oplog_db_name>?authSource=admin"
+	local TMP_RC_SETUP_MGDB_URL="mongodb://${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/rocketchat?replicaSet=rs01"
+	local TMP_RC_SETUP_MGDB_OPLOG_URL="mongodb://${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01"
+
+	# 判断有密码的情况
+	if [ -n "${TMP_RC_SETUP_MGDB_PWD}" ]; then
+		TMP_RC_SETUP_MGDB_URL="mongodb://${TMP_RC_SETUP_MGDB_USER}:${TMP_RC_SETUP_MGDB_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/rocketchat?replicaSet=rs01"
+		TMP_RC_SETUP_MGDB_OPLOG_URL="mongodb://${TMP_RC_SETUP_MGDB_USER}:${TMP_RC_SETUP_MGDB_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01&authSource=admin"
+	fi
+
 	cat << EOF | sudo tee -a /lib/systemd/system/rocketchat.service
 [Unit]
 Description=The Rocket.Chat server
@@ -116,7 +135,7 @@ StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=rocketchat
 User=rocketchat
-Environment=MONGO_URL=mongodb://${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/rocketchat?replicaSet=rs01 MONGO_OPLOG_URL=mongodb://${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01 ROOT_URL=http://${LOCAL_HOST}:${TMP_RC_SETUP_PORT}/ PORT=${TMP_RC_SETUP_PORT}
+Environment=MONGO_URL=${TMP_RC_SETUP_MGDB_URL} MONGO_OPLOG_URL=${TMP_RC_SETUP_MGDB_OPLOG_URL} ROOT_URL=http://${LOCAL_HOST}:${TMP_RC_SETUP_PORT}/ PORT=${TMP_RC_SETUP_PORT}
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -205,7 +224,7 @@ function exec_step_rocket_chat()
 # x1-下载软件
 function down_rocket_chat()
 {
-    setup_soft_wget "rocket.chat" "https://releases.rocket.chat/latest/download -o rocket.chat.tgz" "exec_step_rocket_chat"
+    setup_soft_wget "rocket.chat" "https://releases.rocket.chat/latest/download -O rocket.chat.tgz" "exec_step_rocket_chat"
 
 	return $?
 }

@@ -620,23 +620,23 @@ function while_wget()
 	local TMP_SOFT_WGET_FILE_DEST_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'-O' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | awk -F' ' '{print $1}'`
 	
 	#原始链接名
-	local TMP_SOFT_WGET_FILE_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'/' '{print $NF}' | awk -F' ' '{print $NR}'`
+	local TMP_SOFT_WGET_FILE_SOUR_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'/' '{print $NF}' | awk -F' ' '{print $NR}'`
 
-	if [ "${TMP_SOFT_WGET_FILE_NAME}" == "download.rpm" ]; then
-		TMP_SOFT_WGET_FILE_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'/' '{print $(NF-1)}'`
+	if [ "${TMP_SOFT_WGET_FILE_SOUR_NAME}" == "download.rpm" ]; then
+		TMP_SOFT_WGET_FILE_SOUR_NAME=`echo "${TMP_SOFT_WGET_URL}" | awk -F'/' '{print $(NF-1)}'`
 	fi
 
 	#提取真实URL链接
 	local TMP_SOFT_WGET_TRUE_URL=`echo "${TMP_SOFT_WGET_URL}" | grep -oh -E "https?://[a-zA-Z0-9\.\+\/_&=@$%?~#-]*"`
 
 	#最终名
-	TMP_SOFT_WGET_FILE_DEST_NAME=${TMP_SOFT_WGET_FILE_DEST_NAME:-${TMP_SOFT_WGET_FILE_NAME}}
-	# TMP_SOFT_WGET_FILE_DEST_NAME=$([ -n "$TMP_SOFT_WGET_FILE_DEST_NAME" ] && echo "$TMP_SOFT_WGET_FILE_DEST_NAME" || echo $TMP_SOFT_WGET_FILE_NAME)
+	TMP_SOFT_WGET_FILE_DEST_NAME=${TMP_SOFT_WGET_FILE_DEST_NAME:-${TMP_SOFT_WGET_FILE_SOUR_NAME}}
+	# TMP_SOFT_WGET_FILE_DEST_NAME=$([ -n "$TMP_SOFT_WGET_FILE_DEST_NAME" ] && echo "$TMP_SOFT_WGET_FILE_DEST_NAME" || echo ${TMP_SOFT_WGET_FILE_SOUR_NAME})
 	
 	echo "-------------------------------------------------------------------------------------------------------------------"
 	echo "Start to get file from '${red}${TMP_SOFT_WGET_TRUE_URL}${reset}' named '${green}${TMP_SOFT_WGET_FILE_DEST_NAME}${reset}'"
 	echo "-------------------------------------------------------------------------------------------------------------------"
-
+	echo "${green}Current Dir${reset}：`pwd`"
 	local TMP_SOFT_WGET_DIST_FILE_EXT=`echo ${TMP_SOFT_WGET_FILE_DEST_NAME##*.}`	
 	case ${TMP_SOFT_WGET_DIST_FILE_EXT} in
 		"rpm")
@@ -650,8 +650,11 @@ function while_wget()
 	esac
 
 	local TMP_SOFT_WGET_COMMAND="wget -c --tries=0 --timeout=60 ${TMP_SOFT_WGET_TRUE_URL} -O ${TMP_SOFT_WGET_FILE_DEST_NAME}"
-	echo "${TMP_SOFT_WGET_COMMAND}"
+	echo "${green}Wget Command${reset}：${TMP_SOFT_WGET_COMMAND}"
+	echo "${green}Wget/Current Dir${reset}：`pwd`"
+	echo
 
+	# 循环执行wget命令，直到成功
 	while [ ! -f "${TMP_SOFT_WGET_FILE_DEST_NAME}" ]; do
 		#https://wenku.baidu.com/view/64f7d302b52acfc789ebc936.html
 		${TMP_SOFT_WGET_COMMAND}
@@ -663,9 +666,12 @@ function while_wget()
 		fi
 	done
 
+	# 执行wget后的脚本
 	if [ ${#TMP_SOFT_WGET_SCRIPT} -gt 0 ]; then
 		eval "${TMP_SOFT_WGET_SCRIPT}"
 	fi
+
+	# 回到wget之前的目录
 	cd ${TMP_SOFT_WGET_CURRENT_DIR}
 
 	return $?
@@ -700,10 +706,14 @@ function while_curl()
 	echo "-------------------------------------------------------------------------------------------------------------------------"
 	echo "Start to curl file from '${red}${TMP_SOFT_CURL_TRUE_URL}${reset}' named '${green}${TMP_SOFT_CURL_FILE_DEST_NAME}${reset}'"
 	echo "-------------------------------------------------------------------------------------------------------------------------"
+	echo "${green}Current Dir${reset}：`pwd`"
 
 	cd ${CURL_DIR}
 	local TMP_SOFT_CURL_COMMAND="curl -4sSkL ${TMP_SOFT_CURL_TRUE_URL} -o ${TMP_SOFT_CURL_FILE_DEST_NAME}"
-	echo "${TMP_SOFT_CURL_COMMAND}"
+	echo "${green}Curl Command${reset}：${TMP_SOFT_CURL_COMMAND}"
+	echo "${green}Curl/Current Dir${reset}：`pwd`"
+	echo
+
 	while [ ! -f "${TMP_SOFT_CURL_FILE_DEST_NAME}" ]; do
 		${TMP_SOFT_CURL_COMMAND}
 		
@@ -793,23 +803,24 @@ function setup_soft_wget()
 	local TMP_SOFT_SETUP_DIR=$([ -n "$4" ] && echo "$4" || echo $SETUP_DIR)
 	
 	typeset -l TMP_SOFT_LOWER_NAME
-	local TMP_SOFT_LOWER_NAME=$TMP_SOFT_WGET_NAME
+	local TMP_SOFT_LOWER_NAME=${TMP_SOFT_WGET_NAME}
 
-	local TMP_SOFT_SETUP_PATH=$TMP_SOFT_SETUP_DIR/$TMP_SOFT_LOWER_NAME
+	local TMP_SOFT_SETUP_PATH=${TMP_SOFT_SETUP_DIR}/${TMP_SOFT_LOWER_NAME}
 
-    sudo ls -d $TMP_SOFT_SETUP_PATH   #ps -fe | grep $TMP_SOFT_WGET_NAME | grep -v grep
+    sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep ${TMP_SOFT_WGET_NAME} | grep -v grep
 	if [ $? -ne 0 ]; then
-		TMP_SOFT_WGET_FILE_NAME=`echo "$TMP_SOFT_WGET_URL" | awk -F'/' '{print $NF}'`
+		local TMP_SOFT_WGET_FILE_NAME=
+		local TMP_SOFT_WGET_FILE_DIR="${DOWN_DIR}"
+		while_wget "${TMP_SOFT_WGET_URL}" 'TMP_SOFT_WGET_FILE_DIR=`pwd` && TMP_SOFT_WGET_FILE_NAME=${TMP_SOFT_WGET_FILE_DEST_NAME}'
+		
+		# 回到while_wget下载的目录中去
+		cd ${TMP_SOFT_WGET_FILE_DIR}
 
-		cd ${DOWN_DIR}
-		if [ ! -f "$TMP_SOFT_WGET_FILE_NAME" ]; then
-			while_wget $TMP_SOFT_WGET_URL
-		fi
-
-		TMP_SOFT_WGET_UNPACK_FILE_EXT=`echo ${TMP_SOFT_WGET_FILE_NAME##*.}`
+		local TMP_SOFT_WGET_FILE_NAME_NO_EXTS="${DOWN_DIR}/tmp"
+		local TMP_SOFT_WGET_UNPACK_FILE_EXT=`echo ${TMP_SOFT_WGET_FILE_NAME##*.}`
 		if [ "$TMP_SOFT_WGET_UNPACK_FILE_EXT" = "zip" ]; then
-			TMP_SOFT_WGET_PACK_DIR_LINE=`unzip -v $TMP_SOFT_WGET_FILE_NAME | awk '/----/{print NR}' | awk 'NR==1{print}'`
-			local TMP_SOFT_WGET_FILE_NAME_UNZIP=`unzip -v $TMP_SOFT_WGET_FILE_NAME | awk 'NR==LINE{print $NF}' LINE=$((TMP_SOFT_WGET_PACK_DIR_LINE+1))`
+			TMP_SOFT_WGET_PACK_DIR_LINE=`unzip -v ${TMP_SOFT_WGET_FILE_NAME} | awk '/----/{print NR}' | awk 'NR==1{print}'`
+			local TMP_SOFT_WGET_FILE_NAME_UNZIP=`unzip -v ${TMP_SOFT_WGET_FILE_NAME} | awk 'NR==LINE{print $NF}' LINE=$((TMP_SOFT_WGET_PACK_DIR_LINE+1))`
 			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`echo ${TMP_SOFT_WGET_FILE_NAME_UNZIP} | sed s@/.*@""@g`
 
 			# 没有层级的情况
@@ -820,27 +831,27 @@ function setup_soft_wget()
 			fi
 
 			# 本地是否存在目录
-			if [ ! -d "$TMP_SOFT_WGET_FILE_NAME_NO_EXTS" ]; then
-				unzip -o $TMP_SOFT_WGET_FILE_NAME ${TMP_SOFT_WGET_FILE_NAME_UNZIP_ARGS}
+			if [ ! -d "${TMP_SOFT_WGET_FILE_NAME_NO_EXTS}" ]; then
+				unzip -o ${TMP_SOFT_WGET_FILE_NAME} ${TMP_SOFT_WGET_FILE_NAME_UNZIP_ARGS}
 			fi
 		else
-			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`tar -tf $TMP_SOFT_WGET_FILE_NAME | grep '/' | awk 'NR==1{print}' | sed s@/.*@""@g`
-			if [ ! -d "$TMP_SOFT_WGET_FILE_NAME_NO_EXTS" ]; then
+			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`tar -tf ${TMP_SOFT_WGET_FILE_NAME} | grep '/' | awk 'NR==1{print}' | sed s@/.*@""@g`
+			if [ ! -d "${TMP_SOFT_WGET_FILE_NAME_NO_EXTS}" ]; then
 				if [ "$TMP_SOFT_WGET_UNPACK_FILE_EXT" = "xz" ]; then
-					xz -d $TMP_SOFT_WGET_FILE_NAME
+					xz -d ${TMP_SOFT_WGET_FILE_NAME}
 					local TMP_SOFT_WGET_FILE_NAME_TAR=${TMP_SOFT_WGET_FILE_NAME%%.xz*}
 					tar -xvf ${TMP_SOFT_WGET_FILE_NAME_TAR}
 					rm -rf ${TMP_SOFT_WGET_FILE_NAME_TAR}
 				else
-					tar -zxvf $TMP_SOFT_WGET_FILE_NAME
+					tar -zxvf ${TMP_SOFT_WGET_FILE_NAME}
 				fi
 			fi
 		fi
 		
-		cd $TMP_SOFT_WGET_FILE_NAME_NO_EXTS
+		cd ${TMP_SOFT_WGET_FILE_NAME_NO_EXTS}
 
 		#安装函数调用
-		$TMP_SOFT_WGET_SETUP_FUNC "$TMP_SOFT_SETUP_PATH"
+		${TMP_SOFT_WGET_SETUP_FUNC} "${TMP_SOFT_SETUP_PATH}"
 	
 		echo "Complete."
 	fi
@@ -867,9 +878,9 @@ function setup_soft_git()
 	typeset -l TMP_SOFT_LOWER_NAME
 	local TMP_SOFT_LOWER_NAME=$TMP_SOFT_GIT_NAME
 
-	local TMP_SOFT_SETUP_PATH=$SETUP_DIR/$TMP_SOFT_LOWER_NAME
+	local TMP_SOFT_SETUP_PATH=$SETUP_DIR/${TMP_SOFT_LOWER_NAME}
 
-    sudo ls -d $TMP_SOFT_SETUP_PATH   #ps -fe | grep $TMP_SOFT_GIT_NAME | grep -v grep
+    sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep $TMP_SOFT_GIT_NAME | grep -v grep
 	if [ $? -ne 0 ]; then
 		local TMP_SOFT_GIT_FOLDER_NAME=`echo "$TMP_SOFT_GIT_URL" | awk -F'/' '{print $NF}'`
 
@@ -881,7 +892,7 @@ function setup_soft_git()
 		cd $TMP_SOFT_GIT_FOLDER_NAME
 
 		#安装函数调用
-		$TMP_SOFT_GIT_SETUP_FUNC "$TMP_SOFT_SETUP_PATH"
+		$TMP_SOFT_GIT_SETUP_FUNC "${TMP_SOFT_SETUP_PATH}"
 	
 		echo "Complete."
 	fi
@@ -1055,10 +1066,6 @@ function set_if_equals()
 #参数2：提示信息
 function input_if_empty()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_VAR_NAME=$1
 	local TMP_NOTICE=$2
 	local INPUT_CURRENT=""

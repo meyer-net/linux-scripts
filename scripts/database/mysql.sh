@@ -162,7 +162,7 @@ function conf_mysql()
     TMP_MSQL_SETUP_TEMPORARY_PWD="${TMP_MSQL_SETUP_TEMPORARY_PWD##*: }"
     echo "MySql: System temporary password is '${green}${TMP_MSQL_SETUP_TEMPORARY_PWD}${reset}'，Please ${red}remember it${reset} for local login"
 
-	input_if_empty "TMP_MYSQL_SETUP_PWD" "MySql: Please ender ${red}mysql password${reset} of ${green}User(Root)${reset} for '%'"
+	input_if_empty "TMP_MYSQL_SETUP_PWD" "MySql: Please ender ${green}mysql password${reset} of ${red}user(Root)${reset} for '%'"
     
     systemctl start mysqld.service 
     mysql -uroot -p${TMP_MSQL_SETUP_TEMPORARY_PWD} -e"
@@ -204,7 +204,7 @@ function conf_mariadb()
 	ln -sf ${TMP_MDB_SETUP_LNK_ETC_DIR} ${TMP_MDB_SETUP_ETC_DIR}
     ln -sf /etc/my.cnf ${TMP_MDB_SETUP_LNK_ETC_PATH}
 
-	input_if_empty "TMP_MYSQL_SETUP_PWD" "MariaDB: Please ender ${red}mysql password${reset} of User(Root)"
+	input_if_empty "TMP_MYSQL_SETUP_PWD" "MariaDB: Please ender ${green}mysql password${reset} of User(Root)"
     
     systemctl start mariadb.service 
     mysql -e"
@@ -317,7 +317,7 @@ function conf_mysql_master()
 function conf_mysql_slave()
 {
 	echo "Start Config Mysql-Slave"
-    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER" "Mysql: Please ender ${red}mysql master address in internal${reset}"
+    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER" "Mysql: Please ender ${green}mysql master address in internal${reset}"
 
 	#不加binlog-do-db和binlog_ignore_db，那就表示备份全部数据库。
 	#echo "Mysql: Please Ender Mysql-Slave All DB To Bak And Use Character ',' To Split Like 'db_a,db_b' In Network"
@@ -336,7 +336,7 @@ function conf_mysql_slave()
 	echo "Config Mysql-Slave Over。"
 	echo "------------------------------------------"
 	echo "Start Set And Test To Login Mysql-Master"    
-    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD" "Mysql: Please ender ${red}mysql localhost password of root${reset}"
+    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD" "Mysql: Please ender ${green}mysql localhost password of root${reset}"
 	
 	#在主服务器新建一个用户赋予“REPLICATION SLAVE”的权限。
 	mysql -uroot -p${TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD} -e"

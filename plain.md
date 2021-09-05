@@ -8,3 +8,8 @@ x7：elk自动引用java环境变量
 == 修改为 set_if_equals
 nfs 
 rpcbind
+
+VC-100：{
+    OPTS：80+
+    SVRS：101+
+}
