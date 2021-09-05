@@ -9,6 +9,7 @@
 #------------------------------------------------
 # 备注：
 #      本caddy安装，全程辅助kong做自动https证书使用，不独立占用80,443
+# 	   AutoHttps：PSql -> Kong -> KongA -> Caddy -> Frp -> 解析 -> Webhook
 # 相关：
 #      curl -s https://getcaddy.com | bash -s personal
 
@@ -47,16 +48,14 @@ function set_env_caddy()
     local TMP_IS_CDY_HTTPS_OCCUPY=`lsof -i:${TMP_CDY_SETUP_HTTPS_PORT}`
     if [ -n "${TMP_IS_CDY_HTTP_OCCUPY}" ]; then 
     	TMP_CDY_SETUP_HTTP_PORT=60080
-		echo
 		echo "Caddy：Port '${green}80${reset}' for http occupied，change to '${red}${TMP_CDY_SETUP_HTTP_PORT}${reset}'"
-		echo
 	fi
+
+	echo
 
     if [ -n "${TMP_IS_CDY_HTTPS_OCCUPY}" ]; then 
     	TMP_CDY_SETUP_HTTPS_PORT=60443
-		echo
 		echo "Caddy：Port '${green}443${reset}' for https occupied，change to '${red}${TMP_CDY_SETUP_HTTPS_PORT}${reset}'"
-		echo
 	fi
 		
 	return $?
@@ -187,7 +186,7 @@ function reconf_caddy()
 	cd ${TMP_CDY_SETUP_DIR}/etc
 
     echo "------------------------------------------------------------------"
-	sudo tee Caddyfile.json <<-EOF
+	sudo tee Caddyfile.init.json <<-EOF
 {
 	"admin": {
 		"listen": "${LOCAL_HOST}:${TMP_CDY_SETUP_API_PORT}"
@@ -266,8 +265,8 @@ function increase_auto_https_conf()
 	}
 EOF
 
-    curl localhost:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}.json
-	curl localhost:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}": "${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}"}'
+    curl ${LOCAL_HOST}:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}.json
+	curl ${LOCAL_HOST}:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}": "${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}"}'
 
     echo "----------------------------------------------------------------"
 

@@ -91,12 +91,13 @@ function conf_webhook()
     
 	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
 	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
-    local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
-    local TMP_WBH_SETUP_DATA_SCRIPTS_DIR=${TMP_WBH_SETUP_DATA_DIR}/scripts
-	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
+	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DATA_DIR}/cache
+	local TMP_WBH_SETUP_ETC_DIR=${TMP_WBH_SETUP_DIR}/etc
+    local TMP_WBH_SETUP_ETC_HOOKS_DIR=${TMP_WBH_SETUP_ETC_DIR}/hooks
+    local TMP_WBH_SETUP_ETC_SCRIPTS_DIR=${TMP_WBH_SETUP_ETC_DIR}/scripts
 
-    mkdir -pv ${TMP_WBH_SETUP_DATA_HOOKS_DIR}
-    mkdir -pv ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}
+    mkdir -pv ${TMP_WBH_SETUP_ETC_HOOKS_DIR}
+    mkdir -pv ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}
     mkdir -pv ${TMP_WBH_SETUP_DATA_CACHE_DIR}
 
     # 本机装有caddy
@@ -105,7 +106,7 @@ function conf_webhook()
     if [ -n "${TMP_WBH_SETUP_IS_CDY_LOCAL}" ]; then    
         TMP_WBH_SETUP_CDY_HOOKS_JSON="{
             \"id\": \"cor-caddy-api\",  \
-            \"execute-command\": \"${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/cor-caddy-api.sh\",  \
+            \"execute-command\": \"${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/cor-caddy-api.sh\",  \
             \"http-methods\": [\"Get\"],  \
             \"include-command-output-in-response\": true,  \
             \"command-working-directory\": \"${TMP_WBH_SETUP_LOGS_DIR}\",  \
@@ -120,22 +121,24 @@ function conf_webhook()
 
     local TMP_WBH_SETUP_KNG_HOOKS_JSON="{
             \"id\": \"async-caddy-cert-to-kong\",  \
-            \"execute-command\": \"${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/buffer_for_request_host.sh\",  \
+            \"execute-command\": \"${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/buffer_for_request_host.sh\",  \
             \"http-methods\": [\"Post \"],  \
             \"command-working-directory\": \"${TMP_WBH_SETUP_LOGS_DIR}\",  \
             \"pass-arguments-to-command\": [{  \
                 \"source\": \"payload\",  \
                 \"name\": \"request.headers.host\"  \
             }],  \
-            \"trigger-rule\": {  \
-                \"or\": [{  \
-                        \"match\": {  \
-                                \"type\": \"ip-whitelist\",  \
-                                \"ip-range\": \"127.0.0.1\"  \
-                        }  \
-                }]  \
-            }  \
         }"
+    
+    # ??? 修改成内网
+            # \"trigger-rule\": {  \
+            #     \"or\": [{  \
+            #             \"match\": {  \
+            #                     \"type\": \"ip-whitelist\",  \
+            #                     \"ip-range\": \"127.0.0.1\"  \
+            #             }  \
+            #     }]  \
+            # }  \
 
     conf_webhook_buffer_for_request_host "${TMP_WBH_SETUP_DIR}"
 
@@ -145,12 +148,12 @@ function conf_webhook()
     
     echo "##############################################################" 
     # "source": "entire-payload" #通过此打印全部
-    sudo tee ${TMP_WBH_SETUP_DATA_HOOKS_DIR}/webhook_boot.json <<-EOF
+    sudo tee ${TMP_WBH_SETUP_ETC_HOOKS_DIR}/webhook_boot.json <<-EOF
 ${TMP_WBH_BOOT_HOOKS_JSON}
 EOF
     echo "##############################################################" 
 
-    chmod +x ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/*.sh
+    chmod +x ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/*.sh
 
 	return $?
 }
@@ -165,13 +168,13 @@ function conf_webhook_cor_caddy_api()
     
 	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
 	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
-    # local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
-    local TMP_WBH_SETUP_DATA_SCRIPTS_DIR=${TMP_WBH_SETUP_DATA_DIR}/scripts
-	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
+    # local TMP_WBH_SETUP_ETC_HOOKS_DIR=${TMP_WBH_SETUP_ETC_DIR}/hooks
+    local TMP_WBH_SETUP_ETC_SCRIPTS_DIR=${TMP_WBH_SETUP_ETC_DIR}/scripts
+	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DATA_DIR}/cache
 
     echo "+--------------------------------------------------------------+" 
     
-    sudo tee ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/cor-caddy-api.sh <<-EOF
+    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/cor-caddy-api.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook script for cor caddy api
@@ -229,13 +232,14 @@ function conf_webhook_buffer_for_request_host()
     
 	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
 	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
-    # local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
-    local TMP_WBH_SETUP_DATA_SCRIPTS_DIR=${TMP_WBH_SETUP_DATA_DIR}/scripts
-	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
+	local TMP_WBH_SETUP_ETC_DIR=${TMP_WBH_SETUP_DIR}/etc
+    # local TMP_WBH_SETUP_ETC_HOOKS_DIR=${TMP_WBH_SETUP_ETC_DIR}/hooks
+    local TMP_WBH_SETUP_ETC_SCRIPTS_DIR=${TMP_WBH_SETUP_ETC_DIR}/scripts
+	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DATA_DIR}/cache
 
     echo "+--------------------------------------------------------------+" 
     # 用于记录证书已刷新，记录域名的脚本（接收内容时触发，相当于简单的生产者，buffer）
-    sudo tee ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/buffer_for_request_host.sh <<-EOF
+    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/buffer_for_request_host.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook Script - for receive request
@@ -279,9 +283,9 @@ function conf_webhook_sync_caddy_cert_to_kong()
     
 	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
 	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
-    # local TMP_WBH_SETUP_DATA_HOOKS_DIR=${TMP_WBH_SETUP_DATA_DIR}/hooks
-    local TMP_WBH_SETUP_DATA_SCRIPTS_DIR=${TMP_WBH_SETUP_DATA_DIR}/scripts
-	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DIR}/cache
+    # local TMP_WBH_SETUP_ETC_HOOKS_DIR=${TMP_WBH_SETUP_ETC_DIR}/hooks
+    local TMP_WBH_SETUP_ETC_SCRIPTS_DIR=${TMP_WBH_SETUP_ETC_DIR}/scripts
+	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DATA_DIR}/cache
 
     # Caddy 不在本机，则重新确认host
     if [ -z "${TMP_WBH_SETUP_IS_CDY_LOCAL}" ]; then
@@ -295,7 +299,7 @@ function conf_webhook_sync_caddy_cert_to_kong()
     fi
 
     # 用于同步证书内容，删除记录域名的脚本（每天定时3次触发，相当于消费者，消费buffer）
-    sudo tee ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh <<-EOF
+    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook Script - for sync cert
@@ -408,8 +412,10 @@ execute "\$1"
 echo
 EOF
     
-    # 每天凌晨，12点，18点各执行1次
-    echo "0 0/12/18 * * * ${TMP_WBH_SETUP_DATA_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh >> ${TMP_WBH_SETUP_LOGS_DIR}/sync-caddy-cert-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
+    # 每天凌晨，12点，18点各执行1次。新增的需要手动执行脚本。
+    # echo "0 0/12/18 * * * ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh >> ${TMP_WBH_SETUP_LOGS_DIR}/sync-caddy-cert-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
+    echo "* * * * * ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh >> ${TMP_WBH_SETUP_LOGS_DIR}/sync-caddy-cert-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
+    
     systemctl restart crond
     echo "+--------------------------------------------------------------+" 
 

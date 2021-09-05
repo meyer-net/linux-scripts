@@ -225,7 +225,7 @@ EOF
     
     sed -i "s@^#log_level =.*@log_level = info@g" /etc/kong/kong.conf
     sed -i "s@^#proxy_listen =.*@proxy_listen = 0.0.0.0:80, 0.0.0.0:443 ssl@g" /etc/kong/kong.conf
-    sed -i "s@^#admin_listen =.*@admin_listen = ${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}, ${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTPS_PORT} ssl@g" /etc/kong/kong.conf
+    sed -i "s@^#admin_listen =.*@admin_listen = 0.0.0.0:${TMP_KNG_SETUP_API_HTTP_PORT}, 0.0.0.0:${TMP_KNG_SETUP_API_HTTPS_PORT} ssl@g" /etc/kong/kong.conf
     sed -i "s@^#real_ip_recursive =.*@real_ip_recursive = on@g" /etc/kong/kong.conf
     sed -i "s@^#client_max_body_size =.*@client_max_body_size = 20m@g" /etc/kong/kong.conf
     sed -i "s@^#client_body_buffer_size =.*@client_body_buffer_size = 64k@g" /etc/kong/kong.conf
@@ -243,10 +243,9 @@ EOF
     fi
 
     kong migrations bootstrap
-
+    
 	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps: Please ender ${green}auto https valid api host for kong${reset} of '${green}caddy${reset}'"
-    set_if_equals "TMP_KNG_SETUP_CDY_API_HOST" "LOCAL_HOST" "127.0.0.1"
-        
+
     # -- 添加kong-api的配置信息
     # 1：设置统一工作组ID
     # 2：更新初始化的工作组ID为自定义ID
@@ -271,7 +270,7 @@ EOF
     \set kong_workspace_id '${TMP_KNG_SETUP_WORKSPACE_ID}'
     UPDATE workspaces set id=:'kong_workspace_id' WHERE name='default';
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss'),'UPS-LCL-GATEWAY.KONG-API','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
-    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('d3a11b51-dc3c-414a-b320-95d360d56611',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss'),'6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb','127.0.0.1:${TMP_KNG_SETUP_API_HTTP_PORT}',100,NULL, :'kong_workspace_id'); 
+    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('d3a11b51-dc3c-414a-b320-95d360d56611',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss'),'6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb','${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}',100,NULL, :'kong_workspace_id'); 
     
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('2d929958-f95d-5365-a997-055c26fd122d',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','UPS-LCL-COROUTINES.CADDY-API','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('5055bc0a-bdd5-59cf-a5e6-c60f3b7d680c',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','2d929958-f95d-5365-a997-055c26fd122d','${TMP_KNG_SETUP_CDY_API_HOST}:${TMP_KNG_SETUP_CDY_API_PORT}',100,NULL, :'kong_workspace_id'); 
@@ -712,9 +711,9 @@ EOF
     
     \c ${TMP_KNGA_SETUP_PSQL_KNG_DATABASE};
     \set kong_workspace_id '${TMP_KNG_SETUP_WORKSPACE_ID}'
-    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min','UPS-LCL-GATEWAY.KONGA','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
+    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min','UPS-LCL-DASHBOARD.KONGA','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('941a9b3e-72a0-4b32-854d-a3e282b33711',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min','c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','127.0.0.1:${TMP_KNGA_SETUP_HTTP_PORT}',100,NULL, :'kong_workspace_id');
-    INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('a45c36b6-ab85-47ad-ad20-022d03ff6996', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', 'SERVICE.KONGA', 5, 'http', 'UPS-LCL-GATEWAY.KONGA', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
+    INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('a45c36b6-ab85-47ad-ad20-022d03ff6996', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', 'SERVICE.KONGA', 5, 'http', 'UPS-LCL-DASHBOARD.KONGA', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
     INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','a45c36b6-ab85-47ad-ad20-022d03ff6996','{https}','{}','{${TMP_KNGA_SETUP_DOMAIN}}','{/}',0,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL, :'kong_workspace_id');
 EOF
 

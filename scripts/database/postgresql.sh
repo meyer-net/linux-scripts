@@ -351,5 +351,4 @@ function print_conf()
 ##########################################################################################################
 
 #安装主体
-
 exec_if_choice "TMP_SETUP_CHOICE_POSTGRESQL" "Please choice which postgresql action you want to done" "...,PostgresQL,Conf,Exit" "${TMP_SPLITER}" "print_"
