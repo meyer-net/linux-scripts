@@ -203,10 +203,10 @@ function conf_kong()
 	
     # 开始配置
     # -- 初始化数据库，并设置密码
-	input_if_empty "TMP_KNG_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${green}postgres host address${reset} for kong"
+	input_if_empty "TMP_KNG_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${green}postgres host address${reset} '${green}for kong${reset}'"
     set_if_equals "TMP_KNG_SETUP_PSQL_HOST" "LOCAL_HOST" "127.0.0.1"
-	input_if_empty "TMP_KNG_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${green}postgres port${reset} of '${TMP_KNG_SETUP_PSQL_HOST}' for kong"
-	input_if_empty "TMP_KNG_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${green}postgres user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}' for kong"
+	input_if_empty "TMP_KNG_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${green}postgres port${reset} of '${TMP_KNG_SETUP_PSQL_HOST}' '${green}for kong${reset}'"
+	input_if_empty "TMP_KNG_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${green}postgres user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}' '${green}for kong${reset}'"
     
     local TMP_KNG_SETUP_PSQL_SELF_USRNAME="kong"
     local TMP_KNG_SETUP_PSQL_SELF_USRPWD="kng%DB!m${LOCAL_ID}_"
@@ -626,7 +626,7 @@ function conf_konga()
 	ln -sf ${TMP_KNGA_SETUP_LNK_ETC_DIR} ${TMP_KNGA_SETUP_ETC_DIR}
 
 	# 开始配置
-    local TMP_KNGA_SETUP_DOMAIN="${LOCAL_IPV4}"
+    local TMP_KNGA_SETUP_DOMAIN="konga.xxx.com"
     local TMP_KNGA_SETUP_PSQL_HOST="${TMP_KNG_SETUP_PSQL_HOST}"
     local TMP_KNGA_SETUP_PSQL_PORT=${TMP_KNG_SETUP_PSQL_PORT}    
     local TMP_KNGA_SETUP_PSQL_USRNAME="${TMP_KNG_SETUP_PSQL_USRNAME}"
@@ -643,10 +643,10 @@ function conf_konga()
     fi
     set_if_equals "TMP_KNGA_SETUP_KNG_HOST" "LOCAL_HOST" "127.0.0.1"
 
-	input_if_empty "TMP_KNGA_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${green}postgres host address${reset} for konga"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_HOST" "PostgresQL: Please ender the ${green}postgres host address${reset} '${green}for konga${reset}'"
     set_if_equals "TMP_KNGA_SETUP_PSQL_HOST" "LOCAL_HOST" "127.0.0.1"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${green}postgres port${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}' for konga"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${green}postgres user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}' for konga"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_PORT" "PostgresQL: Please ender the ${green}postgres port${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}' '${green}for konga${reset}'"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${green}postgres user name${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}' '${green}for konga${reset}'"
     
 	input_if_empty "TMP_KNGA_SETUP_DOMAIN" "KongA.Web.Domain: Please ender ${green}kong dashboard web domain${reset}"
 	input_if_empty "TMP_KNGA_SETUP_HTTP_PORT" "KongA.Web.Port: Please ender ${green}kong dashboard web local port${reset}, except '80'&'443'"
@@ -682,7 +682,7 @@ EOF
     node ./bin/konga.js prepare  #不能加sudo
 
     local TMP_KNGA_SETUP_PSQL_KNG_DATABASE="${TMP_KNG_SETUP_PSQL_SELF_DATABASE}"
-	input_if_empty "TMP_KNGA_SETUP_PSQL_KNG_DATABASE" "KongA.Kong: Please sure ${red}kong database name ${reset} of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
+	input_if_empty "TMP_KNGA_SETUP_PSQL_KNG_DATABASE" "KongA.Kong: Please sure ${red}kong database name ${reset}of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
 
     # 添加konga及kong绑定关系
     # konga：
@@ -711,7 +711,7 @@ EOF
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (4,'0a79e2bc-6fc3-5d59-bbfa-cc733f836935',1,true,true,NULL,false,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',NULL,NULL);
     
     \c ${TMP_KNGA_SETUP_PSQL_KNG_DATABASE};
-    \set kong_workspace_id '${TMP_KNGA_SETUP_WORKSPACE_ID}'
+    \set kong_workspace_id '${TMP_KNG_SETUP_WORKSPACE_ID}'
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min','UPS-LCL-GATEWAY.KONGA','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('941a9b3e-72a0-4b32-854d-a3e282b33711',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min','c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1','127.0.0.1:${TMP_KNGA_SETUP_HTTP_PORT}',100,NULL, :'kong_workspace_id');
     INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('a45c36b6-ab85-47ad-ad20-022d03ff6996', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', 'SERVICE.KONGA', 5, 'http', 'UPS-LCL-GATEWAY.KONGA', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
