@@ -15,6 +15,7 @@
 # https://www.jianshu.com/p/5049b3bb4b80
 # https://docs.konghq.com/install/centos/?_ga=2.110225728.474733574.1547721700-1679220384.1547721700
 #
+# ???新增侦听api-CRUD 域名请求的缓存，用于同步到caddy证书
 # ???待修改引入psql安装逻辑，暂时不适配单机情况下安装
 # kong新增配置文件无DB模式：https://docs.konghq.com/install/centos/
 # konga新增配置文件选择模式进行配置

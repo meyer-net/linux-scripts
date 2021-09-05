@@ -22,8 +22,8 @@
 #      https://www.noip.com/support/knowledgebase/installing-the-linux-dynamic-update-client/
 #------------------------------------------------
 local TMP_CDY_SETUP_API_PORT=12019
-local TMP_CDY_SETUP_HTTP_PORT=60080
-local TMP_CDY_SETUP_HTTPS_PORT=60443
+local TMP_CDY_SETUP_HTTP_PORT=80
+local TMP_CDY_SETUP_HTTPS_PORT=443
 
 local TMP_CDY_SETUP_DIR=${SETUP_DIR}/caddy
 local TMP_CDY_LNK_ETC_DIR=${ATT_DIR}/caddy
@@ -40,7 +40,25 @@ function set_env_caddy()
     cd ${__DIR}
 
     soft_yum_check_setup "yum-plugin-copr"
+	
+	# 默认80端口被占用的情况，则修改端口
+	# 如果配合Kong的话，优先安装Kong再装Caddy
+    local TMP_IS_CDY_HTTP_OCCUPY=`lsof -i:${TMP_CDY_SETUP_HTTP_PORT}`
+    local TMP_IS_CDY_HTTPS_OCCUPY=`lsof -i:${TMP_CDY_SETUP_HTTPS_PORT}`
+    if [ -n "${TMP_IS_CDY_HTTP_OCCUPY}" ]; then 
+    	TMP_CDY_SETUP_HTTP_PORT=60080
+		echo
+		echo "Caddy：Port '${green}80${reset}' for http occupied，change to '${red}${TMP_CDY_SETUP_HTTP_PORT}${reset}'"
+		echo
+	fi
 
+    if [ -n "${TMP_IS_CDY_HTTPS_OCCUPY}" ]; then 
+    	TMP_CDY_SETUP_HTTPS_PORT=60443
+		echo
+		echo "Caddy：Port '${green}443${reset}' for https occupied，change to '${red}${TMP_CDY_SETUP_HTTPS_PORT}${reset}'"
+		echo
+	fi
+		
 	return $?
 }
 
