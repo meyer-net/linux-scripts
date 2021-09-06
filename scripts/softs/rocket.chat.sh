@@ -161,6 +161,25 @@ EOF
 	# 授权权限，否则无法写入
 	# chown -R rocketchat:rocketchat ${TMP_RC_SETUP_LNK_ETC_DIR}
 
+	
+    cat > update.sh <<EOF
+#!/bin/bash
+sudo systemctl stop rocketchat.service
+curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
+tar -xzf /tmp/rocket.chat.tgz -C /tmp
+
+TMP_RC_UPDATE_DFT_VERS=`cat /tmp/bundle/star.json | grep "nodeVersion" | awk -F' ' '{print $2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"`
+if [ -n "${TMP_RC_UPDATE_DFT_VERS}" ]; then
+	nvm install ${TMP_RC_UPDATE_DFT_VERS} && nvm use ${TMP_RC_UPDATE_DFT_VERS}
+fi
+    
+cd /tmp/bundle/programs/server && npm install
+sudo rsync -av /tmp/bundle/ ${TMP_RC_SETUP_DIR}
+sudo chown -R rocketchat:rocketchat ${TMP_RC_SETUP_DIR}
+sudo systemctl start rocketchat.service
+rm -rf /tmp/bundle
+EOF
+
 	return $?
 }
 
@@ -177,18 +196,18 @@ function boot_rocket_chat()
 	echo
     echo "Starting rocket.chat，Waiting for a moment"
     echo "--------------------------------------------"
-    nohup systemctl start rocket.chat.service > logs/boot.log 2>&1 &
+    nohup systemctl start rocketchat.service > logs/boot.log 2>&1 &
     sleep 15
 
     cat logs/boot.log
     echo "--------------------------------------------"
 
 	# 启动状态检测
-    systemctl status rocket.chat.service
+    systemctl status rocketchat.service
 	lsof -i:${TMP_RC_SETUP_PORT}
 
 	# 设定启动运行
-    systemctl enable rocket.chat.service
+    systemctl enable rocketchat.service
 	
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_RC_SETUP_PORT}
