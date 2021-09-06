@@ -100,6 +100,27 @@ function conf_webhook()
     mkdir -pv ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}
     mkdir -pv ${TMP_WBH_SETUP_DATA_CACHE_DIR}
 
+    # 默认的测试脚本(添加请求来源，方便回请kong)
+    local TMP_WBH_SETUP_TEST_HOOKS_JSON="{
+        \"id\": \"test\",  \
+        \"execute-command\": \"${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/test.sh\",  \
+        \"include-command-output-in-response\": true,  \
+        \"include-command-output-in-response-on-error\":true,  \
+        \"command-working-directory\": \"${TMP_WBH_SETUP_LOGS_DIR}\",  \
+        \"pass-arguments-to-command\": [{  \
+            \"source\": \"entire-headers\",  \
+            \"name\": \"all-headers\"  \
+        },{  \
+            \"source\": \"entire-query\",  \
+            \"name\": \"all-query\"  \
+        },{  \
+            \"source\": \"entire-payload\",  \
+            \"name\": \"all-json\"  \
+        }]  \
+    }"
+
+    conf_webhook_test "${TMP_WBH_SETUP_DIR}"
+
     # 本机装有caddy
     local TMP_WBH_SETUP_CDY_HOOKS_JSON="{}"
     local TMP_WBH_SETUP_IS_CDY_LOCAL=`lsof -i:${TMP_WBH_SETUP_CDY_API_HTTP_PORT}`
@@ -119,7 +140,7 @@ function conf_webhook()
         conf_webhook_cor_caddy_api "${TMP_WBH_SETUP_DIR}"
     fi
 
-    local TMP_WBH_SETUP_KNG_HOOKS_JSON="{
+    local TMP_WBH_SETUP_KNG_BUFFER_JSON="{
             \"id\": \"async-caddy-cert-to-kong\",  \
             \"execute-command\": \"${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/buffer_for_request_host.sh\",  \
             \"http-methods\": [\"Post \"],  \
@@ -144,7 +165,7 @@ function conf_webhook()
 
     exec_yn_action "conf_webhook_sync_caddy_cert_to_kong" "Webhook.AutoHttps: Please sure if u want to ${green}configuare auto https here${reset}?"
 
-    local TMP_WBH_BOOT_HOOKS_JSON=`echo "[${TMP_WBH_SETUP_CDY_HOOKS_JSON},${TMP_WBH_SETUP_KNG_HOOKS_JSON}]" | jq | sed 's@{},*@@g'`
+    local TMP_WBH_BOOT_HOOKS_JSON=`echo "[${TMP_WBH_SETUP_TEST_HOOKS_JSON},${TMP_WBH_SETUP_CDY_HOOKS_JSON},${TMP_WBH_SETUP_KNG_BUFFER_JSON}]" | jq | sed 's@{},*@@g'`
     
     echo "##############################################################" 
     # "source": "entire-payload" #通过此打印全部
@@ -154,6 +175,55 @@ EOF
     echo "##############################################################" 
 
     chmod +x ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/*.sh
+
+	return $?
+}
+
+# 配置webhook，测试
+# curl localhost:12019/hooks//test?a=1&b=2&c=3
+# 参数1：安装目录
+function conf_webhook_test()
+{
+	local TMP_WBH_SETUP_DIR=${1}
+
+	cd ${TMP_WBH_SETUP_DIR}
+    
+	local TMP_WBH_SETUP_LOGS_DIR=${TMP_WBH_SETUP_DIR}/logs
+	local TMP_WBH_SETUP_DATA_DIR=${TMP_WBH_SETUP_DIR}/data
+    # local TMP_WBH_SETUP_ETC_HOOKS_DIR=${TMP_WBH_SETUP_ETC_DIR}/hooks
+    local TMP_WBH_SETUP_ETC_SCRIPTS_DIR=${TMP_WBH_SETUP_ETC_DIR}/scripts
+	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DATA_DIR}/cache
+
+    echo "+--------------------------------------------------------------+" 
+    
+    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/test.sh <<-EOF
+#!/bin/sh
+#------------------------------------------------
+#  Project Web hook script for test
+#------------------------------------------------
+function execute() {
+    local TMP_TEST_PARAM_HEADERS=\$1
+    local TMP_TEST_PARAM_QUERY=\$2
+    local TMP_TEST_PARAM_PAYLOAD=\$3
+
+    echo "entire-headers："
+    echo "               \${TMP_TEST_PARAM_HEADERS}"
+    echo
+
+    echo "entire-query："
+    echo "             \${TMP_TEST_PARAM_QUERY}"
+    echo
+
+    echo "entire-payload："
+    echo "               \${TMP_TEST_PARAM_PAYLOAD}"
+    echo
+}
+
+execute "\$1" "\$2" "\$3"
+echo
+EOF
+
+    echo "+--------------------------------------------------------------+" 
 
 	return $?
 }
@@ -247,6 +317,7 @@ function conf_webhook_buffer_for_request_host()
 function execute() {
     local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
     local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
+    local TMP_ASYNC_CADDY_CERT_FROM=\$2 #request.headers.host
     local TMP_THIS_LOG_PATH=${TMP_WBH_SETUP_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`
     local TMP_THIS_CACHE_PATH=${TMP_WBH_SETUP_DATA_CACHE_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@cache@g"\`
 
@@ -435,10 +506,10 @@ function boot_webhook()
     bin/webhook -version
 
 	# 当前启动命令
-	nohup bin/webhook -port ${TMP_WBH_SETUP_API_HTTP_PORT} -hooks data/hooks/webhook_boot.json -verbose -hotreload > logs/boot.log 2>&1 &
+	nohup bin/webhook -port ${TMP_WBH_SETUP_API_HTTP_PORT} -hooks etc/hooks/webhook_boot.json -verbose -hotreload > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
-    echo_startup_config "webhook" "${TMP_WBH_SETUP_DIR}" "bin/webhook -port ${TMP_WBH_SETUP_API_HTTP_PORT} -hooks data/hooks/webhook_boot.json -verbose" "" "1"
+    echo_startup_config "webhook" "${TMP_WBH_SETUP_DIR}" "bin/webhook -port ${TMP_WBH_SETUP_API_HTTP_PORT} -hooks etc/hooks/webhook_boot.json -verbose" "" "1"
 
     # 开放端口
     echo_soft_port ${TMP_WBH_SETUP_API_HTTP_PORT}
