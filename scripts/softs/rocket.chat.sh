@@ -7,21 +7,7 @@
 # 相关参考：
 #		  https://docs.rocket.chat/installing-and-updating/manual-installation/centos
 #------------------------------------------------
-# 更新操作：
-# sudo systemctl stop rocketchat
-# curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
-# tar -xzf /tmp/rocket.chat.tgz -C /tmp
-# 
-# TMP_RC_SETUP_DFT_VERS=`cat /tmp/bundle/star.json | grep "nodeVersion" | awk -F' ' '{print $2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"`
-# if [ -n "${TMP_RC_SETUP_DFT_VERS}" ]; then
-# 	nvm install ${TMP_RC_SETUP_DFT_VERS} && nvm use ${TMP_RC_SETUP_DFT_VERS}
-# fi
-#     
-# cd /tmp/bundle/programs/server && npm install
-# sudo rsync -av /tmp/bundle/ /opt/rocket.chat
-# sudo chown -R rocketchat:rocketchat /opt/rocket.chat
-# sudo systemctl start rocketchat
-# rm -rf /tmp/bundle
+# -：
 #------------------------------------------------
 local TMP_RC_SETUP_PORT=13000
 local TMP_RC_SETUP_MGDB_HOST="${LOCAL_HOST}"
@@ -161,7 +147,7 @@ EOF
 	# 授权权限，否则无法写入
 	# chown -R rocketchat:rocketchat ${TMP_RC_SETUP_LNK_ETC_DIR}
 
-    cat > update.sh <<EOF
+    cat > update_rc.sh <<EOF
 #!/bin/bash
 sudo systemctl stop rocketchat.service
 curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
