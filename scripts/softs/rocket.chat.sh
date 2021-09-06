@@ -161,7 +161,6 @@ EOF
 	# 授权权限，否则无法写入
 	# chown -R rocketchat:rocketchat ${TMP_RC_SETUP_LNK_ETC_DIR}
 
-	
     cat > update.sh <<EOF
 #!/bin/bash
 sudo systemctl stop rocketchat.service
