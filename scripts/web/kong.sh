@@ -23,6 +23,8 @@
 local TMP_KNG_SETUP_API_HTTP_PORT=18000
 local TMP_KNG_SETUP_API_HTTPS_PORT=18444
 
+local TMP_KNG_SETUP_RC_FILE_PATH="~/.kong-apirc"
+
 local TMP_KNGA_SETUP_HTTP_PORT=11337
 
 local TMP_KNG_SETUP_CDY_API_HOST="${LOCAL_HOST}"
@@ -606,6 +608,25 @@ EOF
 	return $?
 }
 
+function conf_kong_ext()
+{
+    cd ${__DIR}
+
+    local TMP_KNG_SETUP_API_LISTEN_HOST="127.0.0.1:${TMP_KNG_SETUP_API_HTTP_PORT}"
+    
+    convert_path "TMP_KNG_SETUP_RC_FILE_PATH"
+    path_not_exists_create `dirname ${TMP_KNG_SETUP_RC_FILE_PATH}`
+
+    echo "KONG_ADMIN_LISTEN_HOST=\"${TMP_KNG_SETUP_API_LISTEN_HOST}\"" >> ${TMP_KNG_SETUP_RC_FILE_PATH}
+
+    #路径转换
+    cat special/kong_api_exec.sh > /usr/bin/kong_api && chmod +x /usr/bin/kong_api
+
+    # kong_api "upstream" "${TMP_UPSTREAM_NAME}" "${TMP_KONG_UPSTREAM_TARGETS}" "" "${TMP_ROUTE_HOSTS_URL}"
+
+	return $?
+}
+
 function conf_konga()
 {
 	local TMP_KNGA_SETUP_DIR=${1}
@@ -842,6 +863,8 @@ function exec_step_kong()
 	setup_kong "${TMP_KNG_SETUP_DIR}"
 
 	conf_kong "${TMP_KNG_SETUP_DIR}"
+
+    conf_kong_ext "${TMP_KNG_SETUP_DIR}"
     
     rouse_openresty "${TMP_KNG_SETUP_DIR}"
 

@@ -186,6 +186,7 @@ function reconf_caddy()
 	cd ${TMP_CDY_SETUP_DIR}/etc
 
     echo "------------------------------------------------------------------"
+	# listen这里修改内网IP的情况下是要变更的
 	sudo tee Caddyfile.init.json <<-EOF
 {
 	"admin": {
@@ -265,8 +266,8 @@ function increase_auto_https_conf()
 	}
 EOF
 
-    curl ${LOCAL_HOST}:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}.json
-	curl ${LOCAL_HOST}:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}": "${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}"}'
+    curl localhost:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}.json
+	curl localhost:${TMP_CDY_SETUP_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}": "${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}"}'
 
     echo "----------------------------------------------------------------"
 

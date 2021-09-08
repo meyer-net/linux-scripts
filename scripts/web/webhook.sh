@@ -14,6 +14,7 @@
 #------------------------------------------------
 local TMP_WBH_SETUP_API_HTTP_PORT=19000
 
+local TMP_WBH_SETUP_CDY_HTTP_PORT=80
 local TMP_WBH_SETUP_CDY_API_HTTP_PORT=12019
 local TMP_WBH_SETUP_KNG_API_HTTP_PORT=18000
 
@@ -144,7 +145,7 @@ function conf_webhook()
     fi
 
     local TMP_WBH_SETUP_KNG_BUFFER_JSON="{
-            \"id\": \"async-caddy-cert-to-kong\",  \
+            \"id\": \"async-caddy-cfg-to-kong\",  \
             \"execute-command\": \"${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/buffer_for_request_host.sh\",  \
             \"http-methods\": [\"Post \"],  \
             \"command-working-directory\": \"${TMP_WBH_SETUP_LOGS_DIR}\",  \
@@ -370,18 +371,24 @@ function conf_webhook_sync_caddy_cert_to_kong()
 	local TMP_WBH_SETUP_DATA_CACHE_DIR=${TMP_WBH_SETUP_DATA_DIR}/cache
 
     # Caddy 不在本机，则重新确认host
+    local TMP_WBH_SETUP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
     if [ -z "${TMP_WBH_SETUP_IS_CDY_LOCAL}" ]; then
     	input_if_empty "TMP_WBH_SETUP_CDY_HOST" "Webhook.Caddy.Host: Please ender ${green}your caddy host address${reset}"
+    	input_if_empty "TMP_WBH_SETUP_CDY_HTTP_PORT" "Webhook.Caddy.Port: Please ender ${green}your caddy http port${reset}"
+    else
+        # Caddy在本机，Kong也在本机的情况下，Caddy端口是变更的
+        if [ -n "${TMP_WBH_SETUP_IS_KNG_LOCAL}" ]; then
+            TMP_WBH_SETUP_CDY_HTTP_PORT=60080
+        fi
     fi
 
     # Kong 不在本机的情况下，则重新确认host
-    # local TMP_WBH_SETUP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
     # if [ -z "${TMP_WBH_SETUP_IS_KNG_LOCAL}" ]; then    
     # 	input_if_empty "TMP_WBH_SETUP_KNG_HOST" "Webhook.Kong.Host: Please ender ${green}your kong host address${reset}"
     # fi
 
     # 用于同步证书内容，删除记录域名的脚本（每天定时3次触发，相当于消费者，消费buffer）
-    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh <<-EOF
+    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cfg-to-kong.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook Script - for sync cert
@@ -435,21 +442,32 @@ function patch_certificates_att()
     fi
 }
 
-function sync_crt() {
+function sync_cfg() {
     local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
-    local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
-    local TMP_ASYNC_KNG_CERT_HOST=\${2:-"${TMP_WBH_SETUP_KNG_HOST}"} #request -> remote-addr
+    local TMP_ASYNC_CDY_CFG_HOST=\$1 #request.headers.host
+    local TMP_ASYNC_KNG_CFG_HOST=\${2:-"${TMP_WBH_SETUP_KNG_HOST}"} #request -> remote-addr
     local TMP_THIS_LOG_PATH=${TMP_WBH_SETUP_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`\
 
-    #获取CADDY证书数据
-    local TMP_CERT_DATA_FROM_CDY=\`curl -s ${TMP_WBH_SETUP_CDY_HOST}:${TMP_WBH_SETUP_API_HTTP_PORT}/hooks/cor-caddy-api?host=\${TMP_ASYNC_CADDY_CERT_HOST}\`
+    # 域名同步部分
+    # -- 查询Kong中是否存在域名
+    # -- 将默认域名访问指向Caddy(如果Kong中不存在的话，如果是微服务网关且SAAS模式，需记录为分组，并作为更新的模式进行路由操作)
+    local TMP_ASYNC_SERVICE_NAME=\`echo \${TMP_ASYNC_CDY_CFG_HOST} | sed "s@\.@_@g" | sed 's/[a-z]/\u&/g'\`
+    local TMP_ASYNC_IS_KNG_HAS_ROUTE=`curl -s localhost:18000/routes | jq ".data[].hosts" | grep -o "\\\"\${TMP_ASYNC_CDY_CFG_HOST}\\\""`
+
+    if [ -z "\${TMP_ASYNC_IS_KNG_HAS_ROUTE}" ]; then
+        kong_api "service" "\${TMP_ASYNC_SERVICE_NAME}" "\${TMP_WBH_SETUP_CDY_HOST}:\${TMP_WBH_SETUP_CDY_HTTP_PORT}" "\${TMP_ASYNC_CDY_CFG_HOST}"
+    fi
+
+    # 证书同步部分
+    # -- 获取CADDY证书数据
+    local TMP_CERT_DATA_FROM_CDY=\`curl -s ${TMP_WBH_SETUP_CDY_HOST}:${TMP_WBH_SETUP_API_HTTP_PORT}/hooks/cor-caddy-api?host=\${TMP_ASYNC_CDY_CFG_HOST}\`
     local TMP_CERT_DATA_KEY_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key"\`
 
-    #获取KONG证书数据
-    TMP_CERT_DATA_FROM_KNG=\`curl -s ${TMP_ASYNC_KNG_CERT_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates?tags=\${TMP_ASYNC_CADDY_CERT_HOST}\`
+    # -- 获取KONG证书数据
+    TMP_CERT_DATA_FROM_KNG=\`curl -s ${TMP_ASYNC_KNG_CFG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates?tags=\${TMP_ASYNC_CDY_CFG_HOST}\`
     TMP_CERT_DATA_KEY_FROM_KNG=\`echo "\${TMP_CERT_DATA_FROM_KNG}" | jq ".data[].key"\`
 
-    # 对比key文件，判断是否更新
+    # -- 对比key文件，判断是否更新
     if [ "\${TMP_CERT_DATA_KEY_FROM_CDY}" != "\${TMP_CERT_DATA_KEY_FROM_KNG}" ]; then
         TMP_CERT_DATA_KEY_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key" | xargs -I {} echo -e {}\`
         TMP_CERT_DATA_CRT_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".crt" | xargs -I {} echo -e {}\`
@@ -457,14 +475,14 @@ function sync_crt() {
         TMP_CERT_DATA_ID_FROM_KNG=\`echo "\${TMP_CERT_DATA_FROM_KNG}" | jq ".data[].id"\`
         TMP_CERT_DATA_ID_FINAL=\${TMP_CERT_DATA_ID_FROM_KNG:-\`cat /proc/sys/kernel/random/uuid\`}
         
-        put_certificates "\${TMP_ASYNC_KNG_CERT_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
+        put_certificates "\${TMP_ASYNC_KNG_CFG_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CDY_CFG_HOST}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
 
         # 打印日志    
         sudo tee \${TMP_THIS_LOG_PATH} <<-EOF
 Refresh cert at '\${LOCAL_TIME}'
 ----------------------------------------------------------------
 |ID：\${TMP_CERT_DATA_ID_FROM_KNG}
-|Host&Tags：\${TMP_ASYNC_CADDY_CERT_HOST}
+|Host&Tags：\${TMP_ASYNC_CDY_CFG_HOST}
 |Key：
 \${TMP_CERT_DATA_KEY_FROM_CDY}
 
@@ -475,22 +493,32 @@ Refresh cert at '\${LOCAL_TIME}'
 ``EOF
         
         # 无关紧要的标记更新
-        patch_certificates_att "\${TMP_ASYNC_KNG_CERT_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}"
+        patch_certificates_att "\${TMP_ASYNC_KNG_CFG_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CDY_CFG_HOST}"
     fi
+
+    # 添加日志区分
+    curl -s ${TMP_WBH_SETUP_CDY_HOST}:${TMP_WBH_SETUP_API_HTTP_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"\${TMP_ASYNC_CDY_CFG_HOST}": "\${TMP_ASYNC_CDY_CFG_HOST}"}'
 }
 
 function execute() {
     while read line
     do
-        local TMP_LINE_DOMAIN=`echo \${line} | awk -F'@' '{print \$NR}'`
+        local TMP_LINE_HOST=`echo \${line} | awk -F'@' '{print \$NR}'`
         local TMP_LINE_FROM=`echo \${line} | awk -F'@' '{print \$NF}'`
 
         # 忽略非域名请求（简单的验证，足够用）
-        if [ \`echo \${TMP_LINE_DOMAIN} | tr -cd "." | wc -c\` -eq 3 ]; then
+        if [ \`echo \${TMP_LINE_HOST} | tr -cd "." | wc -c\` -eq 3 ]; then
             continue
         fi
 
-        sync_crt "\${TMP_LINE_DOMAIN}" "\${TMP_LINE_FROM}"
+        local TMP_LINE_HOST_CDY_SOURCE=\`curl -s ${TMP_WBH_SETUP_CDY_HOST}:${TMP_WBH_SETUP_CDY_API_HTTP_PORT}/config/apps/http/servers/autohttps/routes | grep -o "\\\"host\\\":\[\\\"\${TMP_LINE_HOST}\\\"\]"\`    
+        # -- 未添加路由，直接返回不做处理
+        if [ -z "\${TMP_LINE_HOST_CDY_SOURCE}" ]; then
+            echo "Can't find host route from caddy."
+            continue
+        fi
+
+        sync_cfg "\${TMP_LINE_HOST}" "\${TMP_LINE_FROM}"
                 
         # 如果失败不会执行到此处，脚本会在前面直接退出
         sed -i "/^\${line}\$/d" \${TMP_REQUEST_HOST_CACHE_PATH}
@@ -502,8 +530,8 @@ echo
 EOF
     
     # 每天凌晨，12点，18点各执行1次。新增的需要手动执行脚本。
-    # echo "0 0/12/18 * * * ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh >> ${TMP_WBH_SETUP_LOGS_DIR}/sync-caddy-cert-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
-    echo "* * * * * ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh >> ${TMP_WBH_SETUP_LOGS_DIR}/sync-caddy-cert-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
+    # echo "0 0/12/18 * * * ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cfg-to-kong.sh >> ${TMP_WBH_SETUP_LOGS_DIR}/sync-caddy-cfg-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
+    echo "* * * * * ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cfg-to-kong.sh >> ${TMP_WBH_SETUP_LOGS_DIR}/sync-caddy-cfg-to-kong-crontab.log 2>&1" >> /var/spool/cron/root
     
     systemctl restart crond
     echo "+--------------------------------------------------------------+" 

@@ -10,9 +10,9 @@ TMP_CURRENT_RC_FILE_PATH="~/.kong-apirc"
 function check_config()
 {
     convert_path "TMP_CURRENT_RC_FILE_PATH"
-    local TMP_RC_FILE_CONFIG_DIR=`dirname $TMP_CURRENT_RC_FILE_PATH`
-    path_not_exists_create "$TMP_RC_FILE_CONFIG_DIR"
-    path_not_exists_action "$TMP_CURRENT_RC_FILE_PATH" "fill_config"
+    local TMP_RC_FILE_CONFIG_DIR=`dirname ${TMP_CURRENT_RC_FILE_PATH}`
+    path_not_exists_create "${TMP_RC_FILE_CONFIG_DIR}"
+    path_not_exists_action "${TMP_CURRENT_RC_FILE_PATH}" "fill_config"
     
     #路径转换
     cat special/kong_api_exec.sh > /usr/bin/kong_api && chmod +x /usr/bin/kong_api
@@ -22,7 +22,7 @@ function fill_config()
 {
     input_if_empty "KONG_ADMIN_LISTEN_HOST" "KongApi: Please ender ${red}the admin listen host ${reset} of kong"
 
-    echo "KONG_ADMIN_LISTEN_HOST=\"$KONG_ADMIN_LISTEN_HOST\"" >> $TMP_CURRENT_RC_FILE_PATH
+    echo "KONG_ADMIN_LISTEN_HOST=\"${KONG_ADMIN_LISTEN_HOST}\"" >> ${TMP_CURRENT_RC_FILE_PATH}
 }
 
 function boot_main()
@@ -42,7 +42,7 @@ function boot_main()
         local TMP_ROUTE_HOSTS_URL=""
         input_if_empty "TMP_ROUTE_HOSTS_URL" "Kong: Please ender ${red}your route host url${reset} or array split by ','"
 
-        kong_api "upstream" "$TMP_UPSTREAM_NAME" "$TMP_KONG_UPSTREAM_TARGETS" "" "$TMP_ROUTE_HOSTS_URL"
+        kong_api "upstream" "${TMP_UPSTREAM_NAME}" "${TMP_KONG_UPSTREAM_TARGETS}" "" "${TMP_ROUTE_HOSTS_URL}"
 
         echo -e " \n"
         echo "[*]Please sure you will input upstream by '${red}yes(y) or enter key/no(n)${reset}'"
