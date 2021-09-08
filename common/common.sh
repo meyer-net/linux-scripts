@@ -821,8 +821,9 @@ function setup_soft_wget()
 		if [ "$TMP_SOFT_WGET_UNPACK_FILE_EXT" = "zip" ]; then
 			TMP_SOFT_WGET_PACK_DIR_LINE=`unzip -v ${TMP_SOFT_WGET_FILE_NAME} | awk '/----/{print NR}' | awk 'NR==1{print}'`
 			local TMP_SOFT_WGET_FILE_NAME_UNZIP=`unzip -v ${TMP_SOFT_WGET_FILE_NAME} | awk 'NR==LINE{print $NF}' LINE=$((TMP_SOFT_WGET_PACK_DIR_LINE+1))`
-			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`echo ${TMP_SOFT_WGET_FILE_NAME_UNZIP} | sed s@/.*@""@g`
-
+			#TMP_SOFT_WGET_FILE_NAME_NO_EXTS=`echo ${TMP_SOFT_WGET_FILE_NAME_UNZIP} | sed s@/.*@""@g`
+			TMP_SOFT_WGET_FILE_NAME_NO_EXTS=${TMP_SOFT_WGET_FILE_NAME_UNZIP%.*}
+			
 			# 没有层级的情况
 			local TMP_SOFT_WGET_FILE_NAME_UNZIP_ARGS=""
 			if [ "${TMP_SOFT_WGET_FILE_NAME_UNZIP}" == "${TMP_SOFT_WGET_FILE_NAME_NO_EXTS}" ]; then
@@ -1756,7 +1757,7 @@ function echo_startup_config()
     local TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR=${LOGS_DIR}/supervisor
 	
 	path_not_exists_create `dirname ${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}`
-	
+
 	path_not_exists_create "${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}"
 
 	echo

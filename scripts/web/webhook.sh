@@ -116,6 +116,9 @@ function conf_webhook()
         },{  \
             \"source\": \"entire-payload\",  \
             \"name\": \"all-json\"  \
+        },{  \
+            \"source\": \"request\",  \
+            \"name\": \"remote-addr\"  \
         }]  \
     }"
 
@@ -148,6 +151,9 @@ function conf_webhook()
             \"pass-arguments-to-command\": [{  \
                 \"source\": \"payload\",  \
                 \"name\": \"request.headers.host\"  \
+            },{  \
+                \"source\": \"request\",  \
+                \"name\": \"remote-addr\"  \
             }],  \
         }"
     
@@ -202,24 +208,29 @@ function conf_webhook_test()
 #  Project Web hook script for test
 #------------------------------------------------
 function execute() {
-    local TMP_TEST_PARAM_HEADERS=\$1
-    local TMP_TEST_PARAM_QUERY=\$2
-    local TMP_TEST_PARAM_PAYLOAD=\$3
+    local TMP_TEST_ARGS_HEADERS=\$1
+    local TMP_TEST_ARGS_QUERY=\$2
+    local TMP_TEST_ARGS_PAYLOAD=\$3
+    local TMP_TEST_ARGS_REQUESTS=\$4
 
     echo "entire-headers："
-    echo "               \${TMP_TEST_PARAM_HEADERS}"
+    echo "               \${TMP_TEST_ARGS_HEADERS}"
     echo
 
     echo "entire-query："
-    echo "             \${TMP_TEST_PARAM_QUERY}"
+    echo "             \${TMP_TEST_ARGS_QUERY}"
     echo
 
     echo "entire-payload："
-    echo "               \${TMP_TEST_PARAM_PAYLOAD}"
+    echo "               \${TMP_TEST_ARGS_PAYLOAD}"
+    echo
+
+    echo "requests-remote："
+    echo "               \${TMP_TEST_ARGS_REQUESTS}"
     echo
 }
 
-execute "\$1" "\$2" "\$3"
+execute "\$1" "\$2" "\$3" "\$4"
 echo
 EOF
 
@@ -316,27 +327,27 @@ function conf_webhook_buffer_for_request_host()
 #------------------------------------------------
 function execute() {
     local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
-    local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
-    local TMP_ASYNC_CADDY_CERT_FROM=\$2 #request.headers.host
-    local TMP_THIS_LOG_PATH=${TMP_WBH_SETUP_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`
-    local TMP_THIS_CACHE_PATH=${TMP_WBH_SETUP_DATA_CACHE_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@cache@g"\`
+    local TMP_BUFFER_REQ_HOST=\$1 #request.headers.host
+    local TMP_BUFFER_REQ_FROM=\$2 #request -> remote-addr
+    local TMP_BUFFER_REQ_LOG_PATH=${TMP_WBH_SETUP_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`
+    local TMP_BUFFER_REQ_CACHE_PATH=${TMP_WBH_SETUP_DATA_CACHE_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@cache@g"\`
 
     # 忽略非域名请求（简单的验证，足够用）
-    if [ \`echo \${TMP_ASYNC_CADDY_CERT_HOST} | tr -cd "." | wc -c\` -eq 3 ]; then
-        echo "This'nt a host for use '\${TMP_ASYNC_CADDY_CERT_HOST}', so will be return" >> \${TMP_THIS_LOG_PATH}
+    if [ \`echo \${TMP_BUFFER_REQ_HOST} | tr -cd "." | wc -c\` -eq 3 ]; then
+        echo "This'nt a host for use '\${TMP_BUFFER_REQ_HOST}', so will be return" >> \${TMP_BUFFER_REQ_LOG_PATH}
         return
     fi
 
     # 已写入的情况下，暂时不写入
-    local TMP_THIS_CACHE_CONTAINS=\`cat \${TMP_THIS_CACHE_PATH} | egrep "^\${TMP_ASYNC_CADDY_CERT_HOST}\\\$"\`
-    if [ -n "\${TMP_THIS_CACHE_CONTAINS}" ]; then
-        echo "Host of '\${TMP_ASYNC_CADDY_CERT_HOST}' was buffered" >> \${TMP_THIS_LOG_PATH}
+    local TMP_BUFFER_REQ_CACHE_CONTAINS=\`cat \${TMP_BUFFER_REQ_CACHE_PATH} | egrep "^\${TMP_BUFFER_REQ_HOST}"\`
+    if [ -n "\${TMP_BUFFER_REQ_CACHE_CONTAINS}" ]; then
+        echo "Host of '\${TMP_BUFFER_REQ_HOST}' was buffered" >> \${TMP_BUFFER_REQ_LOG_PATH}
         return
     fi
 
     # 写入请求域名，等待消费者处理
-    echo "\${TMP_ASYNC_CADDY_CERT_HOST}" >> \${TMP_THIS_CACHE_PATH}
-    echo "Host of '\${TMP_ASYNC_CADDY_CERT_HOST}' buffered" >> \${TMP_THIS_LOG_PATH}
+    echo "\${TMP_BUFFER_REQ_HOST}@\${TMP_BUFFER_REQ_FROM%:*}" >> \${TMP_BUFFER_REQ_CACHE_PATH}
+    echo "Host of '\${TMP_BUFFER_REQ_HOST}' buffered" >> \${TMP_BUFFER_REQ_LOG_PATH}
 }
 
 execute "\$1"
@@ -364,10 +375,10 @@ function conf_webhook_sync_caddy_cert_to_kong()
     fi
 
     # Kong 不在本机的情况下，则重新确认host
-    local TMP_WBH_SETUP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
-    if [ -z "${TMP_WBH_SETUP_IS_KNG_LOCAL}" ]; then    
-    	input_if_empty "TMP_WBH_SETUP_KNG_HOST" "Webhook.Kong.Host: Please ender ${green}your kong host address${reset}"
-    fi
+    # local TMP_WBH_SETUP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
+    # if [ -z "${TMP_WBH_SETUP_IS_KNG_LOCAL}" ]; then    
+    # 	input_if_empty "TMP_WBH_SETUP_KNG_HOST" "Webhook.Kong.Host: Please ender ${green}your kong host address${reset}"
+    # fi
 
     # 用于同步证书内容，删除记录域名的脚本（每天定时3次触发，相当于消费者，消费buffer）
     sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-cert-to-kong.sh <<-EOF
@@ -378,44 +389,48 @@ function conf_webhook_sync_caddy_cert_to_kong()
 TMP_REQUEST_HOST_CACHE_PATH=${TMP_WBH_SETUP_DATA_CACHE_DIR}/buffer_for_request_host.cache
 
 # 添加/更新 Kong-Certificates
+# 参数0：Kong地址
 # 参数1：证书ID
 # 参数2：证书绑定域名
 # 参数3：证书主体crt
 # 参数4：证书公钥key
 function put_certificates()
 {
-    local tmp_certificates_id="\${1:-}"
-    local tmp_certificates_snis="\${2:-}"
-    local tmp_certificates_cert="\${3:-}"
-    local tmp_certificates_key="\${4:-}"
+    local TMP_CERTIFICATES_KNG_HOST="\${1:-}"
+    local TMP_CERTIFICATES_ID="\${2:-}"
+    local TMP_CERTIFICATES_SNIS="\${3:-}"
+    local TMP_CERTIFICATES_CERT="\${4:-}"
+    local TMP_CERTIFICATES_KEY="\${5:-}"
 
-    local request_code=\`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_WBH_SETUP_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${tmp_certificates_id}  \\
-        -F "cert=\${tmp_certificates_cert}"  \\
-        -F "key=\${tmp_certificates_key}"  \\
-        -F "tags[]=\${tmp_certificates_snis}"  \\
-        -F "snis[]=\${tmp_certificates_snis}"\`
+    local TMP_CERTIFICATES_KNG_REQUEST_CODE=\`curl -o /dev/null -s -w %{http_code} -X PUT http://\${TMP_CERTIFICATES_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${TMP_CERTIFICATES_ID}  \\
+        -F "cert=\${TMP_CERTIFICATES_CERT}"  \\
+        -F "key=\${TMP_CERTIFICATES_KEY}"  \\
+        -F "tags[]=\${TMP_CERTIFICATES_SNIS}"  \\
+        -F "snis[]=\${TMP_CERTIFICATES_SNIS}"\`
         
-    if [ "\${request_code::1}" != "2" ]; then
-    	echo "Webhook.PutCertificates: Failure, remote response '\${request_code}'."
+    if [ "\${TMP_CERTIFICATES_KNG_REQUEST_CODE::1}" != "2" ]; then
+    	echo "Webhook.PutCertificates: Failure, remote response '\${TMP_CERTIFICATES_KNG_REQUEST_CODE}'."
     	exit 9
     fi
 }
 
 # 添加/更新 Kong-Certificates-att
+# 参数0：Kong地址
 # 参数1：证书ID
 # 参数2：证书绑定域名
 function patch_certificates_att()
 {
-    local tmp_certificates_id="\${1:-}"
-    local tmp_certificates_snis="\${2:-}"
+    local TMP_CERTIFICATES_KNG_HOST="\${1:-}"
+    local TMP_CERTIFICATES_ID="\${2:-}"
+    local TMP_CERTIFICATES_SNIS="\${3:-}"
 
-    local request_code=\`curl -o /dev/null -s -w %{http_code} -X PATCH http://${TMP_WBH_SETUP_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${tmp_certificates_id}  \\
+    local TMP_CERTIFICATES_KNG_REQUEST_CODE=\`curl -o /dev/null -s -w %{http_code} -X PATCH http://\${TMP_CERTIFICATES_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${TMP_CERTIFICATES_ID}  \\
         #-d "tags[]=by-webhook-sync"  \\
         -d "tags[]=sync-caddy-acme"  \\
-        -d "tags[]=\${tmp_certificates_snis}"\`
+        -d "tags[]=\${TMP_CERTIFICATES_SNIS}"\`
         
-    if [ "\${request_code::1}" != "2" ]; then
-    	echo "Webhook.PatchCertificatesAtt: Failure, remote response '\${request_code}'."
+    if [ "\${TMP_CERTIFICATES_KNG_REQUEST_CODE::1}" != "2" ]; then
+    	echo "Webhook.PatchCertificatesAtt: Failure, remote response '\${TMP_CERTIFICATES_KNG_REQUEST_CODE}'."
     	# exit 9
     fi
 }
@@ -423,6 +438,7 @@ function patch_certificates_att()
 function sync_crt() {
     local LOCAL_TIME=\`date +"%Y-%m-%d %H:%M:%S"\`
     local TMP_ASYNC_CADDY_CERT_HOST=\$1 #request.headers.host
+    local TMP_ASYNC_KNG_CERT_HOST=\${2:-"${TMP_WBH_SETUP_KNG_HOST}"} #request -> remote-addr
     local TMP_THIS_LOG_PATH=${TMP_WBH_SETUP_LOGS_DIR}/\`echo \$(basename "\${BASH_SOURCE[0]}") | sed "s@sh\\\\\$@log@g"\`\
 
     #获取CADDY证书数据
@@ -430,7 +446,7 @@ function sync_crt() {
     local TMP_CERT_DATA_KEY_FROM_CDY=\`echo "\${TMP_CERT_DATA_FROM_CDY}" | jq ".key"\`
 
     #获取KONG证书数据
-    TMP_CERT_DATA_FROM_KNG=\`curl -s ${TMP_WBH_SETUP_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates?tags=\${TMP_ASYNC_CADDY_CERT_HOST}\`
+    TMP_CERT_DATA_FROM_KNG=\`curl -s ${TMP_ASYNC_KNG_CERT_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates?tags=\${TMP_ASYNC_CADDY_CERT_HOST}\`
     TMP_CERT_DATA_KEY_FROM_KNG=\`echo "\${TMP_CERT_DATA_FROM_KNG}" | jq ".data[].key"\`
 
     # 对比key文件，判断是否更新
@@ -441,7 +457,7 @@ function sync_crt() {
         TMP_CERT_DATA_ID_FROM_KNG=\`echo "\${TMP_CERT_DATA_FROM_KNG}" | jq ".data[].id"\`
         TMP_CERT_DATA_ID_FINAL=\${TMP_CERT_DATA_ID_FROM_KNG:-\`cat /proc/sys/kernel/random/uuid\`}
         
-        put_certificates "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
+        put_certificates "\${TMP_ASYNC_KNG_CERT_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
 
         # 打印日志    
         sudo tee \${TMP_THIS_LOG_PATH} <<-EOF
@@ -459,27 +475,29 @@ Refresh cert at '\${LOCAL_TIME}'
 ``EOF
         
         # 无关紧要的标记更新
-        patch_certificates_att "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}"
-
+        patch_certificates_att "\${TMP_ASYNC_KNG_CERT_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CADDY_CERT_HOST}"
     fi
 }
 
 function execute() {
     while read line
     do
+        local TMP_LINE_DOMAIN=`echo \${line} | awk -F'@' '{print \$NR}'`
+        local TMP_LINE_FROM=`echo \${line} | awk -F'@' '{print \$NF}'`
+
         # 忽略非域名请求（简单的验证，足够用）
-        if [ \`echo \${line} | tr -cd "." | wc -c\` -eq 3 ]; then
+        if [ \`echo \${TMP_LINE_DOMAIN} | tr -cd "." | wc -c\` -eq 3 ]; then
             continue
         fi
 
-        sync_crt "\${line}"
+        sync_crt "\${TMP_LINE_DOMAIN}" "\${TMP_LINE_FROM}"
                 
         # 如果失败不会执行到此处，脚本会在前面直接退出
         sed -i "/^\${line}\$/d" \${TMP_REQUEST_HOST_CACHE_PATH}
     done < \${TMP_REQUEST_HOST_CACHE_PATH}
 }
 
-execute "\$1"
+execute
 echo
 EOF
     
@@ -508,13 +526,17 @@ function boot_webhook()
 	# 当前启动命令
 	nohup bin/webhook -port ${TMP_WBH_SETUP_API_HTTP_PORT} -hooks etc/hooks/webhook_boot.json -verbose -hotreload > logs/boot.log 2>&1 &
 
+    curl http://localhost:${TMP_WBH_SETUP_API_HTTP_PORT}/hooks/test
+
+    # 查看启动状态
+    lsof -i:${TMP_WBH_SETUP_API_HTTP_PORT}
+    cat logs/boot.log
+
 	# 添加系统启动命令
     echo_startup_config "webhook" "${TMP_WBH_SETUP_DIR}" "bin/webhook -port ${TMP_WBH_SETUP_API_HTTP_PORT} -hooks etc/hooks/webhook_boot.json -verbose" "" "1"
 
     # 开放端口
     echo_soft_port ${TMP_WBH_SETUP_API_HTTP_PORT}
-
-    cat logs/boot.log
 
 	return $?
 }
