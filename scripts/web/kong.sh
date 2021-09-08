@@ -622,8 +622,6 @@ function conf_kong_ext()
     #路径转换
     cat special/kong_api_exec.sh > /usr/bin/kong_api && chmod +x /usr/bin/kong_api
 
-    # kong_api "upstream" "${TMP_UPSTREAM_NAME}" "${TMP_KONG_UPSTREAM_TARGETS}" "" "${TMP_ROUTE_HOSTS_URL}"
-
 	return $?
 }
 

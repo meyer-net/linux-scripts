@@ -455,6 +455,8 @@ function sync_cfg() {
     local TMP_ASYNC_IS_KNG_HAS_ROUTE=`curl -s localhost:18000/routes | jq ".data[].hosts" | grep -o "\\\"\${TMP_ASYNC_CDY_CFG_HOST}\\\""`
 
     if [ -z "\${TMP_ASYNC_IS_KNG_HAS_ROUTE}" ]; then
+        # 修改临时变量
+        local TMP_KONG_ADMIN_LISTEN_HOST="\${TMP_ASYNC_KNG_CFG_HOST}"
         kong_api "service" "\${TMP_ASYNC_SERVICE_NAME}" "\${TMP_WBH_SETUP_CDY_HOST}:\${TMP_WBH_SETUP_CDY_HTTP_PORT}" "\${TMP_ASYNC_CDY_CFG_HOST}"
     fi
 

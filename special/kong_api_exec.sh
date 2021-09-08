@@ -23,7 +23,7 @@ function put_certificates()
     local tmp_certificates_cert="${3:-}"
     local tmp_certificates_key="${4:-}"
 
-    local request_code=`curl -o /dev/null -s -w %{http_code} -X PUT http://${KONG_ADMIN_LISTEN_HOST}/certificates/${tmp_certificates_id}  \
+    local request_code=`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/certificates/${tmp_certificates_id}  \
         -F "cert=${tmp_certificates_cert}"  \
         -F "key=${tmp_certificates_key}"  \
         -F "tags[]=${tmp_certificates_snis}"  \
@@ -55,7 +55,7 @@ function post_routes()
             tmp_router_hosts="${tmp_router_hosts}"`echo -e "\n${post_param}"`
         done
 
-        local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${KONG_ADMIN_LISTEN_HOST}/services/${tmp_service_name}/routes/  \
+        local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/services/${tmp_service_name}/routes/  \
             -d "name=$tmp_route_name"  \
             -d "strip_path=false"  \
             -d "preserve_host=true"  \
@@ -81,7 +81,7 @@ function post_service()
     
     if [ -n "${2:-}" ]; then
         echo "KongApi.PostService: U@$tmp_upstream_name S@$tmp_service_name"
-        local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${KONG_ADMIN_LISTEN_HOST}/services/  \
+        local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/services/  \
             -d "name=${tmp_service_name}"  \
             -d "host=UPS-ITL-SERVICE.${tmp_upstream_name}"`
 
@@ -108,7 +108,7 @@ function post_targets()
 
     for target in "${tmp_upstream_targets_arr[@]:-}"; do
         echo "KongApi.PostTargets: U@$tmp_upstream_name T@$target"
-        local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${KONG_ADMIN_LISTEN_HOST}/upstreams/UPS-ITL-SERVICE.$tmp_upstream_name/targets  \
+        local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/upstreams/UPS-ITL-SERVICE.$tmp_upstream_name/targets  \
             --data "target=$target"  \
             --data "weight=10"`
     	echo "KongApi.PostTargets: Remote response '${request_code}'."
@@ -129,7 +129,7 @@ function post_upstream()
     local tmp_router_hosts="${4:-}"
 
     echo "KongApi.PostUpstream: U@$tmp_upstream_name T@$tmp_upstream_targets S@$tmp_service_name H@$tmp_router_hosts"
-    local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${KONG_ADMIN_LISTEN_HOST}/upstreams  \
+    local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/upstreams  \
         -d "name=UPS-ITL-SERVICE.$tmp_upstream_name"  \
         -d "slots=1000"  \
         -d "healthchecks.active.healthy.interval=30"  \
@@ -169,14 +169,13 @@ function exec_program()
 function init_params() {
 
     # must defined，you may declare ENV vars in /etc/profile.d/template.sh
-    if [ -z "${{KONG_ADMIN_LISTEN_HOST}:-}" ]; then
-        echo 'error: Please configure environment "{KONG_ADMIN_LISTEN_HOST}": ' > /dev/stderr
-        echo '  {KONG_ADMIN_LISTEN_HOST}' > /dev/stderr
+    if [ -z "${TMP_DIY_KONG_ADMIN_LISTEN_HOST}:-}" ]; then
+        echo 'error: Please configure environment "KONG_ADMIN_LISTEN_HOST"' > /dev/stderr
         exit 2
     fi
 
     # for must input params
-    if [ -z "${1:-}" -o -z "${2:-}" ]; then
+    if [ -z "${1:-}" -o -z "${2:-}" -o -z "${3:-}"]; then
         echo 'error: Missed required arguments.' > /dev/stderr
         echo 'note: Please follow this example:' > /dev/stderr
         echo '  $ kong_api "api-type {upstream}(*)" "upstream name(*)" "target host&port(*)". ' > /dev/stderr
@@ -201,6 +200,9 @@ function bootstrap() {
     if [ -f $(cd; pwd)/${TMP_CURRENT_RC_FILE_NAME} ]; then
         . $(cd; pwd)/${TMP_CURRENT_RC_FILE_NAME}
     fi
+
+    # 兼容变更情况
+    local TMP_DIY_KONG_ADMIN_LISTEN_HOST=${TMP_KONG_ADMIN_LISTEN_HOST:-"${KONG_ADMIN_LISTEN_HOST}"}
 
     init_params "${@}"
     exec_program "${@}"
