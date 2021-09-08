@@ -29,8 +29,10 @@ local TMP_KNGA_SETUP_HTTP_PORT=11337
 
 local TMP_KNG_SETUP_CDY_API_HOST="${LOCAL_HOST}"
 local TMP_KNG_SETUP_CDY_API_PORT=12019
-local TMP_KNG_SETUP_CDY_BIND_WBH_API_PORT=19000
 local TMP_KNG_SETUP_CDY_DFT_HTTP_PORT=60080
+
+local TMP_KNG_SETUP_WBH_API_HOST="${LOCAL_HOST}"
+local TMP_KNG_SETUP_WBH_API_PORT=19000
 
 local TMP_KNG_SETUP_PSQL_SELF_DATABASE="kong"
 local TMP_KNG_SETUP_WORKSPACE_ID="e4b9993d-653f-44fd-acc5-338ce807582c"
@@ -245,8 +247,8 @@ EOF
     fi
 
     kong migrations bootstrap
-    
-	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps: Please ender ${green}auto https valid api host for kong${reset} of '${green}caddy${reset}'"
+        
+    exec_yn_action "conf_kong_auto_https" "Kong.AutoHttps: Please sure if u want to ${green}configuare auto https here${reset}?"
 
     # -- 添加kong-api的配置信息
     # 1：设置统一工作组ID
@@ -273,6 +275,40 @@ EOF
     UPDATE workspaces set id=:'kong_workspace_id' WHERE name='default';
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss'),'UPS-LCL-GATEWAY.KONG-API','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('d3a11b51-dc3c-414a-b320-95d360d56611',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss'),'6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb','${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}',100,NULL, :'kong_workspace_id'); 
+EOF
+
+    # 重新更新时间，避免VLD优先级受影响
+    LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
+
+	return $?
+}
+
+function conf_kong_auto_https()
+{
+	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps.Caddy: Please ender ${green}caddy api host for kong${reset}"
+	input_if_empty "TMP_KNG_SETUP_WBH_API_HOST" "Kong.AutoHttps.Webhook: Please ender ${green}webhook api host for kong${reset}"
+    
+    # -- 添加kong-api的配置信息
+    # 1：设置统一工作组ID
+    # 2：更新初始化的工作组ID为自定义ID
+    #
+    # 配合autohttps部分，把所有路径规则 /.well-known 都交给caddy
+# 集成默认安装webhook，由kong的请求触发webhook来异步调用caddy-api执行自动添加及更新https配置
+    # 1：添加upstream指针：caddy-api
+    # 2：绑定upstream指针对应的访问地址：caddy-api
+    # 3：添加upstream指针：caddy-vld
+    # 4：绑定upstream指针对应的访问地址：caddy-vld
+    # 5：添加服务指针（表示一个nginx配置文件conf）：caddy-vld
+    # 6：添加服务指针对应路由（表示一个nginx配置文件conf中的location）：caddy-vld
+    # 添加webhook插件，用于同步caddy生成证书内容给与kong，webhook服务默认在本地
+    # 1：添加upstream指针：webhook
+    # 2：绑定upstream指针对应的访问地址：webhook
+    # 3：添加全局消费者：用于针对绑定webhook同步证书信息
+    # 4：添加插件：用于将日志转发给webhook服务
+    psql -U ${TMP_KNG_SETUP_PSQL_USRNAME} -h ${TMP_KNG_SETUP_PSQL_HOST} -p ${TMP_KNG_SETUP_PSQL_PORT} -d postgres << EOF
+    \c ${TMP_KNG_SETUP_PSQL_SELF_DATABASE};
+    \set kong_workspace_id '${TMP_KNG_SETUP_WORKSPACE_ID}'
+    UPDATE workspaces set id=:'kong_workspace_id' WHERE name='default';
     
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('2d929958-f95d-5365-a997-055c26fd122d',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','UPS-LCL-COROUTINES.CADDY-API','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('5055bc0a-bdd5-59cf-a5e6-c60f3b7d680c',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','2d929958-f95d-5365-a997-055c26fd122d','${TMP_KNG_SETUP_CDY_API_HOST}:${TMP_KNG_SETUP_CDY_API_PORT}',100,NULL, :'kong_workspace_id'); 
@@ -282,15 +318,13 @@ EOF
     INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,headers,ws_id) VALUES ('bb232280-811e-5c51-9f66-f10089b15565','${LOCAL_TIME}','${LOCAL_TIME}','8253fa0c-e329-5670-9bde-5d63eba6a92c','{http}','{GET}','{}','{/.well-known}',0,false,true,'ROUTE.SERVICE.CADDY_HTTPS_VLD',NULL,NULL,NULL,NULL,'{"User-Agent": ["acme.zerossl.com/v2/DV90","Mozilla/5.0 (compatible; Let''s Encrypt validation server; +https://www.letsencrypt.org)"]}', :'kong_workspace_id');
 
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('0a79e2bc-6fc3-5d59-bbfa-cc733f836935',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min','UPS-LCL-COROUTINES.WEBHOOK','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
-    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('07232e9f-f860-5659-afcd-cafb8580e6f6',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min','0a79e2bc-6fc3-5d59-bbfa-cc733f836935','${TMP_KNG_SETUP_CDY_API_HOST}:${TMP_KNG_SETUP_CDY_BIND_WBH_API_PORT}',100,NULL, :'kong_workspace_id'); 
-    INSERT INTO plugins (id, created_at, name, consumer_id, service_id, route_id, config, enabled, cache_key, protocols, tags, ws_id) VALUES ('58377e23-5dea-5aaa-9c0a-b056a80381dc', '${LOCAL_TIME}', 'http-log', NULL, NULL, 'bb232280-811e-5c51-9f66-f10089b15565', '{"method": "POST", "headers": null, "timeout": 10000, "keepalive": 60000, "queue_size": 1, "retry_count": 10, "content_type": "application/json", "flush_timeout": 2, "http_endpoint": "http://${TMP_KNG_SETUP_CDY_API_HOST}:${TMP_KNG_SETUP_CDY_BIND_WBH_API_PORT}/hooks/async-caddy-cert-to-kong", "custom_fields_by_lua": null}', true, 'plugins:http-log:bb232280-811e-5c51-9f66-f10089b15565::::e4b9993d-653f-44fd-acc5-338ce807582c', '{grpc,grpcs,http,https}', NULL, :'kong_workspace_id');
+    INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('07232e9f-f860-5659-afcd-cafb8580e6f6',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min','0a79e2bc-6fc3-5d59-bbfa-cc733f836935','${TMP_KNG_SETUP_WBH_API_HOST}:${TMP_KNG_SETUP_WBH_API_PORT}',100,NULL, :'kong_workspace_id'); 
+    INSERT INTO plugins (id, created_at, name, consumer_id, service_id, route_id, config, enabled, cache_key, protocols, tags, ws_id) VALUES ('58377e23-5dea-5aaa-9c0a-b056a80381dc', '${LOCAL_TIME}', 'http-log', NULL, NULL, 'bb232280-811e-5c51-9f66-f10089b15565', '{"method": "POST", "headers": null, "timeout": 10000, "keepalive": 60000, "queue_size": 1, "retry_count": 10, "content_type": "application/json", "flush_timeout": 2, "http_endpoint": "http://${TMP_KNG_SETUP_WBH_API_HOST}:${TMP_KNG_SETUP_WBH_API_PORT}/hooks/async-caddy-cert-to-kong", "custom_fields_by_lua": null}', true, 'plugins:http-log:bb232280-811e-5c51-9f66-f10089b15565::::e4b9993d-653f-44fd-acc5-338ce807582c', '{grpc,grpcs,http,https}', NULL, :'kong_workspace_id');
 EOF
-
-    # 重新更新时间，避免VLD优先级受影响
-    LOCAL_TIME=`date +"%Y-%m-%d %H:%M:%S"`
 
 	return $?
 }
+
 
 # 环境绑定openresty，作为附加安装
 function rouse_openresty()
