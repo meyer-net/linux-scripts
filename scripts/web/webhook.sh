@@ -155,7 +155,7 @@ function conf_webhook()
             },{  \
                 \"source\": \"request\",  \
                 \"name\": \"remote-addr\"  \
-            }],  \
+            }]  \
         }"
     
     # ??? 修改成内网
@@ -374,7 +374,7 @@ function conf_webhook_sync_caddy_cert_to_kong()
     local TMP_WBH_SETUP_IS_KNG_LOCAL=`lsof -i:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}`
     if [ -z "${TMP_WBH_SETUP_IS_CDY_LOCAL}" ]; then
     	input_if_empty "TMP_WBH_SETUP_CDY_HOST" "Webhook.Caddy.Host: Please ender ${green}your caddy host address${reset}"
-    	input_if_empty "TMP_WBH_SETUP_CDY_HTTP_PORT" "Webhook.Caddy.Port: Please ender ${green}your caddy http port${reset}"
+    	input_if_empty "TMP_WBH_SETUP_CDY_HTTP_PORT" "Webhook.Caddy.Port: Please ender ${green}your caddy http port${reset} of '${red}${TMP_WBH_SETUP_CDY_HOST}${reset}'"
     else
         # Caddy在本机，Kong也在本机的情况下，Caddy端口是变更的
         if [ -n "${TMP_WBH_SETUP_IS_KNG_LOCAL}" ]; then
@@ -401,22 +401,22 @@ TMP_REQUEST_HOST_CACHE_PATH=${TMP_WBH_SETUP_DATA_CACHE_DIR}/buffer_for_request_h
 # 参数2：证书绑定域名
 # 参数3：证书主体crt
 # 参数4：证书公钥key
-function put_certificates()
+function put_cert()
 {
-    local TMP_CERTIFICATES_KNG_HOST="\${1:-}"
-    local TMP_CERTIFICATES_ID="\${2:-}"
-    local TMP_CERTIFICATES_SNIS="\${3:-}"
-    local TMP_CERTIFICATES_CERT="\${4:-}"
-    local TMP_CERTIFICATES_KEY="\${5:-}"
+    local TMP_CERT_KNG_HOST="\${1:-}"
+    local TMP_CERT_ID="\${2:-}"
+    local TMP_CERT_SNIS="\${3:-}"
+    local TMP_CERT_CERT="\${4:-}"
+    local TMP_CERT_KEY="\${5:-}"
 
-    local TMP_CERTIFICATES_KNG_REQUEST_CODE=\`curl -o /dev/null -s -w %{http_code} -X PUT http://\${TMP_CERTIFICATES_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${TMP_CERTIFICATES_ID}  \\
-        -F "cert=\${TMP_CERTIFICATES_CERT}"  \\
-        -F "key=\${TMP_CERTIFICATES_KEY}"  \\
-        -F "tags[]=\${TMP_CERTIFICATES_SNIS}"  \\
-        -F "snis[]=\${TMP_CERTIFICATES_SNIS}"\`
+    local TMP_CERT_KNG_REQUEST_CODE=\`curl -o /dev/null -s -w %{http_code} -X PUT http://\${TMP_CERT_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${TMP_CERT_ID}  \\
+        -F "cert=\${TMP_CERT_CERT}"  \\
+        -F "key=\${TMP_CERT_KEY}"  \\
+        -F "tags[]=\${TMP_CERT_SNIS}"  \\
+        -F "snis[]=\${TMP_CERT_SNIS}"\`
         
-    if [ "\${TMP_CERTIFICATES_KNG_REQUEST_CODE::1}" != "2" ]; then
-    	echo "Webhook.PutCertificates: Failure, remote response '\${TMP_CERTIFICATES_KNG_REQUEST_CODE}'."
+    if [ "\${TMP_CERT_KNG_REQUEST_CODE::1}" != "2" ]; then
+    	echo "Webhook.PutCertificates: Failure, remote response '\${TMP_CERT_KNG_REQUEST_CODE}'."
     	exit 9
     fi
 }
@@ -425,19 +425,19 @@ function put_certificates()
 # 参数0：Kong地址
 # 参数1：证书ID
 # 参数2：证书绑定域名
-function patch_certificates_att()
+function patch_cert_att()
 {
-    local TMP_CERTIFICATES_KNG_HOST="\${1:-}"
-    local TMP_CERTIFICATES_ID="\${2:-}"
-    local TMP_CERTIFICATES_SNIS="\${3:-}"
+    local TMP_CERT_KNG_HOST="\${1:-}"
+    local TMP_CERT_ID="\${2:-}"
+    local TMP_CERT_SNIS="\${3:-}"
 
-    local TMP_CERTIFICATES_KNG_REQUEST_CODE=\`curl -o /dev/null -s -w %{http_code} -X PATCH http://\${TMP_CERTIFICATES_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${TMP_CERTIFICATES_ID}  \\
+    local TMP_CERT_KNG_REQUEST_CODE=\`curl -o /dev/null -s -w %{http_code} -X PATCH http://\${TMP_CERT_KNG_HOST}:${TMP_WBH_SETUP_KNG_API_HTTP_PORT}/certificates/\${TMP_CERT_ID}  \\
         #-d "tags[]=by-webhook-sync"  \\
         -d "tags[]=sync-caddy-acme"  \\
-        -d "tags[]=\${TMP_CERTIFICATES_SNIS}"\`
+        -d "tags[]=\${TMP_CERT_SNIS}"\`
         
-    if [ "\${TMP_CERTIFICATES_KNG_REQUEST_CODE::1}" != "2" ]; then
-    	echo "Webhook.PatchCertificatesAtt: Failure, remote response '\${TMP_CERTIFICATES_KNG_REQUEST_CODE}'."
+    if [ "\${TMP_CERT_KNG_REQUEST_CODE::1}" != "2" ]; then
+    	echo "Webhook.PatchCertificatesAtt: Failure, remote response '\${TMP_CERT_KNG_REQUEST_CODE}'."
     	# exit 9
     fi
 }
@@ -477,7 +477,7 @@ function sync_cfg() {
         TMP_CERT_DATA_ID_FROM_KNG=\`echo "\${TMP_CERT_DATA_FROM_KNG}" | jq ".data[].id"\`
         TMP_CERT_DATA_ID_FINAL=\${TMP_CERT_DATA_ID_FROM_KNG:-\`cat /proc/sys/kernel/random/uuid\`}
         
-        put_certificates "\${TMP_ASYNC_KNG_CFG_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CDY_CFG_HOST}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
+        put_cert "\${TMP_ASYNC_KNG_CFG_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CDY_CFG_HOST}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
 
         # 打印日志    
         sudo tee \${TMP_THIS_LOG_PATH} <<-EOF
@@ -495,7 +495,7 @@ Refresh cert at '\${LOCAL_TIME}'
 ``EOF
         
         # 无关紧要的标记更新
-        patch_certificates_att "\${TMP_ASYNC_KNG_CFG_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CDY_CFG_HOST}"
+        patch_cert_att "\${TMP_ASYNC_KNG_CFG_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_CDY_CFG_HOST}"
     fi
 
     # 添加日志区分
