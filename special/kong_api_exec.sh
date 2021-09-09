@@ -11,29 +11,29 @@ set -o errexit
 set -o nounset
 #set -o xtrace
 
-# 添加/更新 Kong-Certificates
-# 参数1：证书ID
-# 参数2：证书绑定域名
-# 参数3：证书主体crt
-# 参数4：证书公钥key
-function put_certificates()
-{
-    local tmp_certificates_id="${1:-}"
-    local tmp_certificates_snis="${2:-}"
-    local tmp_certificates_cert="${3:-}"
-    local tmp_certificates_key="${4:-}"
+# # 添加/更新 Kong-Certificates
+# # 参数1：证书ID
+# # 参数2：证书绑定域名
+# # 参数3：证书主体crt
+# # 参数4：证书公钥key
+# function put_certificates()
+# {
+#     local tmp_certificates_id="${1:-}"
+#     local tmp_certificates_snis="${2:-}"
+#     local tmp_certificates_cert="${3:-}"
+#     local tmp_certificates_key="${4:-}"
 
-    local request_code=`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/certificates/${tmp_certificates_id}  \
-        -F "cert=${tmp_certificates_cert}"  \
-        -F "key=${tmp_certificates_key}"  \
-        -F "tags[]=${tmp_certificates_snis}"  \
-        -F "snis[]=${tmp_certificates_snis}"`
+#     local request_code=`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/certificates/${tmp_certificates_id}  \
+#         -F "cert=${tmp_certificates_cert}"  \
+#         -F "key=${tmp_certificates_key}"  \
+#         -F "tags[]=${tmp_certificates_snis}"  \
+#         -F "snis[]=${tmp_certificates_snis}"`
 
-    if [ "${request_code::1}" != "2" ]; then
-        echo "Webhook.PutCertificates: Failure, remote response '${request_code}'."
-        exit 9
-    fi
-}
+#     if [ "${request_code::1}" != "2" ]; then
+#         echo "Webhook.PutCertificates: Failure, remote response '${request_code}'."
+#         exit 9
+#     fi
+# }
 
 #添加Kong-Upstream-Service-Route
 #参数1：ServiceName

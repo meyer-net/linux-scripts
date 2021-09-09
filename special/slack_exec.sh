@@ -15,7 +15,7 @@
 #     $ slack '#ch-01,@me' MESSAGE
 #
 #   Send a message to the default channel (it must be declared in APP_SLACK_CHANNEL).
-#     $ slack  MESSAGE
+#     $ slack MESSAGE
 #
 # VARIABLES
 #

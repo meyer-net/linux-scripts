@@ -23,9 +23,10 @@
 local TMP_KNG_SETUP_API_HTTP_PORT=18000
 local TMP_KNG_SETUP_API_HTTPS_PORT=18444
 
-local TMP_KNG_SETUP_RC_FILE_PATH="~/.kong-apirc"
+local TMP_KNG_SETUP_API_RC_FILE_PATH="~/.kong-apirc"
 
 local TMP_KNGA_SETUP_HTTP_PORT=11337
+local TMP_KNGA_SETUP_SLACK_WBH_URL="https://hooks.slack.com/services/ABCDEFgh1/HGFFEDCba1/ABCedfGHIjkl0123456789"
 
 local TMP_KNG_SETUP_CDY_API_HOST="${LOCAL_HOST}"
 local TMP_KNG_SETUP_CDY_API_PORT=12019
@@ -286,6 +287,7 @@ EOF
 function conf_kong_auto_https()
 {
 	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps.Caddy: Please ender ${green}caddy api host for kong${reset}"
+
 	input_if_empty "TMP_KNG_SETUP_WBH_API_HOST" "Kong.AutoHttps.Webhook: Please ender ${green}webhook api host for kong${reset}"
     
     # -- 添加kong-api的配置信息
@@ -648,10 +650,12 @@ function conf_kong_ext()
 
     local TMP_KNG_SETUP_API_LISTEN_HOST="127.0.0.1:${TMP_KNG_SETUP_API_HTTP_PORT}"
     
-    convert_path "TMP_KNG_SETUP_RC_FILE_PATH"
-    path_not_exists_create `dirname ${TMP_KNG_SETUP_RC_FILE_PATH}`
+    convert_path "TMP_KNG_SETUP_API_RC_FILE_PATH"
+    path_not_exists_create `dirname ${TMP_KNG_SETUP_API_RC_FILE_PATH}`
 
-    echo "KONG_ADMIN_LISTEN_HOST=\"${TMP_KNG_SETUP_API_LISTEN_HOST}\"" >> ${TMP_KNG_SETUP_RC_FILE_PATH}
+    if [ ! -d "${TMP_WBH_SETUP_KNG_API_RC_FILE_PATH}"]; then
+        echo "KONG_ADMIN_LISTEN_HOST=\"${TMP_KNG_SETUP_API_LISTEN_HOST}\"" >> ${TMP_KNG_SETUP_API_RC_FILE_PATH}
+    fi
 
     #路径转换
     cat special/kong_api_exec.sh > /usr/bin/kong_api && chmod +x /usr/bin/kong_api
@@ -736,15 +740,15 @@ EOF
     local TMP_KNGA_SETUP_PSQL_KNG_DATABASE="${TMP_KNG_SETUP_PSQL_SELF_DATABASE}"
 	input_if_empty "TMP_KNGA_SETUP_PSQL_KNG_DATABASE" "KongA.Kong: Please sure ${red}kong database name ${reset}of '${TMP_KNGA_SETUP_PSQL_HOST}:${TMP_KNGA_SETUP_PSQL_PORT}'"
 
+	input_if_empty "TMP_KNGA_SETUP_SLACK_WBH_URL" "KongA.Slack.Webhook: Please ender ${green}slack webhook url${reset} for ${red}konga health check notify${reset}，u can get it from 'https://www.cnblogs.com/walterlv/p/10326419.html'"
+
     # 添加konga及kong绑定关系
     # konga：
     # 1：添加kong的节点
     # 2：更新默认konga自身配置功能信息
     # 3：添加当前konga对kong节点的快照配置
     # 4：konga对kong的upstream做健康检查：kong-api
-    # 5：konga对caddy的upstream做健康检查：caddy-api （默认不启用，生产启用自行设定）
-    # 6：konga对kong的upstream做健康检查：konga自身
-    # 6：konga对webhook的upstream做健康检查：webhook
+    # 5：konga对kong的upstream做健康检查：konga自身
     # 
     # kong：
     # 1：设置统一工作组ID
@@ -755,12 +759,10 @@ EOF
     psql -U ${TMP_KNGA_SETUP_PSQL_USRNAME} -h ${TMP_KNGA_SETUP_PSQL_HOST} -p ${TMP_KNGA_SETUP_PSQL_PORT} -d postgres << EOF
     \c ${TMP_KNGA_SETUP_PSQL_SELF_DATABASE};
     INSERT INTO konga_kong_nodes (id,"name","type",kong_admin_url,netdata_url,kong_api_key,jwt_algorithm,jwt_key,jwt_secret,kong_version,health_checks,health_check_details,active,"createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'CONNECTION.KONG.LOCAL.$SYS_IP_CONNECT','default','http://${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}',NULL,'','HS256',NULL,NULL,'2.x.0',true,NULL,true,'${LOCAL_TIME}','${LOCAL_TIME}',1,1);
-    UPDATE konga_settings SET "data"='{"signup_enable":false,"signup_require_activation":true,"info_polling_interval":1000,"email_default_sender_name":"Kong Net-Gateway","email_default_sender":"kong@gateway.com","email_notifications":false,"default_transport":"sendmail","notify_when":{"node_down":{"title":"A node is down or unresponsive","description":"Health checks must be enabled for the nodes that need to be monitored.","active":true},"api_down":{"title":"An API is down or unresponsive","description":"Health checks must be enabled for the APIs that need to be monitored.","active":true}},"user_permissions":{"apis":{"create":false,"read":true,"update":false,"delete":false},"services":{"create":false,"read":true,"update":false,"delete":false},"routes":{"create":false,"read":true,"update":false,"delete":false},"consumers":{"create":false,"read":true,"update":false,"delete":false},"plugins":{"create":false,"read":true,"update":false,"delete":false},"upstreams":{"create":false,"read":true,"update":false,"delete":false},"certificates":{"create":false,"read":true,"update":false,"delete":false},"connections":{"create":false,"read":false,"update":false,"delete":false},"users":{"create":false,"read":false,"update":false,"delete":false}},"baseUrl":"https://${TMP_KNGA_SETUP_DOMAIN}","integrations":[{"id":"slack","name":"Slack","image":"slack_rgb.png","config":{"enabled":true,"fields":[{"id":"slack_webhook_url","name":"Slack Webhook URL","type":"text","required":true,"value":"https://hooks.slack.com/services/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"}],"slack_webhook_url":""}}]}' where id = 1;
+    UPDATE konga_settings SET "data"='{"signup_enable":false,"signup_require_activation":true,"info_polling_interval":1000,"email_default_sender_name":"Kong Net-Gateway","email_default_sender":"kong@gateway.com","email_notifications":false,"default_transport":"sendmail","notify_when":{"node_down":{"title":"A node is down or unresponsive","description":"Health checks must be enabled for the nodes that need to be monitored.","active":true},"api_down":{"title":"An API is down or unresponsive","description":"Health checks must be enabled for the APIs that need to be monitored.","active":true}},"user_permissions":{"apis":{"create":false,"read":true,"update":false,"delete":false},"services":{"create":false,"read":true,"update":false,"delete":false},"routes":{"create":false,"read":true,"update":false,"delete":false},"consumers":{"create":false,"read":true,"update":false,"delete":false},"plugins":{"create":false,"read":true,"update":false,"delete":false},"upstreams":{"create":false,"read":true,"update":false,"delete":false},"certificates":{"create":false,"read":true,"update":false,"delete":false},"connections":{"create":false,"read":false,"update":false,"delete":false},"users":{"create":false,"read":false,"update":false,"delete":false}},"baseUrl":"https://${TMP_KNGA_SETUP_DOMAIN}","integrations":[{"id":"slack","name":"Slack","image":"slack_rgb.png","config":{"enabled":true,"fields":[{"id":"slack_webhook_url","name":"Slack Webhook URL","type":"text","required":true,"value":"${TMP_KNGA_SETUP_SLACK_WBH_URL}"}],"slack_webhook_url":""}}]}' where id = 1;
     INSERT INTO konga_kong_snapshot_schedules (id,"connection",active,cron,"lastRunAt","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,1,true,'* 1 * * *',NULL,'${LOCAL_TIME}','${LOCAL_TIME}',1,1);
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (1,'6b57ffb5-c2fb-4e4c-892f-7f77e7f688fb',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min',NULL,NULL);
-    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (2,'2d929958-f95d-5365-a997-055c26fd122d',1,true,true,NULL,false,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '2 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '2 min',NULL,NULL);
-    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (3,'c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',NULL,NULL);
-    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (4,'0a79e2bc-6fc3-5d59-bbfa-cc733f836935',1,true,true,NULL,false,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',NULL,NULL);
+    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (2,'c4f6b96c-2ccd-49ba-a76f-a05d93dde1f1',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '2 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '2 min',NULL,NULL);
     
     \c ${TMP_KNGA_SETUP_PSQL_KNG_DATABASE};
     \set kong_workspace_id '${TMP_KNG_SETUP_WORKSPACE_ID}'
@@ -769,6 +771,12 @@ EOF
     INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('a45c36b6-ab85-47ad-ad20-022d03ff6996', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min', 'SERVICE.KONGA', 5, 'http', 'UPS-LCL-DASHBOARD.KONGA', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
     INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','a45c36b6-ab85-47ad-ad20-022d03ff6996','{https}','{}','{${TMP_KNGA_SETUP_DOMAIN}}','{/}',0,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL, :'kong_workspace_id');
 EOF
+
+    # 判断Kong是否启用了https
+    local TMP_KNGA_SETUP_IS_KNG_AUTO_HTTPS=`curl -s http://${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}/upstreams/2d929958-f95d-5365-a997-055c26fd122d`
+    if [ -n "${TMP_KNGA_SETUP_IS_KNG_AUTO_HTTPS}" ]; then
+        conf_konga_auto_https
+    fi
 
     # 本地存在Kong，则直接命令重启。不存在则提醒重启。
     if [ -z "${TMP_KNGA_SETUP_IS_KONG_LOCAL}" ]; then
@@ -779,6 +787,21 @@ EOF
         kong start
         kong health
     fi
+
+	return $?
+}
+
+function conf_konga_auto_https()
+{
+    # 配置针对于Kong开启了AutoHttps时启用健康检查
+    # konga：
+    # 1：konga对caddy的upstream做健康检查：caddy-api
+    # 2：konga对webhook的upstream做健康检查：webhook
+    psql -U ${TMP_KNGA_SETUP_PSQL_USRNAME} -h ${TMP_KNGA_SETUP_PSQL_HOST} -p ${TMP_KNGA_SETUP_PSQL_PORT} -d postgres << EOF
+    \c ${TMP_KNGA_SETUP_PSQL_SELF_DATABASE};
+    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (3,'2d929958-f95d-5365-a997-055c26fd122d',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',NULL,NULL);
+    INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (4,'0a79e2bc-6fc3-5d59-bbfa-cc733f836935',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',NULL,NULL);
+EOF
 
 	return $?
 }
