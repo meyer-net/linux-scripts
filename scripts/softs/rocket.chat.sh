@@ -9,7 +9,7 @@
 #------------------------------------------------
 # -：
 #------------------------------------------------
-local TMP_RC_SETUP_PORT=13000
+local TMP_RC_SETUP_HTTP_PORT=13000
 local TMP_RC_SETUP_MGDB_HOST="${LOCAL_HOST}"
 local TMP_RC_SETUP_MGDB_PORT=27017
 local TMP_RC_SETUP_MGDB_USER="admin"
@@ -137,7 +137,7 @@ StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=rocketchat
 User=rocketchat
-Environment=MONGO_URL=${TMP_RC_SETUP_MGDB_URL} MONGO_OPLOG_URL=${TMP_RC_SETUP_MGDB_OPLOG_URL} ROOT_URL=http://${LOCAL_HOST}:${TMP_RC_SETUP_PORT}/ PORT=${TMP_RC_SETUP_PORT}
+Environment=MONGO_URL=${TMP_RC_SETUP_MGDB_URL} MONGO_OPLOG_URL=${TMP_RC_SETUP_MGDB_OPLOG_URL} ROOT_URL=http://${LOCAL_HOST}:${TMP_RC_SETUP_HTTP_PORT}/ PORT=${TMP_RC_SETUP_HTTP_PORT}
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -189,13 +189,16 @@ function boot_rocket_chat()
 
 	# 启动状态检测
     systemctl status rocketchat.service
-	lsof -i:${TMP_RC_SETUP_PORT}
+	lsof -i:${TMP_RC_SETUP_HTTP_PORT}
 
 	# 设定启动运行
     systemctl enable rocketchat.service
 	
 	# 授权iptables端口访问
-	echo_soft_port ${TMP_RC_SETUP_PORT}
+	echo_soft_port ${TMP_RC_SETUP_HTTP_PORT}
+	
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "rocket-chat${LOCAL_ID}" "rocket-chat${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_RC_SETUP_HTTP_PORT} "${LOCAL_HOST}"
 
 	return $?
 }

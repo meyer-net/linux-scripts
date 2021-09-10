@@ -317,6 +317,11 @@ function boot_caddy()
 	echo_soft_port ${TMP_CDY_SETUP_API_PORT}
 	echo_soft_port ${TMP_CDY_SETUP_HTTP_PORT}
 	echo_soft_port ${TMP_CDY_SETUP_HTTPS_PORT}
+	
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "caddy${LOCAL_ID}" "caddy${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_CDY_SETUP_HTTP_PORT} "${LOCAL_HOST}" "" "${LOCAL_HOST}"
+
+    echo_web_service_init_scripts "caddy-api${LOCAL_ID}" "caddy-api${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_CDY_SETUP_HTTP_PORT} "${LOCAL_HOST}" "" "${LOCAL_HOST}"
 
 	return $?
 }

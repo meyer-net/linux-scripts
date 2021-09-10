@@ -134,6 +134,10 @@ function boot_zookeeper()
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_ZK_SETUP_PORT}
+	echo_soft_port ${TMP_ZK_SETUP_ADMIN_SERVER_PORT}
+
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "zookeeper${LOCAL_ID}" "zookeeper${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_ZK_SETUP_ADMIN_SERVER_PORT} "${LOCAL_HOST}"
 
 	return $?
 }

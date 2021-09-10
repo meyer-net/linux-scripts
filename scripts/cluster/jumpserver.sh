@@ -217,6 +217,9 @@ function boot_jumpserver()
 	echo_soft_port ${TMP_JMS_SETUP_SSH_PORT}
 	echo_soft_port ${TMP_JMS_SETUP_RDP_PORT}
 
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "jumpserver${LOCAL_ID}" "jms${LOCAL_ID}-webui.${SYS_DOMAIN}" 80 "${LOCAL_HOST}"
+
 	return $?
 }
 

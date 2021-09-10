@@ -135,8 +135,10 @@ function conf_consul()
         echo \"Port of ${TMP_CSL_SETUP_HTTP_API_PORT} allowed for '\${CURRENT}'\"
         echo_soft_port ${TMP_CSL_SETUP_HTTP_API_PORT} \${CURRENT}
         echo \"Port of ${TMP_CSL_SETUP_DNS_PORT} allowed for '\${CURRENT}'\"
-        echo_soft_port ${TMP_CSL_SETUP_DNS_PORT} \${CURRENT}"
-
+        echo_soft_port ${TMP_CSL_SETUP_DNS_PORT} \${CURRENT}
+		echo_web_service_init_scripts \"consul\${I}\" \"consul\${I}-webui.${SYS_DOMAIN}\" ${TMP_CSL_SETUP_HTTP_API_PORT} '\${CURRENT}\'
+		"
+		
     cat > ${TMP_CSL_ETC_DIR}/bootstrap/config.json <<EOF
 {
 	"ui" : true,

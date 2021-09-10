@@ -22,13 +22,11 @@
 #------------------------------------------------
 local TMP_KNG_SETUP_API_HTTP_PORT=18000
 local TMP_KNG_SETUP_API_HTTPS_PORT=18444
+local TMP_KNG_SETUP_API_DOMAIN="kong-api${LOCAL_ID}.${SYS_DOMAIN}"
 
 local TMP_KNG_SETUP_API_RC_FILE_PATH="~/.kong-apirc"
 
-local TMP_KNGA_SETUP_HTTP_PORT=11337
-local TMP_KNGA_SETUP_SLACK_WBH_URL="https://hooks.slack.com/services/ABCDEFgh1/HGFFEDCba1/ABCedfGHIjkl0123456789"
-
-local TMP_KNG_SETUP_CDY_API_HOST="${LOCAL_HOST}"
+local TMP_KNG_SETUP_CDY_API_HOST=
 local TMP_KNG_SETUP_CDY_API_PORT=12019
 local TMP_KNG_SETUP_CDY_DFT_HTTP_PORT=60080
 
@@ -40,6 +38,12 @@ local TMP_KNG_SETUP_WORKSPACE_ID="e4b9993d-653f-44fd-acc5-338ce807582c"
 local TMP_KNG_SETUP_PSQL_HOST="${LOCAL_HOST}"
 local TMP_KNG_SETUP_PSQL_PORT=15432
 local TMP_KNG_SETUP_PSQL_USRNAME="postgres"
+
+local TMP_KNGA_SETUP_DOMAIN="konga${LOCAL_ID}-webui.${SYS_DOMAIN}"
+local TMP_KNGA_SETUP_KNG_HOST="${LOCAL_HOST}"
+local TMP_KNGA_SETUP_HTTP_PORT=11337
+local TMP_KNGA_SETUP_SLACK_WBH_URL="https://hooks.slack.com/services/ABCDEFgh1/HGFFEDCba1/ABCedfGHIjkl0123456789"
+local TMP_KNGA_SETUP_CDY_API_HOST=
 
 ##########################################################################################################
 
@@ -286,6 +290,10 @@ EOF
 
 function conf_kong_auto_https()
 {
+    local TMP_KNG_SETUP_IS_CDY_LOCAL=`lsof -i:${TMP_KNG_SETUP_CDY_API_PORT}`
+    if [ -n "${TMP_KNG_SETUP_IS_CDY_LOCAL}" ]; then    
+        TMP_KNG_SETUP_CDY_API_HOST="127.0.0.1"
+    fi
 	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps.Caddy: Please ender ${green}caddy api host for kong${reset}"
 
 	input_if_empty "TMP_KNG_SETUP_WBH_API_HOST" "Kong.AutoHttps.Webhook: Please ender ${green}webhook api host for kong${reset}"
@@ -682,7 +690,6 @@ function conf_konga()
 	ln -sf ${TMP_KNGA_SETUP_LNK_ETC_DIR} ${TMP_KNGA_SETUP_ETC_DIR}
 
 	# 开始配置
-    local TMP_KNGA_SETUP_DOMAIN="konga.xxx.com"
     local TMP_KNGA_SETUP_PSQL_HOST="${TMP_KNG_SETUP_PSQL_HOST}"
     local TMP_KNGA_SETUP_PSQL_PORT=${TMP_KNG_SETUP_PSQL_PORT}    
     local TMP_KNGA_SETUP_PSQL_USRNAME="${TMP_KNG_SETUP_PSQL_USRNAME}"
@@ -692,7 +699,6 @@ function conf_konga()
     local TMP_KNGA_SETUP_PSQL_SELF_USRPWD="knga%DB!m${LOCAL_ID}_"
 
     # 不在本机的情况下，需要输入地址
-    local TMP_KNGA_SETUP_KNG_HOST="${LOCAL_HOST}"
     local TMP_KNGA_SETUP_IS_KONG_LOCAL=`lsof -i:${TMP_KNG_SETUP_API_HTTP_PORT}`
     if [ -z "${TMP_KNGA_SETUP_IS_KONG_LOCAL}" ]; then
     	input_if_empty "TMP_KNGA_SETUP_KNG_HOST" "KongA.Kong.Host: Please ender ${red}your kong host address${reset}"
@@ -772,9 +778,9 @@ EOF
     INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','a45c36b6-ab85-47ad-ad20-022d03ff6996','{https}','{}','{${TMP_KNGA_SETUP_DOMAIN}}','{/}',0,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL, :'kong_workspace_id');
 EOF
 
-    # 判断Kong是否启用了https
-    local TMP_KNGA_SETUP_IS_KNG_AUTO_HTTPS=`curl -s http://${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}/upstreams/2d929958-f95d-5365-a997-055c26fd122d`
-    if [ -n "${TMP_KNGA_SETUP_IS_KNG_AUTO_HTTPS}" ]; then
+    # 判断Kong是否启用了autohttps
+    local TMP_KNGA_SETUP_KNG_CDY_API_TARGETS=`curl -s http://${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}/upstreams/2d929958-f95d-5365-a997-055c26fd122d/targets`
+    if [ -z `echo ${TMP_KNGA_SETUP_KNG_CDY_API_TARGETS} | jq ".message"` ]; then
         conf_konga_auto_https
     fi
 
@@ -793,6 +799,8 @@ EOF
 
 function conf_konga_auto_https()
 {
+    TMP_KNGA_SETUP_CDY_API_HOST=`echo ${TMP_KNGA_SETUP_KNG_CDY_API_TARGETS} | jq ".data[0].target" | sed 's@\"@@g' | awk -F':' '{print \$NR}'`
+
     # 配置针对于Kong开启了AutoHttps时启用健康检查
     # konga：
     # 1：konga对caddy的upstream做健康检查：caddy-api
@@ -837,6 +845,9 @@ function boot_kong()
 	echo_soft_port 443
 	echo_soft_port ${TMP_KNG_SETUP_API_HTTP_PORT} "${LOCAL_HOST}"
 	echo_soft_port ${TMP_KNG_SETUP_API_HTTPS_PORT} "${LOCAL_HOST}"
+    
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "kong-api${LOCAL_ID}" "${TMP_KNG_SETUP_API_DOMAIN}" ${TMP_KNG_SETUP_API_HTTP_PORT} "${LOCAL_HOST}" "${LOCAL_HOST}" "${TMP_KNG_SETUP_CDY_API_HOST}"
 
 	return $?
 }
@@ -872,6 +883,9 @@ function boot_konga()
 		
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_KNGA_SETUP_HTTP_PORT}
+    
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "konga${LOCAL_ID}" "${TMP_KNGA_SETUP_DOMAIN}" ${TMP_KNGA_SETUP_HTTP_PORT} "${LOCAL_HOST}" "${TMP_KNGA_SETUP_KNG_HOST}" "${TMP_KNGA_SETUP_CDY_API_HOST}"
 
 	return $?
 }

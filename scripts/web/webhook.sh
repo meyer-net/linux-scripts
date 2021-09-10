@@ -595,6 +595,9 @@ function boot_webhook()
 
     # 开放端口
     echo_soft_port ${TMP_WBH_SETUP_API_HTTP_PORT}
+    
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "webhook${LOCAL_ID}" "webhook${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_WBH_SETUP_API_HTTP_PORT} "${LOCAL_HOST}"
 
 	return $?
 }

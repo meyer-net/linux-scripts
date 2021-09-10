@@ -91,7 +91,7 @@ function update_libs()
     source scripts/os${OS_VERS}/libs.sh
     
     source scripts/softs/supervisor.sh
-    
+
 	return $?
 }
 

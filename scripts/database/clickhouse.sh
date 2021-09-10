@@ -195,6 +195,9 @@ function boot_clickhouse()
 	echo_soft_port ${TMP_CH_SETUP_MYSQL_PORT}
 	echo_soft_port ${TMP_CH_SETUP_PSQL_PORT}
 	echo_soft_port ${TMP_CH_SETUP_ITS_HTTP_PORT}
+	
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "clickhouse${LOCAL_ID}" "clickhouse${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_CH_SETUP_HTTP_PORT} "${LOCAL_HOST}"
     
 	return $?
 }

@@ -333,6 +333,9 @@ function boot_kafka_eagle()
 	
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_KFK_EGL_SETUP_WEBUI_PORT}
+	
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "kafka-eagle${LOCAL_ID}" "kafka-eagle${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_KFK_EGL_SETUP_WEBUI_PORT} "${LOCAL_HOST}"
 
 	return $?
 }

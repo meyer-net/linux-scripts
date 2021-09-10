@@ -11,9 +11,14 @@
 #         https://www.zmrbk.com/post-3899.html
 #------------------------------------------------
 local TMP_FRP_SETUP_SVR_BIND_PORT=17000
+local TMP_FRP_SETUP_SVR_BIND_UDP_PORT=17001
 local TMP_FRP_SETUP_SVR_DASHBOARD_PORT=17500
 local TMP_FRP_SETUP_SVR_THIS_TOKEN=""
+
+local TMP_FRP_SETUP_CLT_ADMIN_PORT=17400
+
 local TMP_FRP_SETUP_CHOICE_BOOT_CONF=""
+
 
 ##########################################################################################################
 
@@ -84,13 +89,11 @@ function conf_frps()
 {
 	cd ${TMP_FRP_SETUP_DIR}
 
-    local TMP_FRP_SETUP_SVR_BIND_UDP_PORT=17001
     input_if_empty "TMP_FRP_SETUP_SVR_BIND_PORT" "Frp-Server: Please sure ${red}bind port(contains kcp)${reset}"
     sed -i "s@^bind_port =.*@bind_port = ${TMP_FRP_SETUP_SVR_BIND_PORT}@g" etc/frps.ini
     sed -i "s@^bind_udp_port =.*@bind_udp_port = ${TMP_FRP_SETUP_SVR_BIND_UDP_PORT}@g" etc/frps.ini
     sed -i "s@^kcp_bind_port =.*@kcp_bind_port = ${TMP_FRP_SETUP_SVR_BIND_PORT}@g" etc/frps.ini
     
-    local TMP_FRP_SETUP_SVR_DASHBOARD_PORT=17500
     input_if_empty "TMP_FRP_SETUP_SVR_DASHBOARD_PORT" "Frp-Server: Please sure ${red}dashboard port${reset}"
     sed -i "s@^dashboard_port =.*@dashboard_port = ${TMP_FRP_SETUP_SVR_DASHBOARD_PORT}@g" etc/frps.ini
 
@@ -143,7 +146,7 @@ function conf_frpc()
     sed -i "s@^server_port =.*@server_port = ${TMP_FRP_SETUP_CLT_SERVER_PORT}@g" etc/frpc.ini
         
     sed -i "s@^admin_addr =.*@admin_addr = ${LOCAL_HOST}@g" etc/frpc.ini
-    local TMP_FRP_SETUP_CLT_ADMIN_PORT=17400
+    
     input_if_empty "TMP_FRP_SETUP_CLT_ADMIN_PORT" "Frp-Client: Please sure ${red}admin port${reset}"
     sed -i "s@^admin_port =.*@admin_port = ${TMP_FRP_SETUP_CLT_ADMIN_PORT}@g" etc/frpc.ini
 
@@ -274,7 +277,11 @@ function boot_frps()
 	# 授权iptables端口访问
 	echo_soft_port 80
 	echo_soft_port 443
+	echo_soft_port ${TMP_FRP_SETUP_SVR_DASHBOARD_PORT}
 	echo_soft_port ${TMP_FRP_SETUP_SVR_BIND_PORT}
+    
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "frps${LOCAL_ID}" "frps${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_FRP_SETUP_SVR_DASHBOARD_PORT} "${LOCAL_HOST}"
 
 	return $?
 }
@@ -304,6 +311,12 @@ function boot_frpc()
     systemctl status frpc.service
     
     sudo chkconfig frpc on
+
+	# 授权iptables端口访问
+	echo_soft_port ${TMP_FRP_SETUP_CLT_ADMIN_PORT}
+
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "frpc${LOCAL_ID}" "frpc${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_FRP_SETUP_CLT_ADMIN_PORT} "${LOCAL_HOST}"
 
 	return $?
 }

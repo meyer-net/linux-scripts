@@ -135,6 +135,9 @@ function boot_kibana()
 	
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_ELK_KBN_SETUP_HTTP_PORT}
+	
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "kibana${LOCAL_ID}" "kibana${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_ELK_KBN_SETUP_HTTP_PORT} "${LOCAL_HOST}"
 
 	return $?
 }

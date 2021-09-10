@@ -37,6 +37,7 @@ LOGS_DIR=${MOUNT_DIR}/logs
 CRTB_LOGS_DIR=${LOGS_DIR}/crontab
 SYNC_DIR=${MOUNT_DIR}/svr_sync
 WWW_DIR=${SYNC_DIR}/wwwroot
+WWW_INIT_DIR=${WWW_DIR}/init
 APP_DIR=${SYNC_DIR}/applications
 PYA_DIR=${APP_DIR}/py
 BOOT_DIR=${SYNC_DIR}/boots
@@ -53,6 +54,8 @@ MYCAT_DIR=${SETUP_DIR}/mycat
 PY_PKGS_SETUP_DIR=${SETUP_DIR}/python_packages
 PY3_PKGS_SETUP_DIR=${SETUP_DIR}/python3_packages
 SUPERVISOR_ATT_DIR=${ATT_DIR}/supervisor
+
+CDY_API_PORT=12019
 #---------- DIR ---------- }
 
 CHOICE_CTX="x"

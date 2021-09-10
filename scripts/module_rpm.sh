@@ -163,6 +163,9 @@ function boot_$soft_name()
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_$soft_upper_short_name_SETUP_PORT}
 
+    # 生成web授权访问脚本
+    #echo_web_service_init_scripts "$soft_name${LOCAL_ID}" "$soft_name${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_$soft_upper_short_name_SETUP_PORT} "${LOCAL_HOST}"
+
 	return $?
 }
 

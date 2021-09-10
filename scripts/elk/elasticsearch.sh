@@ -152,6 +152,9 @@ function boot_elasticsearch()
 	echo_soft_port ${TMP_ELK_ES_SETUP_HTTP_PORT}
 	echo_soft_port ${TMP_ELK_ES_SETUP_TRANS_PORT}
 
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "elasticsearch${LOCAL_ID}" "es${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_ELK_ES_SETUP_HTTP_PORT} "${LOCAL_HOST}"
+
 	return $?
 }
 

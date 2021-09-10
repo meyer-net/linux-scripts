@@ -147,10 +147,14 @@ function boot_flink()
 
 	cd ${TMP_FLK_SETUP_DIR}
     
+	# 授权iptables端口访问
     echo_soft_port ${TMP_FLK_SETUP_PORT}
     echo_soft_port ${TMP_FLK_SETUP_REST_PORT}
     echo_soft_port ${TMP_FLK_SETUP_HIS_WEB_PORT}
 	
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "flink${LOCAL_ID}" "flink${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_FLK_SETUP_REST_PORT} "${LOCAL_HOST}"
+
 	# 当前启动命令
     exec_yn_action "boot_flink_master" "Flink.Cluster.Master: Please sure if this is a boot server of master"
 	

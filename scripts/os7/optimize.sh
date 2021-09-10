@@ -7,7 +7,7 @@
 
 function check_sets()
 {
-	path_not_exists_action "${SETUP_DIR}/sys_seted" "optimize_system"
+	path_not_exists_action "${SETUP_DIR}/.sys_seted" "optimize_system"
 
 	return $?
 }
@@ -155,7 +155,12 @@ EOF
 	sysctl -p
 
 	#表示已设置优化
-	echo "" >> ${SETUP_DIR}/sys_seted
+	echo "don't remove" >> ${SETUP_DIR}/.sys_seted
+
+	#安装软件设定
+	if [ ! -f "${SETUP_DIR}/.sys_domain" ]; then
+		input_if_empty "SYS_DOMAIN" "SYS: Please ender ${green}system domain${reset} like '${red}myvnc.com${reset}' or else"
+	fi
 	
     return $?
 }

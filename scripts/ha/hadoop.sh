@@ -355,19 +355,22 @@ function conf_hadoop_cluster()
         fi
 
 		# 授权本地端口开放给Slaves
-        echo_soft_port ${TMP_HDOP_SETUP_HDFS_PORT} \"\$CURRENT\"
-        echo_soft_port ${TMP_HDOP_SETUP_SCHEDULER_PORT} \"\$CURRENT\"
-        echo_soft_port ${TMP_HDOP_SETUP_RES_TRACK_PORT} \"\$CURRENT\"
-        echo_soft_port ${TMP_HDOP_SETUP_RES_MGR_PORT} \"\$CURRENT\"
-        echo_soft_port ${TMP_HDOP_SETUP_RES_ADMIN_PORT} \"\$CURRENT\"
-        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_PORT} \"\$CURRENT\"
-        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT} \"\$CURRENT\"
-        echo_soft_port 49001 \"\$CURRENT\"
-        echo_soft_port 50070 \"\$CURRENT\"
-        echo_soft_port 50075 \"\$CURRENT\"
+        echo_soft_port ${TMP_HDOP_SETUP_HDFS_PORT} \"\${CURRENT}\"
+        echo_soft_port ${TMP_HDOP_SETUP_SCHEDULER_PORT} \"\${CURRENT}\"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_TRACK_PORT} \"\${CURRENT}\"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_MGR_PORT} \"\${CURRENT}\"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_ADMIN_PORT} \"\${CURRENT}\"
+        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_PORT} \"\${CURRENT}\"
+        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT} \"\${CURRENT}\"
+        echo_soft_port 49001 \"\${CURRENT}\"
+        echo_soft_port 50070 \"\${CURRENT}\"
+        echo_soft_port 50075 \"\${CURRENT}\"
+		
+		# 生成web授权访问脚本
+		echo_web_service_init_scripts \"hadoop\${I}\" \"hadoop\${I}-webui.${SYS_DOMAIN}\" ${TMP_HDOP_SETUP_WEBAPP_PORT} \"${CURRENT}\"
 
 		# NameNode映射
-        echo \"\$CURRENT \${TMP_HDOP_CLUSTER_SLAVE_NAME}\" >> /etc/hosts
+        echo \"\${CURRENT} \${TMP_HDOP_CLUSTER_SLAVE_NAME}\" >> /etc/hosts
 
 		# 远程机器免登录授权
         ssh-copy-id -i ~/.ssh/id_rsa.pub \${TMP_HDOP_CLUSTER_SLAVE_NAME}
@@ -397,10 +400,10 @@ function conf_hadoop_cluster()
 		# ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"\"
 
 		# 备份iptables授权IP:端口配置
-        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed 's@\$CURRENT@${TMP_HDOP_MASTER_HOST}@g' > ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp
+        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed 's@\${CURRENT}@${TMP_HDOP_MASTER_HOST}@g' > ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp
 
         echo
-        echo \"Hadoop: File of ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp will upload to '\$CURRENT' then append to iptables.service\"
+        echo \"Hadoop: File of ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp will upload to '\${CURRENT}' then append to iptables.service\"
         echo
     
         scp -r ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:/tmp

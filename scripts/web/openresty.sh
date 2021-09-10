@@ -436,6 +436,9 @@ function boot_openresty()
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_ORST_SETUP_HTTP_PORT}
 	echo_soft_port ${TMP_ORST_SETUP_HTTPS_PORT}
+    
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "openresty${LOCAL_ID}" "openresty${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_ORST_SETUP_HTTP_PORT} "${LOCAL_HOST}" "" "${LOCAL_HOST}"
 
 	return $?
 }

@@ -17,6 +17,19 @@
 # $0：脚本的名称
 # $！：运行在后台的最后一个进程ID
 
+# 绑定系统域名设定
+# 参数1：需要设置的变量名
+function bind_sysdomain () {
+    local TMP_SYS_DOMAIN="mydomain.com"
+	if [ -f "${SETUP_DIR}/.sys_domain" ]; then
+		TMP_SYS_DOMAIN=`cat ${SETUP_DIR}/sys_domain`
+	fi
+
+	eval ${1}=`echo '${TMP_SYS_DOMAIN}'`
+
+	return $?
+}
+
 #创建用户及组，如果不存在
 #参数1：组
 #参数2：用户
@@ -350,21 +363,27 @@ function gen_nginx_starter()
 {
     local TMP_DATE=`date +%Y%m%d%H%M%S`
 
-    local TMP_NGX_APP_NAME="tmp"
-    local TMP_NGX_APP_PORT=""
-	rand_val "TMP_NGX_APP_PORT" 1024 2048
+    local TMP_NGX_BOOT_NAME="tmp"
+    local TMP_NGX_BOOT_PORT=""
+	rand_val "TMP_NGX_BOOT_PORT" 1024 2048
     
-    input_if_empty "TMP_NGX_APP_NAME" "NGX_CONF: Please Ender Application Name Like 'nginx' Or Else"
-	set_if_empty "TMP_NGX_APP_NAME" "prj_${TMP_DATE}"
+    input_if_empty "TMP_NGX_BOOT_NAME" "NGX_CONF: Please ender application name"
+	set_if_empty "TMP_NGX_BOOT_NAME" "prj_${TMP_DATE}"
     
-    local TMP_NGX_APP_PATH="${HTML_DIR}/${TMP_NGX_APP_NAME}"
-    input_if_empty "TMP_NGX_APP_PATH" "NGX_CONF: Please Ender Application Path Like '/usr/bin' Or Else"
-	set_if_empty "TMP_NGX_APP_PATH" "${NGINX_DIR}"
+    local TMP_NGX_BOOT_PATH="${NGINX_DIR}/${TMP_NGX_BOOT_NAME}"
+    input_if_empty "TMP_NGX_BOOT_PATH" "NGX_CONF: Please ender application path"
+	set_if_empty "TMP_NGX_BOOT_PATH" "${NGINX_DIR}"
     
-    input_if_empty "TMP_NGX_APP_PORT" "Please Ender Application Port Like '8080' Or Else"
-	set_if_empty "TMP_NGX_APP_PORT" "${TMP_NGX_CONF_PORT}"
+    input_if_empty "TMP_NGX_BOOT_PORT" "Please ender application port Like '8080'"
+	set_if_empty "TMP_NGX_BOOT_PORT" "${TMP_NGX_CONF_PORT}"
 
-	cp_nginx_starter "${TMP_NGX_APP_NAME}" "${TMP_NGX_APP_PATH}" "${TMP_NGX_APP_PORT}"
+	cp_nginx_starter "${TMP_NGX_BOOT_NAME}" "${TMP_NGX_BOOT_PATH}" "${TMP_NGX_BOOT_PORT}"
+	
+	# 添加系统启动命令
+    echo_startup_config "ngx_${TMP_NGX_BOOT_NAME}" "${TMP_NGX_BOOT_PATH}" "bash start.sh" "" "999"
+
+    # 生成web授权访问脚本
+    echo_web_service_init_scripts "${TMP_NGX_BOOT_NAME}${LOCAL_ID}" "${TMP_NGX_BOOT_NAME}${LOCAL_ID}.${SYS_DOMAIN}" ${TMP_NGX_BOOT_PORT} "${LOCAL_HOST}"
 
 	return $?
 }
@@ -1797,6 +1816,98 @@ EOF
 	return $?
 }
 
+# 输出WEB映射生成脚本（必须在KONG所在机器下运行）
+# 参数1：WEB命名
+# 参数2：WEB域名
+# 参数3：WEB端口
+# 参数4：WEB地址
+# 参数5：Kong地址
+# 参数6：Caddy地址
+function echo_web_service_init_scripts()
+{
+	local TMP_WEB_SERVICE_NAME=${1}
+	local TMP_WEB_SERVICE_UPPER_NAME=`echo ${TMP_WEB_SERVICE_NAME} | sed 's/[a-z]/\u&/g'`
+	local TMP_WEB_SERVICE_DOMAIN=${2}
+	local TMP_WEB_SERVICE_HOST_PORT=${3}
+	local TMP_WEB_SERVICE_HOST=${4:-"${LOCAL_HOST}"}
+	
+	local TMP_WEB_SERVICE_KONG_HOST=${5}
+	local TMP_WEB_SERVICE_CDY_HOST=${6}
+
+	# 清楚kong所在服务器
+	if [ -n "${TMP_WEB_SERVICE_KONG_HOST}" ]; then
+		echo_soft_port ${TMP_WEB_SERVICE_HOST_PORT} "${TMP_WEB_SERVICE_KONG_HOST}"
+	fi
+
+	path_not_exists_create "${WWW_INIT_DIR}"
+    echo ${TMP_SPLITER}
+	sudo tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}.sh <<-EOF
+#!/bin/sh
+#----------------------------------------------------
+#  Project init script - for web service or autohttps
+#----------------------------------------------------
+TMP_INIT_WEB_SERVICE_CDY_HOST="${TMP_WEB_SERVICE_CDY_HOST}"
+TMP_INIT_WEB_SERVICE_LOCAL_HOST=\`ip a | grep inet | grep -v inet6 | grep -v 127 | grep -v docker | awk '{print $2}' | awk -F'/' '{print $1}' | awk 'END {print}'\`
+[ -z \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} ] && TMP_INIT_WEB_SERVICE_LOCAL_HOST=\`ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1\`
+
+# 本机未有kong_api直接退出执行
+if [ ! -f "/usr/bin/kong_api" ]; then
+	echo "Can't find 'kong_api' command in '/usr/bin/kong_api'，please sure u exec at 'kong host'"
+	return
+fi
+
+# 未定义caddy-host	
+if [ -z "\${TMP_INIT_WEB_SERVICE_CDY_HOST}" ]; then	
+	echo "Can't find 'caddy host' in var defined，please sure which your caddy host"
+	return
+fi
+
+# 先添加域名，避免被caddy-webhook的autohttps解析覆盖
+kong_api "service" "${TMP_WEB_SERVICE_UPPER_NAME}" "${TMP_WEB_SERVICE_HOST}:${TMP_WEB_SERVICE_HOST_PORT}" "${TMP_WEB_SERVICE_DOMAIN}"
+
+# 添加防火墙授权许可
+echo "${TMP_SPLITER}"
+echo "Please allow your iptables or cloud firewall for port '${TMP_WEB_SERVICE_HOST_PORT}' on host '${TMP_WEB_SERVICE_HOST}'"
+echo "${TMP_SPLITER}"
+echo "iptables："
+echo "          sed -i \"11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p tcp -m state --state NEW -m tcp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT\" /etc/sysconfig/iptables"
+echo "          sed -i \"11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p udp -m state --state NEW -m udp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT\" /etc/sysconfig/iptables"
+echo "          systemctl restart iptables.service"
+echo "firewall-cmd："
+echo "              firewall-cmd --permanent --add-port=${TMP_WEB_SERVICE_HOST_PORT}/tcp"
+echo "              firewall-cmd --permanent --add-port=${TMP_WEB_SERVICE_HOST_PORT}/udp"
+echo "              firewall-cmd --reload"
+echo "${TMP_SPLITER}"
+
+# 添加autohttps维护
+sudo tee ${WWW_INIT_DIR}/Caddyroute_for_${TMP_WEB_SERVICE_DOMAIN}.json <<-\EOF
+{
+	"match": [
+		{
+			"host": ["${TMP_WEB_SERVICE_DOMAIN}"]
+		}
+	],
+	"handle": [
+		{
+			"handler": "static_response",
+			"body": "Welcome to my security site of '${TMP_WEB_SERVICE_DOMAIN}'!"
+		}
+	],
+	"terminal": true
+}
+\EOF
+
+	curl \${TMP_INIT_WEB_SERVICE_CDY_HOST}:${CDY_API_PORT}/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_WEB_SERVICE_DOMAIN}.json
+	curl \${TMP_INIT_WEB_SERVICE_CDY_HOST}:${CDY_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_WEB_SERVICE_DOMAIN}": "${TMP_WEB_SERVICE_DOMAIN}"}'
+EOF
+    echo ${TMP_SPLITER}
+	echo
+	
+	chmod +x ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}.sh
+
+	return $?
+}
+
 #新增一个授权端口
 #参数1：需放开端口
 #参数2：授权IP
@@ -1959,4 +2070,7 @@ LOCAL_ID=`echo \${LOCAL_HOST##*.}`
 
 SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
 SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"
+
+SYS_DOMAIN=""
+if [ -f "" ];
 #---------- HARDWARE ---------- }

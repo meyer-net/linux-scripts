@@ -17,7 +17,7 @@ function disable_selinux() {
 
 function check_libs()
 {
-	path_not_exists_action "${SETUP_DIR}/lib_installed" "setup_libs"
+	path_not_exists_action "${SETUP_DIR}/.lib_installed" "setup_libs"
 
 	return $?
 }
@@ -95,6 +95,8 @@ function setup_libs()
 	soft_yum_check_setup "vim-enhanced"
 	soft_yum_check_setup "screen"
 	soft_yum_check_setup "lrzsz"
+	soft_yum_check_setup "rpcbind"
+	soft_yum_check_setup "nfs"
 
 	# gcc 切换：https://www.cnblogs.com/jixiaohua/p/11732225.html
 	soft_yum_check_setup "centos-release-scl"
@@ -120,7 +122,7 @@ function setup_libs()
 	#IPTABLES 失效
 	/usr/sbin/iptables-restore /etc/sysconfig/iptables
 	
-	echo "" >> ${SETUP_DIR}/lib_installed
+	echo "don't remove" >> ${SETUP_DIR}/.lib_installed
 
 	return $?
 }
