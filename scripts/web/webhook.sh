@@ -1,8 +1,8 @@
 #!/bin/bash
 #------------------------------------------------
 #      Centos7 Project Env InstallScript
-#      copyright https://echat.oshit.com/
-#      email: meyer_net@foxmail.com
+#      copyright https://devops.oshit.com/
+#      author: meyer.cheng
 #------------------------------------------------
 # 相关参数：
 #         https://github.com/adnanh/webhook/blob/master/docs/Webhook-Parameters.md

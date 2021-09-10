@@ -1,8 +1,8 @@
 #!/bin/bash
 #------------------------------------------------
 #      Centos7 Project Env InstallScript
-#      copyright https://echat.oshit.com/
-#      email: meyer_net@foxmail.com
+#      copyright https://devops.oshit.com/
+#      author: meyer.cheng
 #------------------------------------------------
 # 项目依赖：
 # Node.js 8.x required (some dependencies don't support newer versions)

@@ -1,8 +1,8 @@
 #!/bin/bash
 #------------------------------------------------
 #      Centos7 Project Env InstallScript
-#      copyright https://echat.oshit.com/
-#      email: meyer_net@foxmail.com
+#      copyright https://devops.oshit.com/
+#      author: meyer.cheng
 #------------------------------------------------
 # 相关参考：
 #          https://linux.cn/article-5730-1.html

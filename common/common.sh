@@ -2,7 +2,7 @@
 #------------------------------------------------
 #      Centos7 Or Project Env InitScript
 #      copyright https://oshit.thiszw.com/
-#      email: meyer_net@foxmail.com
+#      author: meyer.cheng
 #------------------------------------------------
 # http://blog.csdn.net/u010861514/article/details/51028220
 # 命令参考：https://www.jianshu.com/p/1bbdbf1aa1bd
@@ -1144,7 +1144,7 @@ function set_url_list_newer_href_link_filename()
 
 #检测github最新版本
 #参数1：需要设置的变量名
-#参数2：Github仓储/项目，例如meyer-net/linux_scripts
+#参数2：Github仓储/项目，例如meyer.cheng/linux_scripts
 #示例：
 #	TMP_ELASTICSEARCH_NEWER_VERS="0.0.1"
 #	set_github_soft_releases_newer_version "TMP_ELASTICSEARCH_NEWER_VERS" "elastic/elasticsearch"

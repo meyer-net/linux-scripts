@@ -1,8 +1,8 @@
 #!/bin/bash
 #------------------------------------------------
 #      Centos7 Project Env InstallScript
-#      copyright https://echat.oshit.com/
-#      email: meyer_net@foxmail.com
+#      copyright https://devops.oshit.com/
+#      author: meyer.cheng
 #------------------------------------------------
 # 参考文献：
 #         https://ci.apache.org/projects/flink/flink-docs-release-1.13/zh/docs

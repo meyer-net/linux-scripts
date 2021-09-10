@@ -1,8 +1,8 @@
 #!/bin/bash
 #------------------------------------------------
 #      Centos7 Project Env InstallScript
-#      copyright https://echat.oshit.com/
-#      email: meyer_net@foxmail.com
+#      copyright https://devops.oshit.com/
+#      author: meyer.cheng
 #------------------------------------------------
 
 # Disable selinux
