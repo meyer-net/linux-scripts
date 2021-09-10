@@ -75,7 +75,7 @@ function choice_type()
 {
 	echo_title
 
-	exec_if_choice "TMP_CHOICE_CTX" "Please choice your setup type" "Update_Libs,From_Clean,From_Bak,Mount_Unmount_Disks,Gen_Ngx_Conf,Gen_Sup_Conf,SSH_Redict,Proxy_By_SS,Exit" "${TMP_SPLITER}"
+	exec_if_choice "TMP_CHOICE_CTX" "Please choice your setup type" "Update_Libs,From_Clean,From_Bak,Mount_Unmount_Disks,Gen_Ngx_Conf,Gen_Sup_Conf,Share_Dir,SSH_Redict,Proxy_By_SS,Exit" "${TMP_SPLITER}"
 
 	return $?
 }
@@ -213,7 +213,112 @@ function gen_ngx_conf()
 
 function gen_sup_conf()
 {
+	local TMP_GEN_SUP_CONF_NAME="test"
+    input_if_empty "TMP_GEN_SUP_CONF_NAME" "GEN_SUP_CONF：Please ender ${green}the program name${reset}"
+
+	local TMP_GEN_SUP_CONF_BOOT_DIR="${SETUP_DIR}"
+    input_if_empty "TMP_GEN_SUP_CONF_BOOT_DIR" "GEN_SUP_CONF：Please ender ${green}the program boot dir${reset}"
+
+	local TMP_GEN_SUP_CONF_COMMAND=""
+    input_if_empty "TMP_GEN_SUP_CONF_COMMAND" "GEN_SUP_CONF：Please ender ${green}the boot command${reset}"
+
+	local TMP_GEN_SUP_CONF_ENV=""
+    input_if_empty "TMP_GEN_SUP_CONF_ENV" "GEN_SUP_CONF：Please ender ${green}the dependency of env var${reset}"
+
+	local TMP_GEN_SUP_CONF_PRIORITY=99
+    input_if_empty "" "GEN_SUP_CONF：Please ender ${green}the boot priority${reset} of your program"
+
+	local TMP_GEN_SUP_CONF_SOURCE="/etc/profile"
+    input_if_empty "TMP_GEN_SUP_CONF_SOURCE" "GEN_SUP_CONF：Please ender ${green}the dependency of env source file${reset}"
+
+	local TMP_GEN_SUP_CONF_USER="root"
+    input_if_empty "TMP_GEN_SUP_CONF_USER" "GEN_SUP_CONF：Please ender ${green}the boot user of your program${reset}"
+
+    # 授权
+    create_user_if_not_exists "${TMP_GEN_SUP_CONF_USER}" "${TMP_GEN_SUP_CONF_USER}"
+    chown -R ${TMP_GEN_SUP_CONF_USER}:${TMP_GEN_SUP_CONF_USER} ${TMP_GEN_SUP_CONF_BOOT_DIR}
+
+    # 日志转储
+    if [ -d "${TMP_GEN_SUP_CONF_BOOT_DIR}/logs" ]; then
+        mv ${TMP_GEN_SUP_CONF_BOOT_DIR}/logs ${LOGS_DIR}/${TMP_GEN_SUP_CONF_NAME}
+        ln -sf ${LOGS_DIR}/${TMP_GEN_SUP_CONF_NAME} ${TMP_GEN_SUP_CONF_BOOT_DIR}/logs
+    fi
+    
+    echo_startup_config "${TMP_GEN_SUP_CONF_NAME}" "${TMP_GEN_SUP_CONF_BOOT_DIR}" "${TMP_GEN_SUP_CONF_COMMAND}" "${TMP_GEN_SUP_CONF_ENV}" ${TMP_GEN_SUP_CONF_PRIORITY} "${TMP_GEN_SUP_CONF_SOURCE}" "${TMP_GEN_SUP_CONF_USER}"
+
 	return $?
+}
+
+function share_dir()
+{
+    exec_if_choice "TMP_SHARE_DIR_CHOICE_TYPE" "Please choice which share type you want to use" "...,Server,Client,Exit" "${TMP_SPLITER}" "share_dir_"
+
+    return $?
+}
+
+function share_dir_server()
+{
+    local TMP_SHARE_DIR_SVR_LCL_DIR="${PRJ_DIR}"
+    input_if_empty "TMP_SHARE_DIR_SVR_LCL_DIR" "SHARE_DIR_SERVER：Please ender ${green}the dir${reset} which u want to share"
+
+    local TMP_SHARE_DIR_SVR_ALLOWS=`echo ${LOCAL_HOST} | sed "s@\.${LOCAL_ID}$@.0/24@G"`
+    input_if_empty "TMP_SHARE_DIR_SVR_ALLOWS" "SHARE_DIR_SERVER：Please ender ${green}the host network area${reset} which u allows to share"
+
+    local TMP_SHARE_DIR_SVR_PERS="rw,no_root_squash"
+    local TMP_SHARE_DIR_SVR_PERS_NOTICE="SHARE_DIR_SERVER：Please ender ${green}the permissions${reset} for ref clients(${TMP_SHARE_DIR_SVR_ALLOWS})
+    # rw：可读写的权限  \
+    # ro：只读的权限  \
+    # no_root_squash：登入到NFS主机的用户如果是root，该用户即拥有root权限（不添加此选项ROOT只有RO权限）  \
+    # root_squash：登入NFS主机的用户如果是root，该用户权限将被限定为匿名使用者nobody  \
+    # all_squash：不管登陆NFS主机的用户是何权限都会被重新设定为匿名使用者nobody  \
+    # anonuid：将登入NFS主机的用户都设定成指定的user id，此ID必须存在于/etc/passwd中  \
+    # anongid：同anonuid，但是变成group ID就是了  \
+    # sync：资料同步写入存储器中  \
+    # async：资料会先暂时存放在内存中，不会直接写入硬盘  \
+    # insecure：允许从这台机器过来的非授权访问"
+    input_if_empty "TMP_SHARE_DIR_SVR_PERS" "${TMP_SHARE_DIR_SVR_PERS_NOTICE}"
+
+    echo "${TMP_SHARE_DIR_SVR_LCL_DIR} ${TMP_SHARE_DIR_SVR_ALLOWS}(${TMP_SHARE_DIR_SVR_PERS})" >> /etc/exports
+    exportfs -rv
+
+    echo
+
+    showmount -e localhost
+
+    echo_soft_port 111 "${TMP_SHARE_DIR_SVR_ALLOWS}"
+    echo_soft_port 2049 "${TMP_SHARE_DIR_SVR_ALLOWS}"
+
+    echo
+    echo "SHARE_DIR_SERVER：Done -> (Dir of '${green}${TMP_SHARE_DIR_SVR_LCL_DIR}${reset}' shared for '${red}${TMP_SHARE_DIR_SVR_ALLOWS}${reset}')"
+    echo
+
+    return $?
+}
+
+function share_dir_client()
+{
+    local TMP_SHARE_DIR_CLT_SVR_HOST="${LOCAL_HOST}"
+    input_if_empty "TMP_SHARE_DIR_CLT_SVR_HOST" "SHARE_DIR_CLIENT：Please ender ${green}the host${reset} which u want to mount dir"
+    
+    showmount -e ${TMP_SHARE_DIR_CLT_SVR_HOST}
+    
+    local TMP_SHARE_DIR_CLT_SVR_DIR="${PRJ_DIR}"
+    input_if_empty "TMP_SHARE_DIR_CLT_SVR_DIR" "SHARE_DIR_CLIENT：Please ender ${green}the dir${reset} which u want to mount from '${red}${TMP_SHARE_DIR_CLT_SVR_HOST}${reset}'"
+
+    local TMP_SHARE_DIR_CLT_LCL_DIR="${HTML_DIR}"
+    input_if_empty "TMP_SHARE_DIR_CLT_LCL_DIR" "SHARE_DIR_CLIENT：Please ender ${green}the dir${reset} which u want to display on local from '${red}${TMP_SHARE_DIR_CLT_SVR_HOST}(${TMP_SHARE_DIR_CLT_SVR_DIR})${reset}'"
+
+    # mount -t nfs ${TMP_SHARE_DIR_CLT_SVR_HOST}:${TMP_SHARE_DIR_CLT_SVR_DIR} ${TMP_SHARE_DIR_CLT_LCL_DIR}
+    echo "${TMP_SHARE_DIR_CLT_SVR_HOST}:${TMP_SHARE_DIR_CLT_SVR_DIR} ${TMP_SHARE_DIR_CLT_LCL_DIR} nfs defaults 0 0" >> /etc/fstab
+    mount -a
+
+    df -h
+    
+    echo
+    echo "SHARE_DIR_CLIENT：Done -> (Dir of '${green}${TMP_SHARE_DIR_CLT_LCL_DIR}${reset}' from '${red}${TMP_SHARE_DIR_CLT_SVR_HOST}(${TMP_SHARE_DIR_CLT_SVR_DIR})${reset}')"
+    echo
+    
+    return $?
 }
 
 # SSH 端口转发

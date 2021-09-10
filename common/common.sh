@@ -327,33 +327,33 @@ function resolve_unmount_disk () {
 #参数3：程序启动的端口
 function cp_nginx_starter()
 {
-	local TMP_NGINX_PROJECT_NAME=$1
-	local TMP_NGINX_PROJECT_RUNNING_DIR=$2
-	local TMP_NGINX_PROJECT_RUNNING_PORT=$3
+	local TMP_CP_NGX_STT_NAME=$1
+	local TMP_CP_NGX_STT_RUNNING_DIR=$2
+	local TMP_CP_NGX_STT_RUNNING_PORT=$3
 
-	local TMP_NGINX_PROJECT_CONTAINER_DIR=${NGINX_DIR}/${1}_${3}
+	local TMP_CP_NGX_STT_CONTAINER_DIR=${NGINX_DIR}/${1}_${3}
 
 	mkdir -pv $NGINX_DIR
 
-	echo "Copy '${__DIR}/templates/nginx/server' To '${TMP_NGINX_PROJECT_CONTAINER_DIR}'"
-	cp -r ${__DIR}/templates/nginx/server ${TMP_NGINX_PROJECT_CONTAINER_DIR}
+	echo "Copy '${__DIR}/templates/nginx/server' To '${TMP_CP_NGX_STT_CONTAINER_DIR}'"
+	cp -r ${__DIR}/templates/nginx/server ${TMP_CP_NGX_STT_CONTAINER_DIR}
 	
-	if [ ! -d "$TMP_NGINX_PROJECT_RUNNING_DIR" ]; then
-		echo "Copy '${__DIR}/templates/nginx/template' To '${TMP_NGINX_PROJECT_RUNNING_DIR}'"
-		cp -r ${__DIR}/templates/nginx/template ${TMP_NGINX_PROJECT_RUNNING_DIR}
+	if [ ! -d "$TMP_CP_NGX_STT_RUNNING_DIR" ]; then
+		echo "Copy '${__DIR}/templates/nginx/template' To '${TMP_CP_NGX_STT_RUNNING_DIR}'"
+		cp -r ${__DIR}/templates/nginx/template ${TMP_CP_NGX_STT_RUNNING_DIR}
 	fi
 
-	cd ${TMP_NGINX_PROJECT_CONTAINER_DIR}
+	cd ${TMP_CP_NGX_STT_CONTAINER_DIR}
 
-	sed -i "s@\%prj_port\%@${TMP_NGINX_PROJECT_RUNNING_PORT}@g" conf/vhosts/project.conf
-	sed -i "s@\%prj_name\%@${TMP_NGINX_PROJECT_NAME}@g" conf/vhosts/project.conf
-	sed -i "s@\%prj_dir\%@${TMP_NGINX_PROJECT_RUNNING_DIR}@g" conf/vhosts/project.conf
+	sed -i "s@\%prj_port\%@${TMP_CP_NGX_STT_RUNNING_PORT}@g" conf/vhosts/project.conf
+	sed -i "s@\%prj_name\%@${TMP_CP_NGX_STT_NAME}@g" conf/vhosts/project.conf
+	sed -i "s@\%prj_dir\%@${TMP_CP_NGX_STT_RUNNING_DIR}@g" conf/vhosts/project.conf
 
-	mv conf/vhosts/project.conf conf/vhosts/${TMP_NGINX_PROJECT_NAME}.conf
+	mv conf/vhosts/project.conf conf/vhosts/${TMP_CP_NGX_STT_NAME}.conf
 	bash start.sh master
 
-    echo_soft_port ${TMP_NGINX_PROJECT_RUNNING_PORT}
-    echo_startup_config "${TMP_NGINX_PROJECT_NAME}" "${TMP_NGINX_PROJECT_CONTAINER_DIR}" "bash start.sh master" "" "99"
+    echo_soft_port ${TMP_CP_NGX_STT_RUNNING_PORT}
+    echo_startup_config "${TMP_CP_NGX_STT_NAME}" "${TMP_CP_NGX_STT_CONTAINER_DIR}" "bash start.sh master" "" "99"
 
 	return $?
 }
@@ -1733,7 +1733,7 @@ function echo_startup_config()
 
 	local TMP_STARTUP_SUPERVISOR_NAME=${1}
 	local TMP_STARTUP_SUPERVISOR_FILENAME=${TMP_STARTUP_SUPERVISOR_NAME}.conf
-	local TMP_STARTUP_SUPERVISOR_DIR=${2}
+	local TMP_STARTUP_SUPERVISOR_BOOT_DIR=${2}
 	local TMP_STARTUP_SUPERVISOR_COMMAND=${3}
 	local TMP_STARTUP_SUPERVISOR_ENV=${4}
 	local TMP_STARTUP_SUPERVISOR_PRIORITY=${5:-99}
@@ -1758,8 +1758,8 @@ function echo_startup_config()
 		fi
 	fi
 
-	if [ -n "${TMP_STARTUP_SUPERVISOR_DIR}" ]; then
-		TMP_STARTUP_SUPERVISOR_DIR="directory = ${TMP_STARTUP_SUPERVISOR_DIR}  ; 程序的启动目录"
+	if [ -n "${TMP_STARTUP_SUPERVISOR_BOOT_DIR}" ]; then
+		TMP_STARTUP_SUPERVISOR_BOOT_DIR="directory = ${TMP_STARTUP_SUPERVISOR_BOOT_DIR}  ; 程序的启动目录"
 	fi
 
 	if [ -n "${TMP_STARTUP_SUPERVISOR_ENV}" ]; then
@@ -1797,7 +1797,7 @@ stdout_logfile_maxbytes = 20MB                                                  
 stdout_logfile_backups = 20                                                          ; stdout 日志文件备份数
 
 ${TMP_STARTUP_SUPERVISOR_PRIORITY}                                                     ; 启动优先级，默认999
-${TMP_STARTUP_SUPERVISOR_DIR}                                                        
+${TMP_STARTUP_SUPERVISOR_BOOT_DIR}                                                        
 
 ${TMP_STARTUP_SUPERVISOR_ENV}                                                        
 

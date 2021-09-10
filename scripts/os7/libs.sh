@@ -95,8 +95,13 @@ function setup_libs()
 	soft_yum_check_setup "vim-enhanced"
 	soft_yum_check_setup "screen"
 	soft_yum_check_setup "lrzsz"
+	soft_yum_check_setup "nfs-utils"
 	soft_yum_check_setup "rpcbind"
-	soft_yum_check_setup "nfs"
+
+	chkconfig nfs on
+	systemctl start nfs.service
+	chkconfig rpcbind on
+	systemctl start rpcbind.service
 
 	# gcc 切换：https://www.cnblogs.com/jixiaohua/p/11732225.html
 	soft_yum_check_setup "centos-release-scl"
