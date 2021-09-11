@@ -229,9 +229,9 @@ function curx_line_insert()
 # 参数1：需要设置的变量名
 function get_mount_root() {
 	local TMP_MOUNT_ROOT=""
-	local TMP_LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR==2{print $1}' | xargs -I {} echo '/dev/{}'`
-	if [ -z "${TMP_LSBLK_DISKS_STR}" ]; then
-		TMP_MOUNT_ROOT=`df -h | grep ${TMP_LSBLK_DISKS_STR} | awk -F' ' '{print $NF}'`
+	local TMP_LSBLK_DISKS_STR=`lsblk | grep "disk" | grep -v ":0" | awk 'NR==1{print \$1}' | xargs -I {} echo '/dev/{}'`
+	if [ -n "${TMP_LSBLK_DISKS_STR}" ]; then
+		TMP_MOUNT_ROOT=`df -h | grep "${TMP_LSBLK_DISKS_STR}" | awk -F' ' '{print \$NF}'`
 	fi
 
 	eval ${1}=`echo '${TMP_MOUNT_ROOT}'`
@@ -2071,6 +2071,6 @@ LOCAL_ID=`echo \${LOCAL_HOST##*.}`
 SYS_IP_CONNECT=`echo ${LOCAL_HOST} | sed 's@\.@-@g' | xargs -I {} echo "{}"`
 SYS_NEW_NAME="ip-${SYS_IP_CONNECT}"
 
-SYS_DOMAIN=""
-if [ -f "" ];
+SYS_DOMAIN=
+bind_sysdomain "SYS_DOMAIN"
 #---------- HARDWARE ---------- }
