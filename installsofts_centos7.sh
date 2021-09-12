@@ -352,7 +352,7 @@ function ssh_transfer()
     local TMP_SSH_TRANS_DEST_USER="root"
     input_if_empty "TMP_SSH_TRANS_DEST_USER" "SSH-Transfer：Please ender ${green}which user of dest(${TMP_SSH_TRANS_DEST_HOST})${reset} on remote by ssh to login"
 
-    local TMP_SSH_TRANS_TUNNEL_HOST1="localhosst" 
+    local TMP_SSH_TRANS_TUNNEL_HOST1="localhost" 
     input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST1" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER} address${reset} you want to listen"
     
     local TMP_SSH_TRANS_TUNNEL_PORT1="80"
@@ -361,7 +361,7 @@ function ssh_transfer()
     local TMP_SSH_TRANS_TUNNEL_HOST2="localhost" 
     input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address${reset} you want to listen"
     
-    local TMP_SSH_TRANS_TUNNEL_PORT2="${TMP_SSH_TRANS_LOCAL_PORT}"
+    local TMP_SSH_TRANS_TUNNEL_PORT2="${TMP_SSH_TRANS_TUNNEL_PORT1}"
     input_if_empty "TMP_SSH_TRANS_TUNNEL_PORT2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address port${reset} you want to listen"
 
     function _nopwd_login()
@@ -377,7 +377,7 @@ function ssh_transfer()
     # -R 将远程主机(服务器)的某个端口转发到本地端指定机器的指定端口
     # -L 将本地机(客户机)的某个端口转发到远端指定机器的指定端口
     # -p 指定远程主机的端口
-    local TMP_SSH_TRANS_SCRIPTS="-CN${TMP_SSH_TRANS_TUNNEL_MODE} ${TMP_SSH_TRANS_TUNNEL_HOST1}:${TMP_SSH_TRANS_TUNNEL_PORT1}:${TMP_SSH_TRANS_TUNNEL_HOST2}:${TMP_SSH_TRANS_TUNNEL_PORT2}  ${TMP_SSH_TRANS_DEST_USER}@${TMP_SSH_TRANS_DEST_HOST}"
+    local TMP_SSH_TRANS_SCRIPTS="-CN${TMP_SSH_TRANS_TUNNEL_MODE} ${TMP_SSH_TRANS_TUNNEL_HOST1}:${TMP_SSH_TRANS_TUNNEL_PORT1}:${TMP_SSH_TRANS_TUNNEL_HOST2}:${TMP_SSH_TRANS_TUNNEL_PORT2} ${TMP_SSH_TRANS_DEST_USER}@${TMP_SSH_TRANS_DEST_HOST}"
     
     ssh -f ${TMP_SSH_TRANS_SCRIPTS}
 
@@ -392,10 +392,16 @@ function ssh_transfer()
 
     local TMP_SSH_TRANS_SUP_NAME="ssh_transfer_${TMP_SSH_TRANS_TUNNEL_MODE}_${TMP_SSH_TRANS_DEST_USER}_${TMP_SSH_TRANS_DEST_HOST}_${TMP_SSH_TRANS_TUNNEL_HOST1}_${TMP_SSH_TRANS_TUNNEL_PORT1}_${TMP_SSH_TRANS_TUNNEL_HOST2}_${TMP_SSH_TRANS_TUNNEL_PORT2}"
     local TMP_SSH_TRANS_ETC_FILE="${SUPERVISOR_HOME}/etc/${TMP_SSH_TRANS_SUP_NAME}.conf"
-    path_not_exists_action "${TMP_SSH_TRANS_ETC_FILE}" "echo_startup_config '${TMP_SSH_TRANS_SUP_NAME}' '${SUPERVISOR_HOME}/scripts' 'ssh ${TMP_SSH_TRANS_SCRIPTS}'"
+
+    function _echo_startup_config()
+    {
+        echo_startup_config "${TMP_SSH_TRANS_SUP_NAME}" "${SUPERVISOR_HOME}/scripts" "ssh ${TMP_SSH_TRANS_SCRIPTS}"
+    }
+
+    path_not_exists_action "${TMP_SSH_TRANS_ETC_FILE}" "_echo_startup_config"
 
     echo
-    echo "SSH-Transfer：Done -> (${TMP_SSH_TRANS_SCRIPTS})"
+    echo "SSH-Transfer：Done -> (ssh ${TMP_SSH_TRANS_SCRIPTS})"
     echo
 
 	return $?

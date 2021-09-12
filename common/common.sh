@@ -38,7 +38,7 @@ function nopwd_login () {
     local TMP_NOPWD_LOGIN_REMOTE_USER=${2:-"root"}
 
 	if [ -n "${TMP_NOPWD_LOGIN_REMOTE_HOST}" ]; then
-		local TMP_NOPWD_LOGIN_ID_RSA_PATH="~/.ssh/id_rsa"
+		local TMP_NOPWD_LOGIN_ID_RSA_PATH="~/.ssh/id_rsa.pub"
 		convert_path "TMP_NOPWD_LOGIN_ID_RSA_PATH"
 		path_not_exists_action "TMP_NOPWD_LOGIN_ID_RSA_PATH" "ssh-keygen -t rsa"
 		
