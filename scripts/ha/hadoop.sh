@@ -374,6 +374,7 @@ function conf_hadoop_cluster()
 
 		# 远程机器免登录授权
         ssh-copy-id -i ~/.ssh/id_rsa.pub \${TMP_HDOP_CLUSTER_SLAVE_NAME}
+		# ssh-copy-id root@\${CURRENT}
 
         sleep 1
 

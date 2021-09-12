@@ -75,7 +75,7 @@ function choice_type()
 {
 	echo_title
 
-	exec_if_choice "TMP_CHOICE_CTX" "Please choice your setup type" "Update_Libs,From_Clean,From_Bak,Mount_Unmount_Disks,Gen_Ngx_Conf,Gen_Sup_Conf,Share_Dir,SSH_Redict,Proxy_By_SS,Exit" "${TMP_SPLITER}"
+	exec_if_choice "TMP_CHOICE_CTX" "Please choice your setup type" "Update_Libs,From_Clean,From_Bak,Mount_Unmount_Disks,Gen_Ngx_Conf,Gen_Sup_Conf,Share_Dir,SSH_Transfer,Proxy_By_SS,Exit" "${TMP_SPLITER}"
 
 	return $?
 }
@@ -322,36 +322,83 @@ function share_dir_client()
 }
 
 # SSH 端口转发
-function ssh_redirect()
+# 参考：https://blog.51cto.com/wavework/1608937 | https://blog.csdn.net/zhouguoqionghai/article/details/81869554
+function ssh_transfer()
 {
-    local TMP_SSH_REDIR_TUNNEL_MODE="L"
-    input_if_empty "TMP_SSH_REDIR_TUNNEL_MODE" "SSH-Redirect：Please ender ${green}the tunnel mode(Local/L、Remote/R、Dynamic/D)${reset}?"
+    # 反向：ssh -fCNR 0.0.0.0:22000:localhost:22 root@1.1.1.1 -p 22，监听远程22000，互通本地22
+    # 正向：ssh -fCNL 0.0.0.0:22000:localhost:22 root@2.2.2.2 -p 22，监听本地22000，互通远程22
+    typeset -u TMP_SSH_TRANS_TUNNEL_MODE
+    local TMP_SSH_TRANS_TUNNEL_MODE="L"
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_MODE" "SSH-Transfer：Please ender ${green}the tunnel mode(Local/L、Remote/R、Dynamic/D)${reset}?"
 
-    local TMP_SSH_REDIR_TUNNEL_PORT="80"
-    input_if_empty "TMP_SSH_REDIR_TUNNEL_PORT" "SSH-Redirect：Please ender ${green}the port${reset} u want to listener?"
-            
-    local TMP_SSH_REDIR_DEST_ADDRESS="xyz.ipssh.net"
-    input_if_empty "TMP_SSH_REDIR_DEST_ADDRESS" "SSH-Redirect：Please ender ${green}which dest address${reset} you want to redirect?"
+    local TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER="dynamic"
+    local TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER="dynamic"
+	case ${TMP_SSH_TRANS_TUNNEL_MODE} in
+		"L")
+            TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER="local"
+            TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER="remote"
+		;;
+		"R")
+            TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER="remote"
+            TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER="local"
+		;;
+		*)
+        TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER="dynamic"
+	esac
+        
+    local TMP_SSH_TRANS_DEST_HOST="xyz.ipssh.net"
+    input_if_empty "TMP_SSH_TRANS_DEST_HOST" "SSH-Transfer：Please ender ${green}which dest address${reset} you want to login on remote?"
     
-    local TMP_SSH_REDIR_DEST_USER="root"
-    input_if_empty "TMP_SSH_REDIR_DEST_USER" "SSH-Redirect：Please ender ${green}which user of dest(${TMP_SSH_REDIR_DEST_ADDRESS})${reset} by ssh to redirect?"
-    
-    local TMP_SSH_REDIR_DEST_NATIVE_ADDRESS="localhost" 
-    input_if_empty "TMP_SSH_REDIR_DEST_NATIVE_ADDRESS" "SSH-Redirect：Please ender ${green}which dest address on '${TMP_SSH_REDIR_DEST_ADDRESS}'${reset} you want to redirect?"
-    
-    local TMP_SSH_REDIR_DEST_NATIVE_PORT="${TMP_SSH_REDIR_LOCAL_PORT}"
-    input_if_empty "TMP_SSH_REDIR_DEST_NATIVE_PORT" "SSH-Redirect：Please ender ${green}which dest address port on '${TMP_SSH_REDIR_DEST_ADDRESS}'${reset} you want to redirect?"
+    local TMP_SSH_TRANS_DEST_USER="root"
+    input_if_empty "TMP_SSH_TRANS_DEST_USER" "SSH-Transfer：Please ender ${green}which user of dest(${TMP_SSH_TRANS_DEST_HOST})${reset} on remote by ssh to login?"
 
-    local TMP_SSH_REDIR_SCRIPTS="ssh -C -f -N -${TMP_SSH_REDIR_TUNNEL_MODE} ${TMP_SSH_REDIR_TUNNEL_PORT}:${TMP_SSH_REDIR_DEST_NATIVE_ADDRESS}:${TMP_SSH_REDIR_DEST_NATIVE_PORT}  ${TMP_SSH_REDIR_DEST_USER}@${TMP_SSH_REDIR_DEST_ADDRESS}"
+    local TMP_SSH_TRANS_TUNNEL_HOST1="" 
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST1" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER} address${reset} you want to listen?"
     
-    ${TMP_SSH_REDIR_SCRIPTS}
+    local TMP_SSH_TRANS_TUNNEL_PORT1="80"
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_PORT1" "SSH-Transfer：Please ender ${green}the port${reset} u want to listener on ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER}?"
+        
+    local TMP_SSH_TRANS_TUNNEL_HOST2="localhost" 
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address${reset} you want to listen?"
+    
+    local TMP_SSH_TRANS_TUNNEL_PORT2="${TMP_SSH_TRANS_LOCAL_PORT}"
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_PORT2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address port${reset} you want to listen?"
 
-    if [ "${TMP_SSH_REDIR_TUNNEL_MODE}" == "L" ]; then
-        echo_soft_port ${TMP_SSH_REDIR_TUNNEL_PORT} 
+    function _nopwd_login()
+    {
+        nopwd_login "${TMP_SSH_TRANS_DEST_HOST}" "${TMP_SSH_TRANS_DEST_USER}"
+    }
+
+    exec_yn_action "_nopwd_login" "SSH-Transfer: Please sure if u want to nopass login in '${TMP_SSH_TRANS_DEST_USER}@${TMP_SSH_TRANS_DEST_HOST}'"
+
+    # -f 后台执行ssh指令
+    # -C 允许压缩数据
+    # -N 不执行远程指令
+    # -R 将远程主机(服务器)的某个端口转发到本地端指定机器的指定端口
+    # -L 将本地机(客户机)的某个端口转发到远端指定机器的指定端口
+    # -p 指定远程主机的端口
+    local TMP_SSH_TRANS_SCRIPTS="-CN${TMP_SSH_TRANS_TUNNEL_MODE} ${TMP_SSH_TRANS_TUNNEL_HOST1}:${TMP_SSH_TRANS_TUNNEL_PORT1}:${TMP_SSH_TRANS_TUNNEL_HOST2}:${TMP_SSH_TRANS_TUNNEL_PORT2}  ${TMP_SSH_TRANS_DEST_USER}@${TMP_SSH_TRANS_DEST_HOST}"
+    
+    ssh -f ${TMP_SSH_TRANS_SCRIPTS}
+
+    # 本地模式需要放开端口
+    if [ "${TMP_SSH_TRANS_TUNNEL_MODE}" == "L" ]; then
+        echo_soft_port ${TMP_SSH_TRANS_TUNNEL_PORT1} 
     fi
 
+    local TMP_SSH_TRANS_SUP_NAME="ssh_transfer_${TMP_SSH_TRANS_TUNNEL_MODE}_${TMP_SSH_TRANS_DEST_USER}_${TMP_SSH_TRANS_DEST_HOST}_${TMP_SSH_TRANS_TUNNEL_HOST1}_${TMP_SSH_TRANS_TUNNEL_PORT1}_${TMP_SSH_TRANS_TUNNEL_HOST2}_${TMP_SSH_TRANS_TUNNEL_PORT2}"
+    local TMP_SSH_TRANS_SHELL_FILE="${SUPERVISOR_HOME}/scripts/${TMP_SSH_TRANS_SUP_NAME}.sh"
+    path_not_exists_action "${TMP_SSH_TRANS_SHELL_FILE}" "echo '#!/bin/bash' > ${TMP_SSH_TRANS_SHELL_FILE}"
+
+    echo "" >> ${TMP_SSH_TRANS_SHELL_FILE}
+    echo "ssh ${TMP_SSH_TRANS_SCRIPTS}" >> ${TMP_SSH_TRANS_SHELL_FILE}
+    echo "" >> ${TMP_SSH_TRANS_SHELL_FILE}
+
+    local TMP_SSH_TRANS_ETC_FILE="${SUPERVISOR_HOME}/etc/${TMP_SSH_TRANS_SUP_NAME}.conf"
+    path_not_exists_action "${TMP_SSH_TRANS_ETC_FILE}" "echo_startup_config \"${TMP_SSH_TRANS_SUP_NAME}\" \"${SUPERVISOR_HOME}/scripts\" \"bash ${TMP_SSH_TRANS_SUP_NAME}.sh\""
+
     echo
-    echo "SSH-Redirect：Done -> (${TMP_SSH_REDIR_SCRIPTS})"
+    echo "SSH-Transfer：Done -> (${TMP_SSH_TRANS_SCRIPTS})"
     echo
 
 	return $?

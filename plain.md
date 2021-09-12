@@ -6,8 +6,10 @@
 *6：重整kafka
 x7：elk自动引用java环境变量
 == 修改为 set_if_equals
-nfs 
-rpcbind
+*nfs 
+*rpcbind
+
+默认检测系统配置文件22端口开放，如开放则修改为10022   /etc/ssh/sshd_config
 
 VC-100：{
     OPTS：80+

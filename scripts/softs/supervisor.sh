@@ -49,9 +49,9 @@ function setup_supervisor()
 	ln -sf ${TMP_SUP_SETUP_LNK_DATA_DIR} ${TMP_SUP_SETUP_DATA_DIR}
 
 	# 环境变量或软连接
-	# echo "SUPERVISOR_HOME=${TMP_SUP_SETUP_DIR}" >> /etc/profile
-	# echo 'PATH=$SUPERVISOR_HOME/bin:$PATH' >> /etc/profile
-	# echo 'export PATH SUPERVISOR_HOME' >> /etc/profile
+	echo "SUPERVISOR_HOME=${TMP_SUP_SETUP_DIR}" >> /etc/profile
+	echo 'PATH=$SUPERVISOR_HOME/bin:$PATH' >> /etc/profile
+	echo 'export PATH SUPERVISOR_HOME' >> /etc/profile
 
 	# 移动bin
 	mkdir bin

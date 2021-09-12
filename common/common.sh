@@ -30,6 +30,22 @@ function bind_sysdomain () {
 	return $?
 }
 
+# 免密登录远程主机
+# 参数1：需要免密登录的机器
+# 参数2：需要免密登录的用户
+function nopwd_login () {
+    local TMP_NOPWD_LOGIN_REMOTE_HOST=${1}
+    local TMP_NOPWD_LOGIN_REMOTE_USER=${2:-"root"}
+
+	if [ -n "${TMP_NOPWD_LOGIN_REMOTE_HOST}" ];
+		ssh-keygen -t rsa
+
+		ssh-copy-id ${TMP_NOPWD_LOGIN_REMOTE_USER}@${TMP_NOPWD_LOGIN_REMOTE_HOST}
+	fi
+
+	return $?
+}
+
 #创建用户及组，如果不存在
 #参数1：组
 #参数2：用户
