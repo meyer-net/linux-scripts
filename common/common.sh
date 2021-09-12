@@ -38,9 +38,9 @@ function nopwd_login () {
     local TMP_NOPWD_LOGIN_REMOTE_USER=${2:-"root"}
 
 	if [ -n "${TMP_NOPWD_LOGIN_REMOTE_HOST}" ]; then
-		local TMP_NOPWD_LOGIN_ID_RSA_PATH="~/.ssh/id_rsa.pub"
+		local TMP_NOPWD_LOGIN_ID_RSA_PATH="~/.ssh/id_rsa"
 		convert_path "TMP_NOPWD_LOGIN_ID_RSA_PATH"
-		path_not_exists_action "TMP_NOPWD_LOGIN_ID_RSA_PATH" "ssh-keygen -t rsa"
+		path_not_exists_action "${TMP_NOPWD_LOGIN_ID_RSA_PATH}" "ssh-keygen -t rsa"
 		
 		ssh-copy-id ${TMP_NOPWD_LOGIN_REMOTE_USER}@${TMP_NOPWD_LOGIN_REMOTE_HOST}
 	fi
@@ -184,10 +184,6 @@ function rand_str() {
 #转换路径
 #参数1：原始路径
 function convert_path () {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	local TMP_SOURCE_PATH=`eval echo '$'$1`
 	local TMP_CONVERT_PATH=`echo "$TMP_SOURCE_PATH" | sed "s@^~@/root@g"`
 	eval ${1}=`echo '$TMP_CONVERT_PATH'`
