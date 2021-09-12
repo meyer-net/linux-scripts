@@ -37,7 +37,7 @@ function nopwd_login () {
     local TMP_NOPWD_LOGIN_REMOTE_HOST=${1}
     local TMP_NOPWD_LOGIN_REMOTE_USER=${2:-"root"}
 
-	if [ -n "${TMP_NOPWD_LOGIN_REMOTE_HOST}" ];
+	if [ -n "${TMP_NOPWD_LOGIN_REMOTE_HOST}" ]; then
 		ssh-keygen -t rsa
 
 		ssh-copy-id ${TMP_NOPWD_LOGIN_REMOTE_USER}@${TMP_NOPWD_LOGIN_REMOTE_HOST}
