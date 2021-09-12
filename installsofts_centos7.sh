@@ -347,22 +347,22 @@ function ssh_transfer()
 	esac
         
     local TMP_SSH_TRANS_DEST_HOST="xyz.ipssh.net"
-    input_if_empty "TMP_SSH_TRANS_DEST_HOST" "SSH-Transfer：Please ender ${green}which dest address${reset} you want to login on remote?"
+    input_if_empty "TMP_SSH_TRANS_DEST_HOST" "SSH-Transfer：Please ender ${green}which dest address${reset} you want to login on remote"
     
     local TMP_SSH_TRANS_DEST_USER="root"
-    input_if_empty "TMP_SSH_TRANS_DEST_USER" "SSH-Transfer：Please ender ${green}which user of dest(${TMP_SSH_TRANS_DEST_HOST})${reset} on remote by ssh to login?"
+    input_if_empty "TMP_SSH_TRANS_DEST_USER" "SSH-Transfer：Please ender ${green}which user of dest(${TMP_SSH_TRANS_DEST_HOST})${reset} on remote by ssh to login"
 
-    local TMP_SSH_TRANS_TUNNEL_HOST1="" 
-    input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST1" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER} address${reset} you want to listen?"
+    local TMP_SSH_TRANS_TUNNEL_HOST1="localhosst" 
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST1" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER} address${reset} you want to listen"
     
     local TMP_SSH_TRANS_TUNNEL_PORT1="80"
-    input_if_empty "TMP_SSH_TRANS_TUNNEL_PORT1" "SSH-Transfer：Please ender ${green}the port${reset} u want to listener on ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER}?"
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_PORT1" "SSH-Transfer：Please ender ${green}the port${reset} u want to listener on ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_LOWER}"
         
     local TMP_SSH_TRANS_TUNNEL_HOST2="localhost" 
-    input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address${reset} you want to listen?"
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_HOST2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address${reset} you want to listen"
     
     local TMP_SSH_TRANS_TUNNEL_PORT2="${TMP_SSH_TRANS_LOCAL_PORT}"
-    input_if_empty "TMP_SSH_TRANS_TUNNEL_PORT2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address port${reset} you want to listen?"
+    input_if_empty "TMP_SSH_TRANS_TUNNEL_PORT2" "SSH-Transfer：Please ender ${green}which ${TMP_SSH_TRANS_TUNNEL_MODE_NAME_OPPOSITE_LOWER} address port${reset} you want to listen"
 
     function _nopwd_login()
     {
@@ -386,16 +386,13 @@ function ssh_transfer()
         echo_soft_port ${TMP_SSH_TRANS_TUNNEL_PORT1} 
     fi
 
+    if [ "${TMP_SSH_TRANS_TUNNEL_HOST1}" == "*" ]; then
+        TMP_SSH_TRANS_TUNNEL_HOST1="ALL"
+    fi
+
     local TMP_SSH_TRANS_SUP_NAME="ssh_transfer_${TMP_SSH_TRANS_TUNNEL_MODE}_${TMP_SSH_TRANS_DEST_USER}_${TMP_SSH_TRANS_DEST_HOST}_${TMP_SSH_TRANS_TUNNEL_HOST1}_${TMP_SSH_TRANS_TUNNEL_PORT1}_${TMP_SSH_TRANS_TUNNEL_HOST2}_${TMP_SSH_TRANS_TUNNEL_PORT2}"
-    local TMP_SSH_TRANS_SHELL_FILE="${SUPERVISOR_HOME}/scripts/${TMP_SSH_TRANS_SUP_NAME}.sh"
-    path_not_exists_action "${TMP_SSH_TRANS_SHELL_FILE}" "echo '#!/bin/bash' > ${TMP_SSH_TRANS_SHELL_FILE}"
-
-    echo "" >> ${TMP_SSH_TRANS_SHELL_FILE}
-    echo "ssh ${TMP_SSH_TRANS_SCRIPTS}" >> ${TMP_SSH_TRANS_SHELL_FILE}
-    echo "" >> ${TMP_SSH_TRANS_SHELL_FILE}
-
     local TMP_SSH_TRANS_ETC_FILE="${SUPERVISOR_HOME}/etc/${TMP_SSH_TRANS_SUP_NAME}.conf"
-    path_not_exists_action "${TMP_SSH_TRANS_ETC_FILE}" "echo_startup_config \"${TMP_SSH_TRANS_SUP_NAME}\" \"${SUPERVISOR_HOME}/scripts\" \"bash ${TMP_SSH_TRANS_SUP_NAME}.sh\""
+    path_not_exists_action "${TMP_SSH_TRANS_ETC_FILE}" "echo_startup_config '${TMP_SSH_TRANS_SUP_NAME}' '${SUPERVISOR_HOME}/scripts' 'ssh ${TMP_SSH_TRANS_SCRIPTS}'"
 
     echo
     echo "SSH-Transfer：Done -> (${TMP_SSH_TRANS_SCRIPTS})"
