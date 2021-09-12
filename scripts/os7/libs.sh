@@ -125,7 +125,9 @@ function setup_libs()
 	free -m
 
 	#IPTABLES 失效
-	/usr/sbin/iptables-restore /etc/sysconfig/iptables
+	if [ -f "/etc/sysconfig/iptables" ]; then
+		/usr/sbin/iptables-restore /etc/sysconfig/iptables
+	fi
 	
 	echo "don't remove" >> ${SETUP_DIR}/.lib_installed
 

@@ -30,6 +30,27 @@ function bind_sysdomain () {
 	return $?
 }
 
+# 交换软连接(不是软连接的情况下执行)
+# 参数1：检测的路径
+# 参数2：真实的路径 
+# 参数3：交换前的动作
+function exchange_softlink()
+{
+	local TMP_EXCHANGE_SOFT_LINK_CHECK_PATH=${1}
+	local TMP_EXCHANGE_SOFT_LINK_TRUE_PATH=${2}
+	local TMP_EXCHANGE_SOFT_LINK_ACTION_BEFORE=${3:-}
+
+    local TMP_EXCHANGE_SOFT_LINK_CHECK_IS_LINK=`ls -il ${TMP_EXCHANGE_SOFT_LINK_CHECK_PATH} | grep "\->"`
+    if [ -z "${TMP_EXCHANGE_SOFT_LINK_CHECK_IS_LINK}" ]; then
+        ${TMP_EXCHANGE_SOFT_LINK_ACTION_BEFORE}
+
+        ln -sf ${TMP_EXCHANGE_SOFT_LINK_TRUE_PATH} ${TMP_EXCHANGE_SOFT_LINK_CHECK_PATH}
+		echo "Link Changed：${TMP_EXCHANGE_SOFT_LINK_CHECK_PATH} -> ${TMP_EXCHANGE_SOFT_LINK_TRUE_PATH}"
+    fi
+
+	return $?
+}
+
 # 免密登录远程主机
 # 参数1：需要免密登录的机器
 # 参数2：需要免密登录的用户
