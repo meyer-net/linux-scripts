@@ -395,7 +395,7 @@ function ssh_transfer()
 
     function _echo_startup_config()
     {
-        echo_startup_config "${TMP_SSH_TRANS_SUP_NAME}" "${SUPERVISOR_HOME}/scripts" "ssh ${TMP_SSH_TRANS_SCRIPTS}"
+        echo_startup_config "${TMP_SSH_TRANS_SUP_NAME}" "${SUPERVISOR_HOME}/scripts" "ssh ${TMP_SSH_TRANS_SCRIPTS}" "" 1
     }
 
     path_not_exists_action "${TMP_SSH_TRANS_ETC_FILE}" "_echo_startup_config"
