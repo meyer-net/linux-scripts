@@ -261,8 +261,7 @@ function reconf_supervisor()
 	cd ${TMP_SUP_SETUP_DIR}
 
     # ???? Supervisor默认链接好像会中断，在此修复
-    exchange_softlink `pwd/etc/supervisor.conf` "/etc/supervisor.conf" "rm -rf /etc/supervisor.conf"
-
+    exchange_softlink "`pwd`/etc/supervisor.conf" "/etc/supervisor.conf" "rm -rf /etc/supervisor.conf"
 
 	return $?
 }
