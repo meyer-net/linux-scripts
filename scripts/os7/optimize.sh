@@ -4,6 +4,7 @@
 #      copyright https://devops.oshit.com/
 #      author: meyer.cheng
 #------------------------------------------------
+local TMP_SSH_NEW_PORT=10022
 
 function check_sets()
 {
@@ -132,19 +133,19 @@ vm.max_map_count = 262144
 EOF
 
 	#echo "ulimit -SHn 65536" >> /etc/rc.local
-	echo "ulimit -SHn 65536" >> /etc/profile
+	echo_if_content_not_exists "ulimit -SHn 65536" "/etc/profile"
 
 	#单个用户可用的最大进程数量(软限制)
-	echo "* soft nofile 65536" >> /etc/security/limits.conf
+	echo_if_content_not_exists "^\* soft nofile 65536" "/etc/security/limits.conf" '* soft nofile 65536'
 
 	#单个用户可用的最大进程数量(硬限制)
-	echo "* hard nofile 65536" >> /etc/security/limits.conf
+	echo_if_content_not_exists "^\* hard nofile 65536" "/etc/security/limits.conf" '* hard nofile 65536'
 
 	#单个用户可打开的最大文件描述符数量(软限制)
-	echo "* soft nproc 65536" >> /etc/security/limits.conf
+	echo_if_content_not_exists "^\* soft nproc 65536" "/etc/security/limits.conf" '* soft nproc 65536'
 
 	#单个用户可打开的最大文件描述符数量(硬限制)
-	echo "* hard nproc 65536" >> /etc/security/limits.conf
+	echo_if_content_not_exists "^\* hard nproc 65536" "/etc/security/limits.conf" '* hard nproc 65536'
    
     # 修改字符集,否则可能报 input/output error的问题,因为日志里打印了中文
     localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8
@@ -162,6 +163,42 @@ EOF
 		input_if_empty "SYS_DOMAIN" "SYS: Please ender ${green}system domain${reset} like '${red}myvnc.com${reset}' or else"
 	fi
 	
+	# 默认端口检测
+	local TMP_DFT_SSH_PORT=`semanage port -l | grep ssh | awk '{print $NF}'`
+	if [ "${TMP_DFT_SSH_PORT}" == "22" ]; then
+		echo ${TMP_SPLITER}
+		echo 
+		echo 
+		echo "*** For ${red}security${reset}, the ${green}default ssh connect port${reset} changed to ${red}${TMP_SSH_NEW_PORT}${reset}, Please remember it."
+		echo 
+		echo 
+		echo ${TMP_SPLITER}
+
+		sed -i "s@^[#]*Port.*@Port ${TMP_SSH_NEW_PORT}@g" /etc/ssh/sshd_config
+		sed -i "s@^[#]*PermitRootLogin.*@PermitRootLogin yes@g" /etc/ssh/sshd_config
+		sed -i "s@^[#]*UseDNS.*@UseDNS no@g" /etc/ssh/sshd_config
+
+		function _change_root_passwd()
+		{
+			sed -i "/^#PasswordAuthentication.*/d" /etc/ssh/sshd_config
+			sed -i "s@^PasswordAuthentication.*@PasswordAuthentication yes@g" /etc/ssh/sshd_config
+
+			passwd root
+		}
+
+		local TMP_IS_PASSWORD_SETED=`egrep "^PasswordAuthentication" /etc/ssh/sshd_config | awk '{print $NF}'`
+		if [ "${TMP_IS_PASSWORD_SETED}" != "yes" ]; then
+		
+			exec_yn_action "_change_root_passwd" "Sys-Optimize: Sys find there's ${red}no root password set${reset}, please sure if u want to change"
+
+
+		fi
+
+		semanage port -a -t ssh_port_t -p tcp ${TMP_SSH_NEW_PORT}
+
+		systemctl restart sshd.service
+	fi
+
     return $?
 }
 

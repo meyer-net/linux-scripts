@@ -97,6 +97,7 @@ function setup_libs()
 	soft_yum_check_setup "lrzsz"
 	soft_yum_check_setup "nfs-utils"
 	soft_yum_check_setup "rpcbind"
+	soft_yum_check_setup "policycoreutils-python"
 
 	chkconfig nfs on
 	systemctl start nfs.service

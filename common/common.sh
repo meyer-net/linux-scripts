@@ -69,9 +69,41 @@ function nopwd_login () {
 	return $?
 }
 
-#创建用户及组，如果不存在
-#参数1：组
-#参数2：用户
+# 执行脚本,如果内容不存在
+# 参数1：内容正则
+# 参数2：内容路径
+# 参数3：执行脚本
+function action_if_content_not_exists() 
+{
+	local TMP_ECHO_IF_NOT_EXISTS_REGEX=${1}
+	local TMP_ECHO_IF_NOT_EXISTS_PATH=${2}
+	local TMP_ECHO_IF_NOT_EXISTS_ACTION=${3}
+
+	#create group if not exists
+	egrep "${TMP_ECHO_IF_NOT_EXISTS_REGEX}" ${TMP_ECHO_IF_NOT_EXISTS_PATH} >& /dev/null
+	if [ $? -ne 0 ]; then
+		if [ -n "${TMP_ECHO_IF_NOT_EXISTS_ACTION}" ]; then
+			${TMP_ECHO_IF_NOT_EXISTS_ACTION}
+		fi
+	fi
+
+	return $?
+}
+
+# 输出信息,如果内容不存在
+# 参数1：内容正则
+# 参数2：内容路径
+# 参数3：输出内容
+function echo_if_content_not_exists() 
+{
+	action_if_content_not_exists "${1}" "${2}" "echo '${3:-${1}}' >> ${2}"
+
+	return $?
+}
+
+# 创建用户及组，如果不存在
+# 参数1：组
+# 参数2：用户
 function create_user_if_not_exists() 
 {
 	local TMP_CURRENT_TO_CREATE_GROUP=${1}

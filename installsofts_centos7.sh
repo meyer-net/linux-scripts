@@ -85,10 +85,9 @@ function update_libs()
     #---------- CHANGE ---------- {
     sudo hostnamectl set-hostname ${SYS_NEW_NAME}
     #---------- CHANGE ---------- }
-
-    source scripts/os${OS_VERS}/optimize.sh
     source scripts/os${OS_VERS}/epel.sh
     source scripts/os${OS_VERS}/libs.sh
+    source scripts/os${OS_VERS}/optimize.sh
     
     source scripts/softs/supervisor.sh
 
@@ -411,6 +410,9 @@ function ssh_transfer()
 
 # 初始基本参数启动目录
 function bootstrap() {
+    # 开启ROOT权限作业
+    # sudo -i
+
     cd ${__DIR}
 
     # 全部给予执行权限
