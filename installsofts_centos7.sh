@@ -348,6 +348,9 @@ function ssh_transfer()
     local TMP_SSH_TRANS_DEST_HOST="xyz.ipssh.net"
     input_if_empty "TMP_SSH_TRANS_DEST_HOST" "SSH-Transfer：Please ender ${green}which dest address${reset} you want to login on remote"
     
+    local TMP_SSH_TRANS_DEST_HOST_PORT="22"
+    input_if_empty "TMP_SSH_TRANS_DEST_HOST_PORT" "SSH-Transfer：Please ender ${green}which port of dest(${TMP_SSH_TRANS_DEST_HOST})${reset} you want to login on remote"
+
     local TMP_SSH_TRANS_DEST_USER="root"
     input_if_empty "TMP_SSH_TRANS_DEST_USER" "SSH-Transfer：Please ender ${green}which user of dest(${TMP_SSH_TRANS_DEST_HOST})${reset} on remote by ssh to login"
 
@@ -365,7 +368,7 @@ function ssh_transfer()
 
     function _nopwd_login()
     {
-        nopwd_login "${TMP_SSH_TRANS_DEST_HOST}" "${TMP_SSH_TRANS_DEST_USER}"
+        nopwd_login "${TMP_SSH_TRANS_DEST_HOST}" "${TMP_SSH_TRANS_DEST_USER}" ${TMP_SSH_TRANS_DEST_HOST_PORT}
     }
 
     exec_yn_action "_nopwd_login" "SSH-Transfer: Please sure if u want to nopass login in '${TMP_SSH_TRANS_DEST_USER}@${TMP_SSH_TRANS_DEST_HOST}'"
@@ -376,7 +379,7 @@ function ssh_transfer()
     # -R 将远程主机(服务器)的某个端口转发到本地端指定机器的指定端口
     # -L 将本地机(客户机)的某个端口转发到远端指定机器的指定端口
     # -p 指定远程主机的端口
-    local TMP_SSH_TRANS_SCRIPTS="-CN${TMP_SSH_TRANS_TUNNEL_MODE} ${TMP_SSH_TRANS_TUNNEL_HOST1}:${TMP_SSH_TRANS_TUNNEL_PORT1}:${TMP_SSH_TRANS_TUNNEL_HOST2}:${TMP_SSH_TRANS_TUNNEL_PORT2} ${TMP_SSH_TRANS_DEST_USER}@${TMP_SSH_TRANS_DEST_HOST}"
+    local TMP_SSH_TRANS_SCRIPTS="-CN${TMP_SSH_TRANS_TUNNEL_MODE} ${TMP_SSH_TRANS_TUNNEL_HOST1}:${TMP_SSH_TRANS_TUNNEL_PORT1}:${TMP_SSH_TRANS_TUNNEL_HOST2}:${TMP_SSH_TRANS_TUNNEL_PORT2} ${TMP_SSH_TRANS_DEST_USER}@${TMP_SSH_TRANS_DEST_HOST} -p ${TMP_SSH_TRANS_DEST_HOST_PORT}"
     
     ssh -f ${TMP_SSH_TRANS_SCRIPTS}
 

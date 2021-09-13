@@ -67,13 +67,16 @@ function exchange_softlink()
 function nopwd_login () {
     local TMP_NOPWD_LOGIN_REMOTE_HOST=${1}
     local TMP_NOPWD_LOGIN_REMOTE_USER=${2:-"root"}
+    local TMP_NOPWD_LOGIN_REMOTE_HOST_PORT=${1:-22}
 
 	if [ -n "${TMP_NOPWD_LOGIN_REMOTE_HOST}" ]; then
 		local TMP_NOPWD_LOGIN_ID_RSA_PATH="~/.ssh/id_rsa"
+
 		convert_path "TMP_NOPWD_LOGIN_ID_RSA_PATH"
+
 		path_not_exists_action "${TMP_NOPWD_LOGIN_ID_RSA_PATH}" "ssh-keygen -t rsa"
 		
-		ssh-copy-id ${TMP_NOPWD_LOGIN_REMOTE_USER}@${TMP_NOPWD_LOGIN_REMOTE_HOST}
+		ssh-copy-id ${TMP_NOPWD_LOGIN_REMOTE_USER}@${TMP_NOPWD_LOGIN_REMOTE_HOST} -p ${TMP_NOPWD_LOGIN_REMOTE_HOST_PORT}
 	fi
 
 	return $?
