@@ -181,10 +181,15 @@ function get_ipv6 () {
 #参数1：需要设置的变量名
 function get_country_code () {
 	local TMP_LOCAL_IPV4=`curl -s ip.sb`
-	local TMP_COUNTRY_JSON=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4}`
+	# local TMP_COUNTRY_JSON=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4}`
+	local TMP_COUNTRY_CODE=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4} | jq ".country_code" | sed "s@\"@@g"`
+
+	# if [ -n "${TMP_COUNTRY_JSON}" ]; then
+	# 	eval ${1}=`echo "${TMP_COUNTRY_JSON}" | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
+	# fi
 
 	if [ -n "${TMP_COUNTRY_JSON}" ]; then
-		eval ${1}=`echo "${TMP_COUNTRY_JSON}" | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
+		eval ${1}=`echo ${TMP_COUNTRY_CODE}`
 	fi
 
 	return $?

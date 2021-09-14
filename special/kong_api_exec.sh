@@ -35,6 +35,31 @@ set -o nounset
 #     fi
 # }
 
+# 添加acme识别路由
+# 参数1: 域名
+# 参数2: 域名
+# https://docs.konghq.com/hub/kong-inc/acme/
+function patch_increase_acme_domain()
+{
+    local tmp_acme_domain="${1:-}"
+
+    if [ -n "${TMP_DIY_KONG_ACME_PLUGIN_ID}" ] then
+        local tmp_plugin_acme_domains_current=`curl -s http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/plugins/${TMP_DIY_KONG_ACME_PLUGIN_ID}/ | jq ".config.domains"`
+
+        # 不包含该域名的情况下
+        if [ -z `echo ${tmp_plugin_acme_domains_current} | grep -o "${tmp_acme_domain}"` ]; then
+            local tmp_plugin_acme_domains_current_form=`echo ${tmp_plugin_acme_domains_current} | sed '/^\[\|\]/d' | sed "s@^[[:space:]]*\"@-d \"config.domains[]=@g" | sed "s@,@@g"`
+
+            local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/plugins/${TMP_DIY_KONG_ACME_PLUGIN_ID}/ ${tmp_plugin_acme_domains_current_form}  \
+                    -d "config.domains[]=${tmp_acme_domain}"`
+
+            echo "KongApi.PatchIncreaseAcmeDomain: Remote response '${request_code}'."
+
+            curl http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/acme -XPATCH
+        fi
+    fi
+}
+
 #添加Kong-Upstream-Service-Route
 #参数1：ServiceName
 #post_routes "$tmp_service_name" "$tmp_router_hosts"
@@ -53,6 +78,8 @@ function post_routes()
             echo "KongApi.PostRoutes: S@$tmp_service_name R@$tmp_route_name H@$router_host"
             local post_param="-d \"hosts[]=${router_host}\"  \\"
             tmp_router_hosts="${tmp_router_hosts}"`echo -e "\n${post_param}"`
+
+            patch_increase_acme_domain "${router_host}"
         done
 
         local request_code=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/services/${tmp_service_name}/routes/  \
@@ -161,6 +188,10 @@ function exec_program()
     # 移除第一位选择器
     shift
 
+    # 适配kong服务器
+    TMP_DIY_KONG_ADMIN_LISTEN_HOST=${1:-"${TMP_DIY_KONG_ADMIN_LISTEN_HOST}"}
+    shift
+
     # 调用执行类型
     post_$tmp_api_type "${@}"
 }
@@ -175,12 +206,12 @@ function init_params() {
     fi
 
     # for must input params
-    if [ -z "${1:-}" -o -z "${2:-}" -o -z "${3:-}"]; then
+    if [ -z "${1:-}" -o -z "${3:-}" -o -z "${4:-}"]; then
         echo 'error: Missed required arguments.' > /dev/stderr
         echo 'note: Please follow this example:' > /dev/stderr
-        echo '  $ kong_api "api-type {upstream}(*)" "upstream name(*)" "target host&port(*)". ' > /dev/stderr
-        echo '  $ kong_api "api-type {upstream}(*)" "upstream name(*)" "target host&port(*)" "service name(*?)" "router url". ' > /dev/stderr
-        echo '  $ kong_api "api-type {service}(*)" "service name(*)" "target upstream name or host&port(*)" "router url". ' > /dev/stderr
+        echo '  $ kong_api "api-type {upstream}(*)" "kong host&port" "upstream name(*)" "target host&port(*)". ' > /dev/stderr
+        echo '  $ kong_api "api-type {upstream}(*)" "kong host&port" "upstream name(*)" "target host&port(*)" "service name(*?)" "router url". ' > /dev/stderr
+        echo '  $ kong_api "api-type {service}(*)" "kong host&port" "service name(*)" "target upstream name or host&port(*)" "router url". ' > /dev/stderr
         exit 3
     fi
 
@@ -203,6 +234,7 @@ function bootstrap() {
 
     # 兼容变更情况
     local TMP_DIY_KONG_ADMIN_LISTEN_HOST=${TMP_KONG_ADMIN_LISTEN_HOST:-"${KONG_ADMIN_LISTEN_HOST}"}
+    local TMP_DIY_KONG_ACME_PLUGIN_ID=`curl -s http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/plugins/ | jq '.data[] | select(.name == "acme").id'`
 
     init_params "${@}"
     exec_program "${@}"

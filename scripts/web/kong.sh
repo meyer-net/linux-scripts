@@ -252,8 +252,6 @@ EOF
     fi
 
     kong migrations bootstrap
-        
-    exec_yn_action "conf_kong_auto_https" "Kong.AutoHttps: Please sure if u want to ${green}configuare auto https here${reset}?"
 
     # -- 添加kong-api的配置信息
     # 1：设置统一工作组ID
@@ -288,16 +286,152 @@ EOF
 	return $?
 }
 
-function conf_kong_auto_https()
+function reconf_kong()
+{
+    set_if_choice "TMP_KNG_SETUP_CHOICE_AUTO_HTTPS" "Please choice which ${green}auto-https mode${reset} you want to use" "ACME_Plugin,Caddy_Webhook" "${TMP_SPLITER}" "conf_kong_https_by_"
+
+	return $?
+}
+
+function conf_kong_https_by_acme_plugin()
+{
+	cd ${TMP_KNG_SETUP_DIR}
+
+    # 修改配置文件
+    sed -i "s@^[#]*lua_ssl_trusted_certificate =   @lua_ssl_trusted_certificate = /etc/ssl/certs/ca-bundle.crt   @g" /etc/kong/kong.conf
+
+    # 重启配置生效
+    kong reload
+
+    # add a dummy service if needed
+    curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/services  \
+        -d "name=SERVICE.ACME_DUMMY"  \
+        -d "url=localhost:65535"
+
+    # add a dummy route if needed
+    curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/routes  \
+        -d "name=ROUTE.SERVICE.ACME_DUMMY"  \
+        -d "service.name=SERVICE.ACME_DUMMY"  \
+        -d "paths[]=/.well-known"  \
+        -d "headers.User-Agent=acme.zerossl.com%2Fv2%2FDV90"  \
+        -d "headers.User-Agent=Mozilla%2F5.0 (compatible; Let''s Encrypt validation server; %2Bhttps:%2F%2Fwww.letsencrypt.org)"  \
+        -d "methods[]=GET"  \
+        -d "strip_path=false"  \
+        -d "preserve_host=true"  \
+        -d "protocols[]=http" 
+
+    # 添加插件支持, 在需要加入解析的域名上添加 config.domains
+    curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/plugins/ \
+        -d "name=acme"  \
+        -d "config.account_email=devops@oshit.com"  \
+        -d "config.fail_backoff_minutes=1"  \
+        -d "config.renew_threshold_days=7"  \
+        -d "config.storage=kong"  \
+        -d "config.tos_accepted=true"  \
+        -d "config.domains[]=*.ddns.net"  \
+        -d "config.domains[]=*.ddnsking.com"  \
+        -d "config.domains[]=*.3utilities.com"  \
+        -d "config.domains[]=*.bounceme.net"  \
+        -d "config.domains[]=*.freedynamicdns.net"  \
+        -d "config.domains[]=*.freedynamicdns.org"  \
+        -d "config.domains[]=*.gotdns.ch"  \
+        -d "config.domains[]=*.hopto.org"  \
+        -d "config.domains[]=*.myddns.me"  \
+        -d "config.domains[]=*.myftp.biz"  \
+        -d "config.domains[]=*.myftp.org"  \
+        -d "config.domains[]=*.myvnc.com"  \
+        -d "config.domains[]=*.onthewifi.com"  \
+        -d "config.domains[]=*.redirectme.net"  \
+        -d "config.domains[]=*.servebeer.com"  \
+        -d "config.domains[]=*.serveblog.net"  \
+        -d "config.domains[]=*.servecounterstrike.com"  \
+        -d "config.domains[]=*.serveftp.com"  \
+        -d "config.domains[]=*.servegame.com"  \
+        -d "config.domains[]=*.servehalflife.com"  \
+        -d "config.domains[]=*.servehttp.com"  \
+        -d "config.domains[]=*.serveirc.com"  \
+        -d "config.domains[]=*.serveminecraft.net"  \
+        -d "config.domains[]=*.servemp3.com"  \
+        -d "config.domains[]=*.servepics.com"  \
+        -d "config.domains[]=*.servequake.com"  \
+        -d "config.domains[]=*.sytes.net"  \
+        -d "config.domains[]=*.viewdns.net"  \
+        -d "config.domains[]=*.webhop.me"  \
+        -d "config.domains[]=*.zapto.org"  \
+        -d "config.domains[]=*.access.ly"  \
+        -d "config.domains[]=*.blogsyte.com"  \
+        -d "config.domains[]=*.brasilia.me"  \
+        -d "config.domains[]=*.cable-modem.org"  \
+        -d "config.domains[]=*.ciscofreak.com"  \
+        -d "config.domains[]=*.collegefan.org"  \
+        -d "config.domains[]=*.couchpotatofries.org"  \
+        -d "config.domains[]=*.damnserver.com"  \
+        -d "config.domains[]=*.ddns.me"  \
+        -d "config.domains[]=*.ditchyourip.com"  \
+        -d "config.domains[]=*.dnsfor.me"  \
+        -d "config.domains[]=*.dnsiskinky.com"  \
+        -d "config.domains[]=*.dvrcam.info"  \
+        -d "config.domains[]=*.dynns.com"  \
+        -d "config.domains[]=*.eating-organic.net"  \
+        -d "config.domains[]=*.fantasyleague.cc"  \
+        -d "config.domains[]=*.geekgalaxy.com"  \
+        -d "config.domains[]=*.golffan.us"  \
+        -d "config.domains[]=*.health-carereform.com"  \
+        -d "config.domains[]=*.homesecuritymac.com"  \
+        -d "config.domains[]=*.homesecuritypc.com"  \
+        -d "config.domains[]=*.hosthampster.com"  \
+        -d "config.domains[]=*.hopto.me"  \
+        -d "config.domains[]=*.ilovecollege.info"  \
+        -d "config.domains[]=*.loginto.me"  \
+        -d "config.domains[]=*.mlbfan.org"  \
+        -d "config.domains[]=*.mmafan.biz"  \
+        -d "config.domains[]=*.myactivedirectory.com"  \
+        -d "config.domains[]=*.mydissent.net"  \
+        -d "config.domains[]=*.myeffect.net"  \
+        -d "config.domains[]=*.mymediapc.net"  \
+        -d "config.domains[]=*.mypsx.net"  \
+        -d "config.domains[]=*.mysecuritycamera.com"  \
+        -d "config.domains[]=*.mysecuritycamera.net"  \
+        -d "config.domains[]=*.mysecuritycamera.org"  \
+        -d "config.domains[]=*.net-freaks.com"  \
+        -d "config.domains[]=*.nflfan.org"  \
+        -d "config.domains[]=*.nhlfan.net"  \
+        -d "config.domains[]=*.pgafan.net"  \
+        -d "config.domains[]=*.point2this.com"  \
+        -d "config.domains[]=*.pointto.us"  \
+        -d "config.domains[]=*.privatizehealthinsurance.net"  \
+        -d "config.domains[]=*.quicksytes.com"  \
+        -d "config.domains[]=*.read-books.org"  \
+        -d "config.domains[]=*.securitytactics.com"  \
+        -d "config.domains[]=*.serveexchange.com"  \
+        -d "config.domains[]=*.servehumour.com"  \
+        -d "config.domains[]=*.servep2p.com"  \
+        -d "config.domains[]=*.servesarcasm.com"  \
+        -d "config.domains[]=*.stufftoread.com"  \
+        -d "config.domains[]=*.ufcfan.org"  \
+        -d "config.domains[]=*.unusualperson.com"  \
+        -d "config.domains[]=*.workisboring.com"
+
+	return $?
+}
+
+function conf_kong_https_by_caddy_webhook()
 {
     local TMP_KNG_SETUP_IS_CDY_LOCAL=`lsof -i:${TMP_KNG_SETUP_CDY_API_PORT}`
     if [ -n "${TMP_KNG_SETUP_IS_CDY_LOCAL}" ]; then    
         TMP_KNG_SETUP_CDY_API_HOST="127.0.0.1"
     fi
-	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps.Caddy: Please ender ${green}caddy api host for kong${reset}"
 
-	input_if_empty "TMP_KNG_SETUP_WBH_API_HOST" "Kong.AutoHttps.Webhook: Please ender ${green}webhook api host for kong${reset}"
-    
+	input_if_empty "TMP_KNG_SETUP_CDY_API_HOST" "Kong.AutoHttps.Caddy: Please ender ${green}caddy api host${reset} for acme validate"
+
+	input_if_empty "TMP_KNG_SETUP_WBH_API_HOST" "Kong.AutoHttps.Webhook: Please ender ${green}webhook api host${reset} for http log plugin to dummy acme domains"
+
+    # curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/upstreams  \
+    #     -d "name=UPS-LCL-COROUTINES.ACME_DUMMY"
+
+    # curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/upstreams/UPS-LCL-COROUTINES.ACME_DUMMY/targets  \
+    #     -d "target=127.0.0.1:65535"
+
     # -- 添加kong-api的配置信息
     # 1：设置统一工作组ID
     # 2：更新初始化的工作组ID为自定义ID
@@ -322,10 +456,10 @@ function conf_kong_auto_https()
     
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('2d929958-f95d-5365-a997-055c26fd122d',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','UPS-LCL-COROUTINES.CADDY-API','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('5055bc0a-bdd5-59cf-a5e6-c60f3b7d680c',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','2d929958-f95d-5365-a997-055c26fd122d','${TMP_KNG_SETUP_CDY_API_HOST}:${TMP_KNG_SETUP_CDY_API_PORT}',100,NULL, :'kong_workspace_id'); 
-    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('9d68b631-2c02-5506-9e88-53e6d7975ea6',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '2 min','UPS-LCL-COROUTINES.CADDY_HTTPS_VLD','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
+    INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('9d68b631-2c02-5506-9e88-53e6d7975ea6',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '2 min','UPS-LCL-COROUTINES.ACME_DUMMY','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('a5178e75-f6d7-59cf-bda8-290f892885ed',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '2 min','9d68b631-2c02-5506-9e88-53e6d7975ea6','${TMP_KNG_SETUP_CDY_API_HOST}:${TMP_KNG_SETUP_CDY_DFT_HTTP_PORT}',100,NULL, :'kong_workspace_id');
-    INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('8253fa0c-e329-5670-9bde-5d63eba6a92c', '${LOCAL_TIME}', '${LOCAL_TIME}', 'SERVICE.CADDY_HTTPS_VLD', 5, 'http', 'UPS-LCL-COROUTINES.CADDY_HTTPS_VLD', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
-    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,headers,ws_id) VALUES ('bb232280-811e-5c51-9f66-f10089b15565','${LOCAL_TIME}','${LOCAL_TIME}','8253fa0c-e329-5670-9bde-5d63eba6a92c','{http}','{GET}','{}','{/.well-known}',0,false,true,'ROUTE.SERVICE.CADDY_HTTPS_VLD',NULL,NULL,NULL,NULL,'{"User-Agent": ["acme.zerossl.com/v2/DV90","Mozilla/5.0 (compatible; Let''s Encrypt validation server; +https://www.letsencrypt.org)"]}', :'kong_workspace_id');
+    INSERT INTO services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout, ws_id) VALUES ('8253fa0c-e329-5670-9bde-5d63eba6a92c', '${LOCAL_TIME}', '${LOCAL_TIME}', 'SERVICE.ACME_DUMMY', 5, 'http', 'UPS-LCL-COROUTINES.ACME_DUMMY', '80', '/', 60000, 60000, 60000, :'kong_workspace_id');
+    INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,headers,ws_id) VALUES ('bb232280-811e-5c51-9f66-f10089b15565','${LOCAL_TIME}','${LOCAL_TIME}','8253fa0c-e329-5670-9bde-5d63eba6a92c','{http}','{GET}','{}','{/.well-known}',0,false,true,'ROUTE.SERVICE.ACME_DUMMY',NULL,NULL,NULL,NULL,'{"User-Agent": ["acme.zerossl.com/v2/DV90","Mozilla/5.0 (compatible; Let''s Encrypt validation server; +https://www.letsencrypt.org)"]}', :'kong_workspace_id');
 
     INSERT INTO upstreams (id,created_at,name,hash_on,hash_fallback,hash_on_header,hash_fallback_header,hash_on_cookie,hash_on_cookie_path,slots,healthchecks,tags,ws_id) VALUES ('0a79e2bc-6fc3-5d59-bbfa-cc733f836935',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min','UPS-LCL-COROUTINES.WEBHOOK','none','none',NULL,NULL,NULL,'/',1000,'{"active": {"type": "http", "healthy": {"interval": 30, "successes": 1, "http_statuses": [200, 302]}, "timeout": 5, "http_path": "/", "https_sni": "localhost", "unhealthy": {"interval": 3, "timeouts": 0, "tcp_failures": 10, "http_failures": 10, "http_statuses": [429, 404, 500, 501, 502, 503, 504, 505]}, "concurrency": 10, "https_verify_certificate": true}, "passive": {"type": "http", "healthy": {"successes": 1, "http_statuses": [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]}, "unhealthy": {"timeouts": 0, "tcp_failures": 5, "http_failures": 0, "http_statuses": [429, 500, 503]}}}',NULL, :'kong_workspace_id');
     INSERT INTO targets (id,created_at,upstream_id,target,weight,tags,ws_id) VALUES ('07232e9f-f860-5659-afcd-cafb8580e6f6',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min','0a79e2bc-6fc3-5d59-bbfa-cc733f836935','${TMP_KNG_SETUP_WBH_API_HOST}:${TMP_KNG_SETUP_WBH_API_PORT}',100,NULL, :'kong_workspace_id'); 
@@ -334,7 +468,6 @@ EOF
 
 	return $?
 }
-
 
 # 环境绑定openresty，作为附加安装
 function rouse_openresty()
@@ -654,20 +787,23 @@ EOF
 
 function conf_kong_ext()
 {
+    local TMP_KNG_SETUP_API_LISTEN_HOST=${1:-"localhost"}
+
     cd ${__DIR}
 
-    local TMP_KNG_SETUP_API_LISTEN_HOST="127.0.0.1:${TMP_KNG_SETUP_API_HTTP_PORT}"
+    local TMP_KNG_SETUP_API_LISTEN_HOST_PAIR="${TMP_KNG_SETUP_API_LISTEN_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}"
     
     convert_path "TMP_KNG_SETUP_API_RC_FILE_PATH"
     path_not_exists_create `dirname ${TMP_KNG_SETUP_API_RC_FILE_PATH}`
 
     if [ ! -d "${TMP_WBH_SETUP_KNG_API_RC_FILE_PATH}"]; then
-        echo "KONG_ADMIN_LISTEN_HOST=\"${TMP_KNG_SETUP_API_LISTEN_HOST}\"" >> ${TMP_KNG_SETUP_API_RC_FILE_PATH}
+        echo "KONG_ADMIN_LISTEN_HOST=\"${TMP_KNG_SETUP_API_LISTEN_HOST_PAIR}\"" >> ${TMP_KNG_SETUP_API_RC_FILE_PATH}
     fi
+    path_not_exists_action "${TMP_WBH_SETUP_KNG_API_RC_FILE_PATH}" "echo 'KONG_ADMIN_LISTEN_HOST=\"${TMP_KNG_SETUP_API_LISTEN_HOST_PAIR}\"' >> ${TMP_KNG_SETUP_API_RC_FILE_PATH}"
 
     #路径转换
-    cat special/kong_api_exec.sh > /usr/bin/kong_api && chmod +x /usr/bin/kong_api
-
+    path_not_exists_action "/usr/bin/kong_api" "cat special/kong_api_exec.sh > /usr/bin/kong_api && chmod +x /usr/bin/kong_api"
+    
 	return $?
 }
 
@@ -778,12 +914,6 @@ EOF
     INSERT INTO routes (id,created_at,updated_at,service_id,protocols,methods,hosts,paths,regex_priority,strip_path,preserve_host,name,snis,sources,destinations,tags,ws_id) VALUES ('c834f616-4583-4bab-b3c5-10456ebd7441',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '1 min','a45c36b6-ab85-47ad-ad20-022d03ff6996','{https}','{}','{${TMP_KNGA_SETUP_DOMAIN}}','{/}',0,true,false,'ROUTE.SERVICE.KONGA',NULL,NULL,NULL,NULL, :'kong_workspace_id');
 EOF
 
-    # 判断Kong是否启用了autohttps
-    local TMP_KNGA_SETUP_KNG_CDY_API_TARGETS=`curl -s http://${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}/upstreams/2d929958-f95d-5365-a997-055c26fd122d/targets`
-    if [ -z `echo ${TMP_KNGA_SETUP_KNG_CDY_API_TARGETS} | jq ".message"` ]; then
-        conf_konga_auto_https
-    fi
-
     # 本地存在Kong，则直接命令重启。不存在则提醒重启。
     if [ -z "${TMP_KNGA_SETUP_IS_KONG_LOCAL}" ]; then
         echo "KongA.Notice: Please ender ${red}kong reload${reset} in your kong host address of '${red}${TMP_KNGA_SETUP_KNG_HOST}${reset}'"
@@ -797,7 +927,20 @@ EOF
 	return $?
 }
 
-function conf_konga_auto_https()
+function conf_kong_https_by_acme_plugin()
+{
+    # 更新证书    
+    local TMP_KNGA_SETUP_KNG_HOST_PAIR="${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}"
+    local TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID=`curl -s http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/ | jq '.data[] | select(.name == "acme").id'`
+    local TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID}/  \
+            -d "config.domains[]=${TMP_KNGA_SETUP_DOMAIN}"`
+
+    echo "KongA.Notice: To support the domain of '${TMP_KNGA_SETUP_DOMAIN}' by kong ${TMP_KNGA_SETUP_KNG_HOST_PAIR}, remote response '${TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE}'."
+
+	return $?
+}
+
+function conf_konga_https_by_caddy_webhook()
 {
     TMP_KNGA_SETUP_CDY_API_HOST=`echo ${TMP_KNGA_SETUP_KNG_CDY_API_TARGETS} | jq ".data[0].target" | sed 's@\"@@g' | awk -F':' '{print \$NR}'`
 
@@ -810,6 +953,19 @@ function conf_konga_auto_https()
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (3,'2d929958-f95d-5365-a997-055c26fd122d',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '3 min',NULL,NULL);
     INSERT INTO konga_kong_upstream_alerts (id,upstream_id,"connection",email,slack,cron,active,"data","createdAt","updatedAt","createdUserId","updatedUserId") VALUES (4,'0a79e2bc-6fc3-5d59-bbfa-cc733f836935',1,true,true,NULL,true,NULL,to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',to_timestamp('${LOCAL_TIME}', 'yyyy-MM-dd hh24:mi:ss') + INTERVAL '4 min',NULL,NULL);
 EOF
+
+	return $?
+}
+
+function reconf_konga()
+{
+    # 判断Kong是否启用了autohttps
+    local TMP_KNGA_SETUP_KNG_ACME_DUMMY_HOST=`curl -s http://${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}/services/SERVICE.ACME_DUMMY | jq ".host" | sed 's@\"@@g'`
+    if [ "${TMP_KNGA_SETUP_KNG_ACME_DUMMY_HOST}" == "UPS-LCL-COROUTINES.ACME_DUMMY" ]; then
+        conf_konga_https_by_caddy_webhook
+    else
+        conf_kong_https_by_acme_plugin
+    fi
 
 	return $?
 }
@@ -927,19 +1083,21 @@ function exec_step_kong()
 {
 	local TMP_KNG_SETUP_DIR=${SETUP_DIR}/kong
     
-	set_env_kong "${TMP_KNG_SETUP_DIR}"
+	set_env_kong
 
-	setup_kong "${TMP_KNG_SETUP_DIR}"
+	setup_kong
 
-	conf_kong "${TMP_KNG_SETUP_DIR}"
+	conf_kong
 
-    conf_kong_ext "${TMP_KNG_SETUP_DIR}"
+    conf_kong_ext
     
-    rouse_openresty "${TMP_KNG_SETUP_DIR}"
+    rouse_openresty
 
-    setup_plugin_kong "${TMP_KNG_SETUP_DIR}"
+    setup_plugin_kong
 
-	boot_kong "${TMP_KNG_SETUP_DIR}"
+	boot_kong
+
+    reconf_kong
 
 	return $?
 }
@@ -949,15 +1107,19 @@ function exec_step_konga()
 	local TMP_KNGA_SETUP_DIR=${1}
 	local TMP_KNGA_CURRENT_DIR=`pwd`
     
-	set_env_konga "${TMP_KNGA_SETUP_DIR}"
+	set_env_konga
 
-	setup_konga "${TMP_KNGA_SETUP_DIR}" "${TMP_KNGA_CURRENT_DIR}"
+	setup_konga
 
-	conf_konga "${TMP_KNGA_SETUP_DIR}"
+	conf_konga
 
-    # down_plugin_konga "${TMP_KNGA_SETUP_DIR}"
+    conf_kong_ext "${TMP_KNGA_SETUP_KNG_HOST}"
 
-	boot_konga "${TMP_KNGA_SETUP_DIR}"
+    # down_plugin_konga
+
+	boot_konga
+    
+    reconf_konga
 
 	return $?
 }

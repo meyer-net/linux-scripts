@@ -359,7 +359,7 @@ function exec_step_caddy()
 
 	reconf_caddy "${TMP_CDY_SETUP_DIR}"
 	
-    exec_yn_action "conf_konga_auto_https" "Caddy：Please sure you want to need ${red}configure auto https for konga${reset}"
+    exec_yn_action "conf_konga_auto_https" "Caddy：Please sure you want to need ${red}configure auto https for konga${reset} here, if u not set https by kong"
 	
 	# 开放API出去，必装
     # cd ${__DIR}
