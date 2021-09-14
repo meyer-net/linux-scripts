@@ -43,7 +43,9 @@ function exchange_softlink()
 	if [ -f ${TMP_EXCHANGE_SOFT_LINK_CHECK_PATH} ]; then
 		local TMP_EXCHANGE_SOFT_LINK_CHECK_IS_LINK=`ls -il ${TMP_EXCHANGE_SOFT_LINK_CHECK_PATH} | grep '\->'`
 		if [ -z "${TMP_EXCHANGE_SOFT_LINK_CHECK_IS_LINK}" ]; then
-			${TMP_EXCHANGE_SOFT_LINK_ACTION_BEFORE}
+			if [ -n "${TMP_EXCHANGE_SOFT_LINK_ACTION_BEFORE}" ]; then
+				eval "${TMP_EXCHANGE_SOFT_LINK_ACTION_BEFORE}"
+			fi
 
 			cp ${TMP_EXCHANGE_SOFT_LINK_CHECK_PATH} ${TMP_EXCHANGE_SOFT_LINK_TRUE_PATH} -Rp
 			rm -rf ${TMP_EXCHANGE_SOFT_LINK_CHECK_PATH}
@@ -96,7 +98,7 @@ function action_if_content_not_exists()
 	egrep "${TMP_ECHO_IF_NOT_EXISTS_REGEX}" ${TMP_ECHO_IF_NOT_EXISTS_PATH} >& /dev/null
 	if [ $? -ne 0 ]; then
 		if [ -n "${TMP_ECHO_IF_NOT_EXISTS_ACTION}" ]; then
-			${TMP_ECHO_IF_NOT_EXISTS_ACTION}
+			eval "${TMP_ECHO_IF_NOT_EXISTS_ACTION}"
 		fi
 	fi
 
@@ -1686,11 +1688,11 @@ function exec_while_read()
 		return $?
 	fi
 
-	TMP_EXEC_WHILE_READ_VAR_NAME=$1
-	TMP_EXEC_WHILE_READ_NOTICE=$2
-	TMP_EXEC_WHILE_READ_FORMAT=$3
-	TMP_EXEC_WHILE_READ_SCRIPTS=$4
-	TMP_EXEC_WHILE_READ_DFT=`eval echo '$'$TMP_EXEC_WHILE_READ_VAR_NAME`
+	local TMP_EXEC_WHILE_READ_VAR_NAME=$1
+	local TMP_EXEC_WHILE_READ_NOTICE=$2
+	local TMP_EXEC_WHILE_READ_FORMAT=$3
+	local TMP_EXEC_WHILE_READ_SCRIPTS=$4
+	local TMP_EXEC_WHILE_READ_DFT=`eval echo '$'$TMP_EXEC_WHILE_READ_VAR_NAME`
 
 	local I=1
 	for I in $(seq 99);
@@ -1731,7 +1733,7 @@ function exec_while_read()
 	done
 
 	# TMP_FORMAT_VAL="$TMP_WRAP_CHAR$CURRENT$TMP_WRAP_CHAR"
-	NEW_VAL=`eval echo '$'$TMP_EXEC_WHILE_READ_VAR_NAME`
+	local NEW_VAL=`eval echo '$'$TMP_EXEC_WHILE_READ_VAR_NAME`
 	NEW_VAL=`echo "$NEW_VAL" | sed "s/^[,]\{1,\}//g;s/[,]\{1,\}$//g"`
 	eval ${1}='$NEW_VAL'
 	
