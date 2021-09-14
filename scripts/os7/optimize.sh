@@ -164,40 +164,43 @@ EOF
 	fi
 	
 	# 默认端口检测
+	# local TMP_SSH_PORT_CURRENT=`egrep "^[#]*Port" /etc/ssh/sshd_config | awk '{print $NF}'`
 	local TMP_DFT_SSH_PORT=`semanage port -l | grep ssh | awk '{print $NF}' | sed '/^$/d'`
 	if [ "${TMP_DFT_SSH_PORT}" == "22" ]; then
-		echo ${TMP_SPLITER}
-		echo 
-		echo 
-		echo "*** For ${red}security${reset}, the ${green}default ssh connect port${reset} changed to ${red}${TMP_SSH_NEW_PORT}${reset}, Please remember it."
-		echo 
-		echo 
-		echo ${TMP_SPLITER}
-
-		sed -i "s@^[#]*Port.*@Port ${TMP_SSH_NEW_PORT}@g" /etc/ssh/sshd_config
-		sed -i "s@^[#]*PermitRootLogin.*@PermitRootLogin yes@g" /etc/ssh/sshd_config
-		sed -i "s@^[#]*UseDNS.*@UseDNS no@g" /etc/ssh/sshd_config
-
-		function _change_root_passwd()
+		function _change_ssh_port()
 		{
-			sed -i "/^#PasswordAuthentication.*/d" /etc/ssh/sshd_config
-			sed -i "s@^PasswordAuthentication.*@PasswordAuthentication yes@g" /etc/ssh/sshd_config
-
-			passwd root
+			sed -i "s@^[#]*Port.*@Port ${TMP_SSH_NEW_PORT}@g" /etc/ssh/sshd_config
+				
+			echo ${TMP_SPLITER}
+			echo 
+			echo 
+			echo "*** For ${red}security${reset}, the ${green}default ssh connect port${reset} changed to ${red}${TMP_SSH_NEW_PORT}${reset}, Please remember it."
+			echo 
+			echo 
+			echo ${TMP_SPLITER}
 		}
 
-		local TMP_IS_PASSWORD_SETED=`egrep "^PasswordAuthentication" /etc/ssh/sshd_config | awk '{print $NF}'`
-		if [ "${TMP_IS_PASSWORD_SETED}" != "yes" ]; then
-		
-			exec_yn_action "_change_root_passwd" "Sys-Optimize: Sys find there's ${red}no root password set${reset}, please sure if u want to change"
-
-
-		fi
-
-		semanage port -a -t ssh_port_t -p tcp ${TMP_SSH_NEW_PORT}
-
-		systemctl restart sshd.service
+		exec_yn_action "_change_ssh_port" "Sys-Optimize: Sys find there's ${red}ssh port is 22 defult${reset}, please sure if u want to change"
 	fi
+
+	function _change_root_passwd()
+	{
+		sed -i "s@^[#]*PermitRootLogin.*@PermitRootLogin yes@g" /etc/ssh/sshd_config
+		sed -i "s@^[#]*UseDNS.*@UseDNS no@g" /etc/ssh/sshd_config
+		sed -i "/^#PasswordAuthentication.*/d" /etc/ssh/sshd_config
+		sed -i "s@^PasswordAuthentication.*@PasswordAuthentication yes@g" /etc/ssh/sshd_config
+
+		passwd root
+	}
+
+	local TMP_IS_PASSWORD_SETED=`egrep "^PasswordAuthentication" /etc/ssh/sshd_config | awk '{print $NF}'`
+	if [ "${TMP_IS_PASSWORD_SETED}" != "yes" ]; then
+		exec_yn_action "_change_root_passwd" "Sys-Optimize: Sys find there's ${red}no root password set${reset}, please sure if u want to change"
+	fi
+
+	semanage port -a -t ssh_port_t -p tcp ${TMP_SSH_NEW_PORT}
+
+	systemctl restart sshd.service
 
     return $?
 }

@@ -26,8 +26,8 @@ function setup_libs()
 {
 	sudo rpm -ivh http://www.rpmfind.net/linux/dag/redhat/el${OS_VERS}/en/x86_64/dag/RPMS/rpmforge-release-0.5.3-1.el${OS_VERS}.rf.x86_64.rpm
 	sudo rpm --import /etc/pki/rpm-gpg/RPM*
-	soft_yum_check_setup "apt"
-	sudo apt-get update
+	# soft_yum_check_setup "apt"
+	# sudo apt-get update
 
 	sudo yum -y update
 	sudo yum -y groupinstall "Development Tools"
