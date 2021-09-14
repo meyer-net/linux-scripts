@@ -9,6 +9,10 @@ function setup_epel()
 {	
 	soft_yum_check_setup "wget"
 	
+	#https://github.com/stedolan/jq
+	soft_yum_check_setup "jq"
+	soft_yum_check_setup "git"
+	
 	echo "Checking country code..."
 	local TMP_COUNTRY_CODE="CN"
 	get_country_code "TMP_COUNTRY_CODE"
@@ -67,10 +71,7 @@ function setup_epel()
 	sudo yum -y install yum-priorities
 	sudo yum -y install yum-plugin-fastestmirror
 	
-	#https://github.com/stedolan/jq
-	soft_yum_check_setup "jq"
 	soft_yum_check_setup "jsawk"
-	soft_yum_check_setup "git"
 	
 	return $?
 }
