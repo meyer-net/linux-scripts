@@ -301,7 +301,7 @@ function reconf_kong()
 
     kong start
 
-    set_if_choice "TMP_KNG_SETUP_CHOICE_AUTO_HTTPS" "Please choice which ${green}auto-https mode${reset} you want to use" "ACME_Plugin,Caddy_Webhook" "${TMP_SPLITER}" "conf_kong_https_by_"
+    exec_if_choice "TMP_KNG_SETUP_CHOICE_AUTO_HTTPS" "Please choice which ${green}auto-https mode${reset} you want to use" "ACME_Plugin,Caddy_Webhook" "${TMP_SPLITER}" "conf_kong_https_by_"
 
 	return $?
 }
@@ -319,7 +319,7 @@ function conf_kong_https_by_acme_plugin()
     # add a dummy service if needed
     curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/services  \
         -d "name=SERVICE.ACME_DUMMY"  \
-        -d "url=localhost:65535"
+        -d "url=http://localhost:65535"
 
     # add a dummy route if needed
     curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/routes  \

@@ -1921,14 +1921,14 @@ function echo_web_service_init_scripts()
 	local TMP_WEB_SERVICE_KONG_HOST=${5}
 	local TMP_WEB_SERVICE_CDY_HOST=${6}
 
-	# 清楚kong所在服务器
+	# 开放端口给kong所在服务器
 	if [ -n "${TMP_WEB_SERVICE_KONG_HOST}" ]; then
 		echo_soft_port ${TMP_WEB_SERVICE_HOST_PORT} "${TMP_WEB_SERVICE_KONG_HOST}"
 	fi
 
 	path_not_exists_create "${WWW_INIT_DIR}"
     echo ${TMP_SPLITER}
-	sudo tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}.sh <<-EOF
+	sudo tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}_by_caddy_webhook.sh <<-EOF
 #!/bin/sh
 #----------------------------------------------------
 #  Project init script - for web service or autohttps
@@ -1950,15 +1950,15 @@ if [ -z "\${TMP_INIT_WEB_SERVICE_CDY_HOST}" ]; then
 fi
 
 # 先添加域名，避免被caddy-webhook的autohttps解析覆盖
-kong_api "service" "${TMP_WEB_SERVICE_UPPER_NAME}" "${TMP_WEB_SERVICE_HOST}:${TMP_WEB_SERVICE_HOST_PORT}" "${TMP_WEB_SERVICE_DOMAIN}"
+kong_api "service" "${TMP_WEB_SERVICE_KONG_HOST}" "${TMP_WEB_SERVICE_UPPER_NAME}" "${TMP_WEB_SERVICE_HOST}:${TMP_WEB_SERVICE_HOST_PORT}" "${TMP_WEB_SERVICE_DOMAIN}"
 
 # 添加防火墙授权许可
 echo "${TMP_SPLITER}"
 echo "Please allow your iptables or cloud firewall for port '${TMP_WEB_SERVICE_HOST_PORT}' on host '${TMP_WEB_SERVICE_HOST}'"
 echo "${TMP_SPLITER}"
 echo "iptables："
-echo "          sed -i \"11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p tcp -m state --state NEW -m tcp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT\" /etc/sysconfig/iptables"
-echo "          sed -i \"11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p udp -m state --state NEW -m udp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT\" /etc/sysconfig/iptables"
+echo "          sed -i "11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p tcp -m state --state NEW -m tcp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT" /etc/sysconfig/iptables"
+echo "          sed -i "11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p udp -m state --state NEW -m udp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT" /etc/sysconfig/iptables"
 echo "          systemctl restart iptables.service"
 echo "firewall-cmd："
 echo "              firewall-cmd --permanent --add-port=${TMP_WEB_SERVICE_HOST_PORT}/tcp"
@@ -1986,6 +1986,38 @@ sudo tee ${WWW_INIT_DIR}/Caddyroute_for_${TMP_WEB_SERVICE_DOMAIN}.json <<-\EOF
 
 	curl \${TMP_INIT_WEB_SERVICE_CDY_HOST}:${CDY_API_PORT}/config/apps/http/servers/autohttps/routes -X POST -H "Content-Type: application/json" -d @Caddyroute_for_${TMP_WEB_SERVICE_DOMAIN}.json
 	curl \${TMP_INIT_WEB_SERVICE_CDY_HOST}:${CDY_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_WEB_SERVICE_DOMAIN}": "${TMP_WEB_SERVICE_DOMAIN}"}'
+EOF
+    echo ${TMP_SPLITER}
+	sudo tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}_by_acme_plugin.sh <<-EOF
+#!/bin/sh
+#----------------------------------------------------
+#  Project init script - for web service or autohttps
+#----------------------------------------------------
+TMP_INIT_WEB_SERVICE_LOCAL_HOST=\`ip a | grep inet | grep -v inet6 | grep -v 127 | grep -v docker | awk '{print $2}' | awk -F'/' '{print $1}' | awk 'END {print}'\`
+[ -z \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} ] && TMP_INIT_WEB_SERVICE_LOCAL_HOST=\`ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1\`
+
+# 本机未有kong_api直接退出执行
+if [ ! -f "/usr/bin/kong_api" ]; then
+	echo "Can't find 'kong_api' command in '/usr/bin/kong_api'，please sure u exec at 'kong host'"
+	return
+fi
+
+# 先添加域名
+kong_api "service" "${TMP_WEB_SERVICE_KONG_HOST}" "${TMP_WEB_SERVICE_UPPER_NAME}" "${TMP_WEB_SERVICE_HOST}:${TMP_WEB_SERVICE_HOST_PORT}" "${TMP_WEB_SERVICE_DOMAIN}"
+
+# 添加防火墙授权许可
+echo "${TMP_SPLITER}"
+echo "Please allow your iptables or cloud firewall for port '${TMP_WEB_SERVICE_HOST_PORT}' on host '${TMP_WEB_SERVICE_HOST}'"
+echo "${TMP_SPLITER}"
+echo "iptables："
+echo "          sed -i "11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p tcp -m state --state NEW -m tcp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT" /etc/sysconfig/iptables"
+echo "          sed -i "11a-A INPUT -s \${TMP_INIT_WEB_SERVICE_LOCAL_HOST} -p udp -m state --state NEW -m udp --dport ${TMP_WEB_SERVICE_HOST_PORT} -j ACCEPT" /etc/sysconfig/iptables"
+echo "          systemctl restart iptables.service"
+echo "firewall-cmd："
+echo "              firewall-cmd --permanent --add-port=${TMP_WEB_SERVICE_HOST_PORT}/tcp"
+echo "              firewall-cmd --permanent --add-port=${TMP_WEB_SERVICE_HOST_PORT}/udp"
+echo "              firewall-cmd --reload"
+echo "${TMP_SPLITER}"
 EOF
     echo ${TMP_SPLITER}
 	echo
