@@ -26,6 +26,8 @@ local TMP_KNG_SETUP_API_DOMAIN="kong-api${LOCAL_ID}.${SYS_DOMAIN}"
 
 local TMP_KNG_SETUP_API_RC_FILE_PATH="~/.kong-apirc"
 
+local TMP_KNG_SETUP_LNK_ETC_DIR=${ATT_DIR}/kong
+
 local TMP_KNG_SETUP_CDY_API_HOST=
 local TMP_KNG_SETUP_CDY_API_PORT=12019
 local TMP_KNG_SETUP_CDY_DFT_HTTP_PORT=60080
@@ -99,8 +101,6 @@ function setup_postgresql()
 # 2-安装软件
 function setup_kong()
 {
-	local TMP_KNG_SETUP_DIR=${1}
-
 	## 源模式    
     #通过RPM安装
 	local TMP_KNG_SETUP_NEWER="2.5.0"
@@ -120,6 +120,12 @@ function setup_kong()
 	# 创建日志软链
 	local TMP_KNG_SETUP_LNK_LOGS_DIR=${LOGS_DIR}/kong
 	local TMP_KNG_SETUP_LOGS_DIR=${TMP_KNG_SETUP_DIR}/logs
+    
+    # 等待软件安装完毕
+    while [ ! -d /usr/local/kong ]; do
+        echo "Kong.Setup: Waitting for setup ok, sleep 3secs..."
+        sleep 3
+    done
 
 	# 先清理文件，再创建文件
     ln -sf /usr/local/kong ${TMP_KNG_SETUP_DIR}
@@ -147,9 +153,6 @@ function setup_kong()
 # 2-安装软件
 function setup_konga()
 {
-	local TMP_KNGA_SETUP_DIR=${1}
-	local TMP_KNGA_CURRENT_DIR=${2}
-
 	## 直装模式
 	cd `dirname ${TMP_KNGA_CURRENT_DIR}`
 
@@ -185,26 +188,14 @@ function setup_konga()
 # 3-设置软件
 function conf_kong()
 {
-	local TMP_KNG_SETUP_DIR=${1}
-
-	cd ${TMP_KNG_SETUP_DIR}
+    cd ${TMP_KNG_SETUP_DIR}
 	
-	local TMP_KNG_SETUP_LNK_ETC_DIR=${ATT_DIR}/kong
-	local TMP_KNG_SETUP_LNK_GLOBAL_ETC_DIR=${TMP_KNG_SETUP_LNK_ETC_DIR}/global
 	local TMP_KNG_SETUP_LNK_NGX_ETC_DIR=${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx
 	local TMP_KNG_SETUP_ETC_DIR=${TMP_KNG_SETUP_DIR}/etc
 
 	# 替换原路径链接
     path_not_exists_create ${TMP_KNG_SETUP_LNK_ETC_DIR}
-    mv .kong_env ${TMP_KNG_SETUP_LNK_ETC_DIR}/
-    mv nginx*.conf ${TMP_KNG_SETUP_LNK_ETC_DIR}/
-    ln -sf /etc/kong ${TMP_KNG_SETUP_LNK_GLOBAL_ETC_DIR}
     mv /usr/local/openresty/nginx/conf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR}
-    
-    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/.kong_env `pwd`/.kong_env
-    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx.conf `pwd`/nginx.conf
-    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong.conf `pwd`/nginx-kong.conf
-    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong-stream.conf `pwd`/nginx-kong-stream.conf
 	ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR} ${TMP_KNG_SETUP_ETC_DIR}
     
 	ln -sf ${TMP_KNG_SETUP_LNK_NGX_ETC_DIR} /usr/local/openresty/conf
@@ -288,6 +279,28 @@ EOF
 
 function reconf_kong()
 {
+	cd ${TMP_KNG_SETUP_DIR}
+
+	local TMP_KNG_SETUP_LNK_ETC_DIR="${ATT_DIR}/kong"
+	local TMP_KNG_SETUP_LNK_GLOBAL_ETC_DIR=${TMP_KNG_SETUP_LNK_ETC_DIR}/global
+
+    mv .kong_env ${TMP_KNG_SETUP_LNK_ETC_DIR}/
+    mv nginx*.conf ${TMP_KNG_SETUP_LNK_ETC_DIR}/
+
+    ln -sf /etc/kong ${TMP_KNG_SETUP_LNK_GLOBAL_ETC_DIR}
+    
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/.kong_env `pwd`/.kong_env
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx.conf `pwd`/nginx.conf
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong.conf `pwd`/nginx-kong.conf
+    ln -sf ${TMP_KNG_SETUP_LNK_ETC_DIR}/nginx-kong-stream.conf `pwd`/nginx-kong-stream.conf
+
+    kong stop
+
+    # 清除临时文件
+    rm -rf *_temp
+
+    kong start
+
     set_if_choice "TMP_KNG_SETUP_CHOICE_AUTO_HTTPS" "Please choice which ${green}auto-https mode${reset} you want to use" "ACME_Plugin,Caddy_Webhook" "${TMP_SPLITER}" "conf_kong_https_by_"
 
 	return $?
@@ -472,8 +485,6 @@ EOF
 # 环境绑定openresty，作为附加安装
 function rouse_openresty()
 {
-	local TMP_KNG_SETUP_DIR=${1}
-
     cd ${TMP_KNG_SETUP_DIR}
 
     # 先引用环境变量，调取信息
@@ -809,8 +820,6 @@ function conf_kong_ext()
 
 function conf_konga()
 {
-	local TMP_KNGA_SETUP_DIR=${1}
-
 	cd ${TMP_KNGA_SETUP_DIR}
 	
 	local TMP_KNGA_SETUP_LNK_ETC_DIR=${ATT_DIR}/konga
@@ -975,8 +984,6 @@ function reconf_konga()
 # 4-启动软件
 function boot_kong()
 {
-	local TMP_KNG_SETUP_DIR=${1}
-
 	cd ${TMP_KNG_SETUP_DIR}
 	
 	# 验证安装
@@ -1011,8 +1018,6 @@ function boot_kong()
 # 4-启动软件
 function boot_konga()
 {
-	local TMP_KNGA_SETUP_DIR=${1}
-
 	cd ${TMP_KNGA_SETUP_DIR}
 	
 	# # 验证安装

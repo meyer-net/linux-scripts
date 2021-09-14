@@ -22,7 +22,7 @@
 function bind_sysdomain () {
     local TMP_SYS_DOMAIN="mydomain.com"
 	if [ -f "${SETUP_DIR}/.sys_domain" ]; then
-		TMP_SYS_DOMAIN=`cat ${SETUP_DIR}/sys_domain`
+		TMP_SYS_DOMAIN=`cat ${SETUP_DIR}/.sys_domain`
 	fi
 
 	eval ${1}=`echo '${TMP_SYS_DOMAIN}'`
