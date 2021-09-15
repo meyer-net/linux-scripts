@@ -944,6 +944,9 @@ function conf_kong_https_by_acme_plugin()
     local TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID}/  \
             -d "config.domains[]=${TMP_KNGA_SETUP_DOMAIN}"`
 
+    # 静默请求, 激活生效
+    `curl -s ${TMP_KNGA_SETUP_DOMAIN}`
+
     echo "KongA.Notice: To support the domain of '${TMP_KNGA_SETUP_DOMAIN}' by kong ${TMP_KNGA_SETUP_KNG_HOST_PAIR}, remote response '${TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE}'."
 
 	return $?

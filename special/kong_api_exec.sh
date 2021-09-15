@@ -55,7 +55,8 @@ function patch_increase_acme_domain()
 
             echo "KongApi.PatchIncreaseAcmeDomain: Remote response '${request_code}'."
 
-            curl http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/acme -XPATCH
+            `curl http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/acme -XPATCH`
+            `curl -s ${tmp_acme_domain}`
         fi
     fi
 }
