@@ -2022,7 +2022,7 @@ EOF
     echo ${TMP_SPLITER}
 	echo
 	
-	chmod +x ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}.sh
+	chmod +x ${WWW_INIT_DIR}/*.sh
 
 	return $?
 }
