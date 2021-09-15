@@ -1423,7 +1423,8 @@ function set_if_choice()
 #参数3：选项参数
 #参数4：自定义的Spliter
 #参数5：脚本路径/前缀
-function exec_if_choice()
+#参数6：执行脚本后的操作
+function exec_if_choice_custom()
 {
 	if [ $? -ne 0 ]; then
 		return $?
@@ -1481,11 +1482,35 @@ function exec_if_choice()
 			read -n 1 -p "Press <Enter> go on..."
 		fi
 
-		exec_if_choice "$1" "$2" "$3" "$4" "$5"
+		if [ -n "${6}" ]; then
+			eval "${6}"
+		fi
 	fi
 
 
 	return $?
+}
+
+#按键选择类型的弹出动态设置变量值函数
+#参数1：需要设置的变量名
+#参数2：提示信息
+#参数3：选项参数
+#参数4：自定义的Spliter
+#参数5：脚本路径/前缀
+function exec_if_choice()
+{
+	exec_if_choice_custom "$1" "$2" "$3" "$4" "$5" 'exec_if_choice "$1" "$2" "$3" "$4" "$5"'
+}
+
+#按键选择类型的弹出动态设置变量值函数
+#参数1：需要设置的变量名
+#参数2：提示信息
+#参数3：选项参数
+#参数4：自定义的Spliter
+#参数5：脚本路径/前缀
+function exec_if_choice_onece()
+{
+	exec_if_choice_custom "$1" "$2" "$3" "$4" "$5"
 }
 
 #检测并执行指令

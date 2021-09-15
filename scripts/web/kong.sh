@@ -301,7 +301,7 @@ function reconf_kong()
 
     kong start
 
-    exec_if_choice "TMP_KNG_SETUP_CHOICE_AUTO_HTTPS" "Please choice which ${green}auto-https mode${reset} you want to use" "ACME_Plugin,Caddy_Webhook" "${TMP_SPLITER}" "conf_kong_https_by_"
+    exec_if_choice_onece "TMP_KNG_SETUP_CHOICE_AUTO_HTTPS" "Please choice which ${green}auto-https mode${reset} you want to use" "ACME_Plugin,Caddy_Webhook" "${TMP_SPLITER}" "conf_kong_https_by_"
 
 	return $?
 }
@@ -936,7 +936,7 @@ EOF
 	return $?
 }
 
-function conf_kong_https_by_acme_plugin()
+function conf_konga_https_by_acme_plugin()
 {
     # 更新证书    
     local TMP_KNGA_SETUP_KNG_HOST_PAIR="${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}"
@@ -976,7 +976,7 @@ function reconf_konga()
     if [ "${TMP_KNGA_SETUP_KNG_ACME_DUMMY_HOST}" == "UPS-LCL-COROUTINES.ACME_DUMMY" ]; then
         conf_konga_https_by_caddy_webhook
     else
-        conf_kong_https_by_acme_plugin
+        conf_konga_https_by_acme_plugin
     fi
 
 	return $?
