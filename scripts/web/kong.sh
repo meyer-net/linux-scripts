@@ -321,6 +321,8 @@ function conf_kong_https_by_acme_plugin()
         -d "name=SERVICE.ACME_DUMMY"  \
         -d "url=http://localhost:65535"
 
+    echo
+
     # add a dummy route if needed
     curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/routes  \
         -d "name=ROUTE.SERVICE.ACME_DUMMY"  \
@@ -332,6 +334,8 @@ function conf_kong_https_by_acme_plugin()
         -d "strip_path=false"  \
         -d "preserve_host=true"  \
         -d "protocols[]=http" 
+
+    echo
 
     # 添加插件支持, 在需要加入解析的域名上添加 config.domains
     curl -i -s -X POST http://localhost:${TMP_KNG_SETUP_API_HTTP_PORT}/plugins/ \
@@ -424,6 +428,8 @@ function conf_kong_https_by_acme_plugin()
         -d "config.domains[]=*.ufcfan.org"  \
         -d "config.domains[]=*.unusualperson.com"  \
         -d "config.domains[]=*.workisboring.com"
+
+    echo
 
 	return $?
 }
