@@ -34,7 +34,7 @@ function set_env_$soft_name()
 function setup_$soft_name()
 {
 	## 源模式
-	cat << EOF | sudo tee -a /etc/yum.repos.d/$setup_name.repo
+	cat << EOF | tee -a /etc/yum.repos.d/$setup_name.repo
 [$setup_name]
 name=$setup_name Repository
 baseurl=
@@ -79,7 +79,7 @@ EOF
 
 	rm -rf /etc/yum.repos.d/$setup_name.repo
 	
-    sudo yum clean all && sudo yum makecache fast
+    yum clean all && yum makecache fast
 	
     # 安装初始
 

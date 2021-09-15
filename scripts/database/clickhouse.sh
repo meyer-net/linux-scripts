@@ -174,10 +174,10 @@ function boot_clickhouse()
     clickhouse-server -V  # lsof -i:${TMP_CH_SETUP_PORT}
 
 	# 当前启动命令
-    # nohup sudo -u clickhouse clickhouse-server --config-file /etc/clickhouse-server/config.xml > logs/boot.log 2>&1 &
-    sudo systemctl daemon-reload
-    sudo systemctl enable clickhouse-server.service
-    sudo systemctl start clickhouse-server.service
+    # nohup su -u clickhouse clickhouse-server --config-file /etc/clickhouse-server/config.xml > logs/boot.log 2>&1 &
+    systemctl daemon-reload
+    systemctl enable clickhouse-server.service
+    systemctl start clickhouse-server.service
     
     # 等待启动
     echo "Starting clickhouse-server，Waiting for a moment..."
@@ -185,8 +185,8 @@ function boot_clickhouse()
     sleep 5
 
     cat /var/log/clickhouse-server/clickhouse-server.log
-    sudo systemctl status clickhouse-server.service
-    sudo chkconfig clickhouse-server on
+    systemctl status clickhouse-server.service
+    chkconfig clickhouse-server on
     echo "--------------------------------------------"
     
 	# 授权iptables端口访问

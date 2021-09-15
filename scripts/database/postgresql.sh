@@ -256,9 +256,9 @@ function boot_postgresql()
     psql --version  # lsof -i:${TMP_PSQL_SETUP_PORT}
 
 	# 当前启动命令
-    sudo systemctl daemon-reload
-    sudo systemctl enable postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
-    sudo systemctl start postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
+    systemctl daemon-reload
+    systemctl enable postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
+    systemctl start postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
 	# nohup bin/postgresql > logs/boot.log 2>&1 &
 
     # 等待启动
@@ -273,8 +273,8 @@ psql -U postgres -h localhost -p ${TMP_PSQL_SETUP_PORT} -d postgres << EOF
     \password postgres;
 EOF
 
-	sudo systemctl status postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
-    sudo chkconfig postgresql-${TMP_PSQL_SETUP_STP_VERS} on
+	systemctl status postgresql-${TMP_PSQL_SETUP_STP_VERS}.service
+    chkconfig postgresql-${TMP_PSQL_SETUP_STP_VERS} on
     echo "-----------------------------------------"
 
 	# 授权iptables端口访问

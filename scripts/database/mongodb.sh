@@ -51,7 +51,7 @@ function set_env_mongodb()
 function setup_mongodb()
 {
 	## 源模式
-	cat << EOF | sudo tee -a /etc/yum.repos.d/mongodb-org-4.0.repo
+	cat << EOF | tee -a /etc/yum.repos.d/mongodb-org-4.0.repo
 [mongodb-org-4.0]
 name=MongoDB Repository
 baseurl=https://repo.mongodb.org/yum/redhat/7/mongodb-org/4.0/x86_64/
@@ -91,7 +91,7 @@ EOF
 
 	rm -rf /etc/yum.repos.d/mongodb.repo
 	
-    sudo yum clean all && sudo yum makecache fast
+    yum clean all && yum makecache fast
 	
     # 安装初始
 
@@ -161,21 +161,21 @@ function boot_mongodb()
     mongo --version  # lsof -i:${TMP_MGDB_SETUP_PORT}
 
 	# 当前启动命令
-    sudo systemctl daemon-reload
-    sudo systemctl enable mongod.service
+    systemctl daemon-reload
+    systemctl enable mongod.service
 
     # 等待启动
     echo "Starting mongodb，Waiting for a moment"
     echo "--------------------------------------------"
-    sudo systemctl start mongod.service
+    systemctl start mongod.service
     sleep 5
     mongo --eval "printjson(rs.initiate())"
     sleep 5
 
-	sudo systemctl status mongod.service
-    sudo chkconfig mongod on
+	systemctl status mongod.service
+    chkconfig mongod on
     # journalctl -u mongod --no-pager | less
-    # sudo systemctl reload mongod.service
+    # systemctl reload mongod.service
     echo "--------------------------------------------"
 
 	# 授权iptables端口访问

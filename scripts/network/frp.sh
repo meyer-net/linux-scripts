@@ -171,7 +171,7 @@ function conf_frpc()
     # 删除多余行
     sed -i '96,999d' etc/frpc.ini
 
-    sudo tee -a etc/frpc.ini <<-'EOF'
+    tee -a etc/frpc.ini <<-'EOF'
 [web_http_noip]
 type = http
 local_ip = 127.0.0.1
@@ -272,7 +272,7 @@ function boot_frps()
 	# 启动状态检测
     systemctl status frps.service
     
-    sudo chkconfig frps on
+    chkconfig frps on
 	
 	# 授权iptables端口访问
 	echo_soft_port 80
@@ -310,7 +310,7 @@ function boot_frpc()
 	# 启动状态检测
     systemctl status frpc.service
     
-    sudo chkconfig frpc on
+    chkconfig frpc on
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_FRP_SETUP_CLT_ADMIN_PORT}

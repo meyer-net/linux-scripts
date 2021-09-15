@@ -277,7 +277,7 @@ function boot_supervisor()
     supervisord -v
 	
 	# 启动配置加载
-	sudo tee /usr/lib/systemd/system/supervisor.service <<-EOF
+	tee /usr/lib/systemd/system/supervisor.service <<-EOF
 # Supervisord service for systemd (CentOS 7.0+)
 # https://github.com/Supervisor/initscripts
 

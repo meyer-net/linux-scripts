@@ -184,14 +184,16 @@ function get_ipv6 () {
 function get_country_code () {
 	local TMP_LOCAL_IPV4=`curl -s ip.sb`
 	# local TMP_COUNTRY_JSON=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4}`
-	local TMP_COUNTRY_CODE=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4} | jq ".country_code" | sed 's@\"@@g'`
+	local TMP_COUNTRY_CODE=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4} | jq '.country_code' | sed 's@\"@@g'`
 
 	# if [ -n "${TMP_COUNTRY_JSON}" ]; then
 	# 	eval ${1}=`echo "${TMP_COUNTRY_JSON}" | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
 	# fi
 
+	# ???debug
+	echo ${TMP_COUNTRY_CODE}
 	if [ -n "${TMP_COUNTRY_CODE}" ]; then
-		eval ${1}=`echo '${TMP_COUNTRY_CODE}'`
+		eval ${1}=`echo '$TMP_COUNTRY_CODE'`
 	fi
 
 	return $?
@@ -913,7 +915,7 @@ function setup_soft_wget()
 
 	local TMP_SOFT_SETUP_PATH=${TMP_SOFT_SETUP_DIR}/${TMP_SOFT_LOWER_NAME}
 
-    sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep ${TMP_SOFT_WGET_NAME} | grep -v grep
+    ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep ${TMP_SOFT_WGET_NAME} | grep -v grep
 	if [ $? -ne 0 ]; then
 		local TMP_SOFT_WGET_FILE_NAME=
 		local TMP_SOFT_WGET_FILE_DIR="${DOWN_DIR}"
@@ -987,7 +989,7 @@ function setup_soft_git()
 
 	local TMP_SOFT_SETUP_PATH=$SETUP_DIR/${TMP_SOFT_LOWER_NAME}
 
-    sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep $TMP_SOFT_GIT_NAME | grep -v grep
+    ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep $TMP_SOFT_GIT_NAME | grep -v grep
 	if [ $? -ne 0 ]; then
 		local TMP_SOFT_GIT_FOLDER_NAME=`echo "$TMP_SOFT_GIT_URL" | awk -F'/' '{print $NF}'`
 
@@ -1047,7 +1049,7 @@ function setup_soft_pip()
 		#安装后配置函数
 		${TMP_SOFT_PIP_SETUP_FUNC} "${PY_PKGS_SETUP_DIR}/${TMP_SOFT_LOWER_NAME}"
 	else
-    	sudo ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep ${TMP_SOFT_PIP_NAME} | grep -v grep
+    	ls -d ${TMP_SOFT_SETUP_PATH}   #ps -fe | grep ${TMP_SOFT_PIP_NAME} | grep -v grep
 
 		return 1
 	fi
@@ -1896,7 +1898,7 @@ function echo_startup_config()
 	if [ ! -f "${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}" ]; then
 		echo "Supervisor：Gen startup config of '${green}${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}${reset}'"
 		echo
-		sudo tee ${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH} <<-EOF
+		tee ${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH} <<-EOF
 [program:${TMP_STARTUP_SUPERVISOR_NAME}]
 command = /bin/bash -c 'source "\$0" && exec "\$@"' ${TMP_STARTUP_SUPERVISOR_SOURCE} ${TMP_STARTUP_SUPERVISOR_COMMAND} ; 启动命令，可以看出与手动在命令行启动的命令是一样的
 autostart = true                                                                     ; 在 supervisord 启动的时候也自动启动
@@ -1953,7 +1955,7 @@ function echo_web_service_init_scripts()
 
 	path_not_exists_create "${WWW_INIT_DIR}"
     echo ${TMP_SPLITER}
-	sudo tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}_by_caddy_webhook.sh <<-EOF
+	tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}_by_caddy_webhook.sh <<-EOF
 #!/bin/sh
 #----------------------------------------------------
 #  Project init script - for web service or autohttps
@@ -1992,7 +1994,7 @@ echo "              firewall-cmd --reload"
 echo "${TMP_SPLITER}"
 
 # 添加autohttps维护
-sudo tee ${WWW_INIT_DIR}/Caddyroute_for_${TMP_WEB_SERVICE_DOMAIN}.json <<-\EOF
+tee ${WWW_INIT_DIR}/Caddyroute_for_${TMP_WEB_SERVICE_DOMAIN}.json <<-\EOF
 {
 	"match": [
 		{
@@ -2013,7 +2015,7 @@ sudo tee ${WWW_INIT_DIR}/Caddyroute_for_${TMP_WEB_SERVICE_DOMAIN}.json <<-\EOF
 	curl \${TMP_INIT_WEB_SERVICE_CDY_HOST}:${CDY_API_PORT}/config/apps/http/servers/autohttps/logs/logger_names -X POST -H "Content-Type: application/json" -d '{"${TMP_WEB_SERVICE_DOMAIN}": "${TMP_WEB_SERVICE_DOMAIN}"}'
 EOF
     echo ${TMP_SPLITER}
-	sudo tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}_by_acme_plugin.sh <<-EOF
+	tee ${WWW_INIT_DIR}/init_web_service_for_${TMP_WEB_SERVICE_UPPER_NAME}_by_acme_plugin.sh <<-EOF
 #!/bin/sh
 #----------------------------------------------------
 #  Project init script - for web service or autohttps

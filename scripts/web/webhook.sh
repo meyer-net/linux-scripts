@@ -155,7 +155,7 @@ function conf_webhook()
     
     echo "##############################################################" 
     # "source": "entire-payload" #通过此打印全部
-    sudo tee ${TMP_WBH_SETUP_ETC_HOOKS_DIR}/webhook_boot.json <<-EOF
+    tee ${TMP_WBH_SETUP_ETC_HOOKS_DIR}/webhook_boot.json <<-EOF
 ${TMP_WBH_BOOT_HOOKS_JSON}
 EOF
     echo "##############################################################" 
@@ -207,7 +207,7 @@ function conf_webhook_test()
 
     echo "+--------------------------------------------------------------+" 
     
-    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/test.sh <<-EOF
+    tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/test.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook script for test
@@ -260,7 +260,7 @@ function conf_webhook_cor_caddy_api()
 
     echo "+--------------------------------------------------------------+" 
     
-    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/cor-caddy-api.sh <<-EOF
+    tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/cor-caddy-api.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook script for cor caddy api
@@ -325,7 +325,7 @@ function conf_webhook_buffer_for_request_host()
 
     echo "+--------------------------------------------------------------+" 
     # 用于记录证书已刷新，记录域名的脚本（接收内容时触发，相当于简单的生产者，buffer）
-    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/buffer_for_request_host.sh <<-EOF
+    tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/buffer_for_request_host.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook Script - for receive request
@@ -415,7 +415,7 @@ function conf_webhook_sync_caddy_cert_to_kong()
     
     # Cache一定要写入本机才生效
     # 用于同步证书内容，删除记录域名的脚本（每天定时3次触发，相当于消费者，消费buffer）
-    sudo tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-conf-to-kong.sh <<-EOF
+    tee ${TMP_WBH_SETUP_ETC_SCRIPTS_DIR}/sync-caddy-conf-to-kong.sh <<-EOF
 #!/bin/sh
 #------------------------------------------------
 #  Project Web hook Script - for sync cert
@@ -507,7 +507,7 @@ function sync_conf() {
         put_cert "\${TMP_ASYNC_KNG_CFG_HOST}" "\${TMP_CERT_DATA_ID_FINAL}" "\${TMP_ASYNC_KNG_BUF_DOMAIN}" "\${TMP_CERT_DATA_CRT_FROM_CDY}" "\${TMP_CERT_DATA_KEY_FROM_CDY}"
 
         # 打印日志    
-        sudo tee \${TMP_THIS_LOG_PATH} <<-EOF
+        tee \${TMP_THIS_LOG_PATH} <<-EOF
 Refresh cert at '\${LOCAL_TIME}'
 ----------------------------------------------------------------
 |ID：\${TMP_CERT_DATA_ID_FROM_KNG}

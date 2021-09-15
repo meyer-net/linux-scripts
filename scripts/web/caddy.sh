@@ -14,7 +14,7 @@
 #      curl -s https://getcaddy.com | bash -s personal
 
 #      mkdir -pv /logs/caddy
-#      sudo chown -R caddy:caddy /logs/caddy
+#      chown -R caddy:caddy /logs/caddy
 #      https://3mile.github.io/archives/2018/07/21/
 #      https://dengxiaolong.com/caddy/zh/http.proxy.html
 
@@ -69,7 +69,7 @@ function setup_caddy()
 	local TMP_CDY_SETUP_DIR=${1}
 
 	## 源模式
-    sudo yum -y copr enable @caddy/caddy
+    yum -y copr enable @caddy/caddy
 
 	soft_yum_check_setup "caddy"
 
@@ -129,7 +129,7 @@ function conf_caddy()
     # 开始配置
     echo "------------------------------------------------------------------"
     # EOF使用单引号则禁用变量，实际有了json此处就被禁用了
-    sudo tee /etc/caddy/Caddyfile <<-EOF
+    tee /etc/caddy/Caddyfile <<-EOF
 # The Caddyfile is an easy way to configure your Caddy web server.
 #
 # Unless the file starts with a global options block, the first
@@ -187,7 +187,7 @@ function reconf_caddy()
 
     echo "------------------------------------------------------------------"
 	# listen这里修改内网IP的情况下是要变更的
-	sudo tee Caddyfile.init.json <<-EOF
+	tee Caddyfile.init.json <<-EOF
 {
 	"admin": {
 		"listen": "${LOCAL_HOST}:${TMP_CDY_SETUP_API_PORT}"
@@ -235,7 +235,7 @@ EOF
 	# 修改启动配置文件，避免服务重启配置丢失
 	sed -i "s@/etc/caddy/Caddyfile@/etc/caddy/Caddyfile.autosave.json@g" /usr/lib/systemd/system/caddy.service
 	
-    sudo systemctl daemon-reload
+    systemctl daemon-reload
 
 	return $?
 }
@@ -249,7 +249,7 @@ function increase_auto_https_conf()
     cd ${TMP_CDY_DATA_DIR}
 
     echo "----------------------------------------------------------------"
-	sudo tee Caddyroute_for_${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}.json <<-EOF
+	tee Caddyroute_for_${TMP_CDY_SETUP_CONF_VLD_BIND_DOMAIN}.json <<-EOF
 	{
 		"match": [
 			{
@@ -298,19 +298,19 @@ function boot_caddy()
     caddy version  # lsof -i:${TMP_CDY_SETUP_API_PORT}
 
 	# 当前启动命令
-    sudo systemctl daemon-reload
-    sudo systemctl enable caddy.service
+    systemctl daemon-reload
+    systemctl enable caddy.service
 
     # 等待启动
     echo "Starting caddy，Waiting for a moment"
     echo "--------------------------------------------"
-    sudo systemctl start caddy.service
+    systemctl start caddy.service
     sleep 5
 
-	sudo systemctl status caddy.service
-    sudo chkconfig caddy on
+	systemctl status caddy.service
+    chkconfig caddy on
     # journalctl -u caddy --no-pager | less
-    # sudo systemctl reload caddy.service
+    # systemctl reload caddy.service
     echo "--------------------------------------------"
 
 	# 授权iptables端口访问

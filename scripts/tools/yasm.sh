@@ -19,7 +19,7 @@ function setup_yasm()
 
 	# 编译模式
 	./configure --prefix=${TMP_YASM_SETUP_DIR}
-	sudo make -j4 && make -j4 install
+	make -j4 && make -j4 install
 	
 	# 环境变量或软连接
 	echo "YASM_HOME=${TMP_YASM_SETUP_DIR}" >> /etc/profile

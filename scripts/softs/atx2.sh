@@ -2,7 +2,7 @@
 1：安装java
 2：https://rethinkdb.com/docs/install/centos/ (安装rethinkdb，完后nohup执行nohup rethinkdb --bind all &)
 3：https://github.com/openatx/atxserver2，（创建python-env1环境{python3 -m venv /opt/pyenv3.atx-server}，source /opt/pyenv3.atx-server/bin/activate，pip3 install -r requirements.txt，执行nohup python3 main.py --auth simple &，exit）
-4：sudo yum -y install git-lfs 安装必备
+4：yum -y install git-lfs 安装必备
 5：安装android sdk tool 使支持 adb最新版：{
     wget https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
     unzip sdk-tools-linux-4333796.zip

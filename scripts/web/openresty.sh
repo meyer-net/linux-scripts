@@ -147,7 +147,7 @@ function rouse_nginx()
         mv nginx/conf/nginx.conf nginx/conf/nginx.conf.bak
 
         # 覆写优化配置(???相关参数待优化为按机器计算数值)
-        sudo tee ${TMP_ORST_SETUP_NGX_CONF_PATH} <<-'EOF'
+        tee ${TMP_ORST_SETUP_NGX_CONF_PATH} <<-'EOF'
 #user  nobody;
 worker_processes  auto;
 

@@ -105,7 +105,7 @@ function down_plugin_openresty_frame_lor_baseapp()
     
     wget_unpack_dist "${TMP_LR_SETUP_LPEG_OFFICIAL_STABLE_LINK}" "lpeg.so" "${LUALIB_HOME}" "
         sed -i 's@LUADIR =.*@LUADIR = ${LUAJIT_INC}@g' makefile
-        sudo make -j4
+        make -j4
     "
 
 	return $?

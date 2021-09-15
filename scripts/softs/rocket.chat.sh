@@ -127,7 +127,7 @@ function conf_rocket_chat()
 		TMP_RC_SETUP_MGDB_OPLOG_URL="mongodb://${TMP_RC_SETUP_MGDB_USER}:${TMP_RC_SETUP_MGDB_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01&authSource=admin"
 	fi
 
-	cat << EOF | sudo tee -a /lib/systemd/system/rocketchat.service
+	cat << EOF | tee -a /lib/systemd/system/rocketchat.service
 [Unit]
 Description=The Rocket.Chat server
 After=network.target remote-fs.target nss-lookup.target nginx.service mongod.service
@@ -149,7 +149,7 @@ EOF
 
     cat > update_rc.sh <<EOF
 #!/bin/bash
-sudo systemctl stop rocketchat.service
+systemctl stop rocketchat.service
 curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
 tar -xzf /tmp/rocket.chat.tgz -C /tmp
 
@@ -159,9 +159,9 @@ if [ -n "${TMP_RC_UPDATE_DFT_VERS}" ]; then
 fi
     
 cd /tmp/bundle/programs/server && npm install
-sudo rsync -av /tmp/bundle/ ${TMP_RC_SETUP_DIR}
-sudo chown -R rocketchat:rocketchat ${TMP_RC_SETUP_DIR}
-sudo systemctl start rocketchat.service
+rsync -av /tmp/bundle/ ${TMP_RC_SETUP_DIR}
+chown -R rocketchat:rocketchat ${TMP_RC_SETUP_DIR}
+systemctl start rocketchat.service
 rm -rf /tmp/bundle
 EOF
 

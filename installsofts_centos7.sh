@@ -66,7 +66,7 @@ function mkdirs()
     path_not_exists_create "${DATA_DIR}"
     path_not_exists_action "${LOGS_DIR}" "link_logs"
 
-    sudo yum makecache fast
+    yum makecache fast
 
     return $?
 }
@@ -83,7 +83,7 @@ function choice_type()
 function update_libs()
 {
     #---------- CHANGE ---------- {
-    sudo hostnamectl set-hostname ${SYS_NEW_NAME}
+    hostnamectl set-hostname ${SYS_NEW_NAME}
     #---------- CHANGE ---------- }
     source scripts/os${OS_VERS}/epel.sh
     source scripts/os${OS_VERS}/libs.sh

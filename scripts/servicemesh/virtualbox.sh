@@ -17,7 +17,7 @@ function set_environment()
 
 function setup_virtualbox()
 {
-	sudo tee /etc/yum.repos.d/virtualbox.repo <<-'EOF'
+	tee /etc/yum.repos.d/virtualbox.repo <<-'EOF'
 [virtualbox]
 name=Oracle Linux / RHEL / CentOS-$releasever / $basearch - VirtualBox
 baseurl=https://mirrors.tuna.tsinghua.edu.cn/virtualbox/rpm/el$releasever/
@@ -28,12 +28,12 @@ gpgkey=https://www.virtualbox.org/download/oracle_vbox.asc
 
 EOF
     #while_wget "https://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo" "mv virtualbox.repo /etc/yum.repos.d"
-    #sudo wget https://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo -P /etc/yum.repos.d
+    #wget https://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo -P /etc/yum.repos.d
 
-    sudo yum makecache
+    yum makecache
     yum -y install VirtualBox-5.2
-    sudo /sbin/vboxconfig
-    sudo /sbin/rcvboxdrv setup
+    /sbin/vboxconfig
+    /sbin/rcvboxdrv setup
 
     VBoxManage --version
 

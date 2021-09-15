@@ -111,10 +111,10 @@ function setup_kong()
     
     #通过Repository安装
     # 等效如下：
-    # curl -s $(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/config.repo") | sudo tee /etc/yum.repos.d/kong.repo
-    # while_wget "https://bintray.com/kong/kong-rpm/rpm -O bintray-kong-kong-rpm.repo" "sed -i -e 's/baseurl.*/&\/centos\/'$MAJOR_VERS''/ bintray-kong-kong-rpm.repo && sudo mv bintray-kong-kong-rpm.repo /etc/yum.repos.d/ && sudo yum install -y kong"
+    # curl -s $(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/config.repo") | tee /etc/yum.repos.d/kong.repo
+    # while_wget "https://bintray.com/kong/kong-rpm/rpm -O bintray-kong-kong-rpm.repo" "sed -i -e 's/baseurl.*/&\/centos\/'$MAJOR_VERS''/ bintray-kong-kong-rpm.repo && mv bintray-kong-kong-rpm.repo /etc/yum.repos.d/ && yum install -y kong"
     # local TMP_KNG_SETUP_REPO_NEWER=$(rpm --eval "https://download.konghq.com/gateway-2.x-centos-%{centos_ver}/config.repo")
-    # while_wget "${TMP_KNG_SETUP_REPO_NEWER} -O kong.repo" "sed -i '2 aname=gateway-kong - $basearch' kong.repo && sudo mv kong.repo /etc/yum.repos.d/" 
+    # while_wget "${TMP_KNG_SETUP_REPO_NEWER} -O kong.repo" "sed -i '2 aname=gateway-kong - $basearch' kong.repo && mv kong.repo /etc/yum.repos.d/" 
     # soft_yum_check_setup "kong.repo"
 
 	# 创建日志软链
@@ -518,7 +518,7 @@ function rouse_openresty()
         mv ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH} ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH}.bak
 
         # 覆写优化配置(???相关参数待优化为按机器计算数值)
-        sudo tee ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH} <<-'EOF'
+        tee ${TMP_KNG_SETUP_ORST_NGX_CONF_PATH} <<-'EOF'
 user  kong;
 worker_processes  auto;
 

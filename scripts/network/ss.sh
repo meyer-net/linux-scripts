@@ -12,7 +12,7 @@ wget https://download.libsodium.org/libsodium/releases/LATEST.tar.gz
 tar zxf LATEST.tar.gz
 cd libsodium*
 ./configure --prefix=/usr/local/lib/libsodium
-sudo make && sudo make install
+make && make install
 echo /usr/local/lib/libsodium/lib >> /etc/ld.so.conf.d/local.conf
 ldconfig
 

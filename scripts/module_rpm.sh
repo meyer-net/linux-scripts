@@ -149,7 +149,7 @@ function boot_$soft_name()
     cat logs/boot.log
     cat /var/log/$setup_name/$setup_name.log
     # journalctl -u $setup_name --no-pager | less
-    # sudo systemctl reload $setup_name.service
+    # systemctl reload $setup_name.service
     echo "--------------------------------------------"
 
 	# 启动状态检测

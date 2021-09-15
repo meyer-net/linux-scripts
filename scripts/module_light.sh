@@ -112,7 +112,7 @@ function conf_$soft_name()
 	# 开始配置
 
 # 	# -- 服务配置加载
-# 	sudo tee /usr/lib/systemd/system/$setup_name.service <<-EOF
+# 	tee /usr/lib/systemd/system/$setup_name.service <<-EOF
 # [Unit]
 # Description=$soft_upper_name Server Service
 # After=network.target

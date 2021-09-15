@@ -128,7 +128,7 @@ EOF
         if [ ${TMP_CURRENT_UPDATE_COUNT} -gt 0 ]; then
             slack ">Start update svn project '${SVN_LOCAL_NAME}@${TMP_CURRENT_VERS}:${TMP_CURRENT_NEWER_VERS}', it takes ${TMP_CURRENT_UPDATE_COUNT} updates, percent ${TMP_DIR_DONE_PERCENT}."
         
-	        sudo tee ${SVN_UPDATE_LOCAL_ROOT_DIR}/logs/${SVN_LOCAL_NAME}_${TMP_CURRENT_TIME}.txt <<-EOF
+	        tee ${SVN_UPDATE_LOCAL_ROOT_DIR}/logs/${SVN_LOCAL_NAME}_${TMP_CURRENT_TIME}.txt <<-EOF
 $TMP_CURRENT_UPDATE_LIST
 EOF
 

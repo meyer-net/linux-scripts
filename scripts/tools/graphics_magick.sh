@@ -21,7 +21,7 @@ function setup_graphics_magick()
 
 	# 编译模式
 	./configure --prefix=${TMP_GRAPHICS_MAGICK_SETUP_DIR} --with-quantum-depth=8 --enable-shared --enable-static
-	sudo make -j4 && make -j4 install
+	make -j4 && make -j4 install
 
 	# 环境变量或软连接
 	echo "GMAGICK_HOME=${TMP_GRAPHICS_MAGICK_SETUP_DIR}" >> /etc/profile

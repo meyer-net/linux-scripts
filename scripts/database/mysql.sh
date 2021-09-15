@@ -79,7 +79,7 @@ function setup_mariadb()
 	local TMP_MDB_SETUP_DIR=${1}
 
 	## 直装模式
-    sudo tee /etc/yum.repos.d/MariaDB.repo <<-'EOF'
+    tee /etc/yum.repos.d/MariaDB.repo <<-'EOF'
 # MariaDB 10.x CentOS repository list
 # http://mariadb.org/mariadb/repositories/
 [mariadb]
@@ -131,7 +131,7 @@ EOF
     
     rm -rf /etc/yum.repos.d/MariaDB.repo
 
-    sudo yum clean all && sudo yum makecache fast
+    yum clean all && yum makecache fast
 
 	return $?
 }
@@ -369,13 +369,13 @@ function boot_mysql()
     mysql -V
 
 	# 当前启动命令
-    sudo systemctl daemon-reload
-    sudo systemctl enable mysqld.service
-    sudo systemctl start mysqld.service
+    systemctl daemon-reload
+    systemctl enable mysqld.service
+    systemctl start mysqld.service
     systemctl status mysqld.service
-    sudo chkconfig mysqld on
+    chkconfig mysqld on
     # journalctl -u mysql --no-pager | less
-    # sudo systemctl reload mysql.service
+    # systemctl reload mysql.service
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_MYSQL_SETUP_PORT}
@@ -393,13 +393,13 @@ function boot_mariadb()
     mysql -V
 
 	# 当前启动命令
-    sudo systemctl daemon-reload
-    sudo systemctl enable mariadb.service
-    sudo systemctl start mariadb.service
+    systemctl daemon-reload
+    systemctl enable mariadb.service
+    systemctl start mariadb.service
     systemctl status mariadb.service
-    sudo chkconfig mariadb on
+    chkconfig mariadb on
     # journalctl -u mariadb --no-pager | less
-    # sudo systemctl reload mariadb
+    # systemctl reload mariadb
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_MDB_SETUP_PORT}

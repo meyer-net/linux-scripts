@@ -20,7 +20,7 @@ function setup_pkg_config()
 
 	# 编译模式
 	./configure --prefix=${TMP_PKG_CONFIG_SETUP_DIR} --with-internal-glib
-	sudo make -j4 && make -j4 install
+	make -j4 && make -j4 install
 	
 	# 环境变量或软连接
 	echo "PKG_CONFIG_HOME=${TMP_PKG_CONFIG_SETUP_DIR}" >> /etc/profile

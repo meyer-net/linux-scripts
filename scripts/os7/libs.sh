@@ -24,16 +24,16 @@ function check_libs()
 
 function setup_libs()
 {
-	sudo rpm -ivh http://www.rpmfind.net/linux/dag/redhat/el${OS_VERS}/en/x86_64/dag/RPMS/rpmforge-release-0.5.3-1.el${OS_VERS}.rf.x86_64.rpm
-	sudo rpm --import /etc/pki/rpm-gpg/RPM*
+	rpm -ivh http://www.rpmfind.net/linux/dag/redhat/el${OS_VERS}/en/x86_64/dag/RPMS/rpmforge-release-0.5.3-1.el${OS_VERS}.rf.x86_64.rpm
+	rpm --import /etc/pki/rpm-gpg/RPM*
 	# soft_yum_check_setup "apt"
-	# sudo apt-get update
+	# apt-get update
 
-	sudo yum -y update
-	sudo yum -y groupinstall "Development Tools"
+	yum -y update
+	yum -y groupinstall "Development Tools"
 	soft_yum_check_setup "yum-utils"
-	sudo yum clean all
-	sudo yum-complete-transaction --cleanup-only
+	yum clean all
+	yum-complete-transaction --cleanup-only
 
 	soft_yum_check_setup "lsof"
 	soft_yum_check_setup "gcc*"
@@ -107,7 +107,7 @@ function setup_libs()
 	# gcc 切换：https://www.cnblogs.com/jixiaohua/p/11732225.html
 	soft_yum_check_setup "centos-release-scl"
 
-	sudo tmpwatch 168 /tmp
+	tmpwatch 168 /tmp
 
 	ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 	soft_yum_check_setup "ntp"

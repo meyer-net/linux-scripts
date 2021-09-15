@@ -7,7 +7,7 @@
 
 function reset_passwd()
 {
-    sudo passwd
+    passwd root
 
 	return $?
 }
@@ -51,7 +51,7 @@ function reset_os()
 {
     SYS_NAME=`hostname`
     input_if_empty "SYS_NAME" "SYS: Please Ender ${green}System Name${reset} Like 'LnxSvr' Or Else"
-    sudo hostnamectl set-hostname $SYS_NAME
+    hostnamectl set-hostname $SYS_NAME
 
     exec_yn_action "reset_passwd" "SYS: Please sure you want to ${green}Change Password${reset}"
     exec_yn_action "reset_dns" "SYS: Please sure you want to ${green}Change DNS${reset}"

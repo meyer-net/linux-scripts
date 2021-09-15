@@ -66,7 +66,7 @@ function setup_libmbedcrypto()
     local TMP_SOFT_SETUP_PATH="$1"
 
     ./configure --prefix=$TMP_SOFT_SETUP_PATH
-    sudo make -j$PROCESSOR_COUNT && sudo make -j$PROCESSOR_COUNT install
+    make -j$PROCESSOR_COUNT && make -j$PROCESSOR_COUNT install
     echo $TMP_SOFT_SETUP_PATH/lib >> /etc/ld.so.conf.d/local.conf
     ldconfig
 
@@ -125,7 +125,7 @@ function setup_kcptun()
     open https://github.com/xtaci/kcptun/releases
 
     # create run_client.sh and run_client.plist
-    sudo tee run_client.plist <<-EOF
+    tee run_client.plist <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -159,7 +159,7 @@ function setup_shadowsocks()
 {
     set_environment
 
-    while_wget "-O shadowsocks-libev.repo https://copr.fedorainfracloud.org/coprs/librehat/shadowsocks/repo/epel-7/librehat-shadowsocks-epel-7.repo" "sudo mv shadowsocks-libev.repo /etc/yum.repos.d/ && sudo yum -y install shadowsocks-libev"
+    while_wget "-O shadowsocks-libev.repo https://copr.fedorainfracloud.org/coprs/librehat/shadowsocks/repo/epel-7/librehat-shadowsocks-epel-7.repo" "mv shadowsocks-libev.repo /etc/yum.repos.d/ && yum -y install shadowsocks-libev"
 
     # 随机序列端口号
     local TMP_CURR_SHADOWSOCK_LOCALPORT=1080
@@ -174,7 +174,7 @@ function setup_shadowsocks()
     echo "--------------------------------------------------------------------------"
     echo "Shadowsocks: The conf of server '/etc/shadowsocks-libev/config.server.json'"
     echo "--------------------------------------------------------------------------"
-	sudo tee /etc/shadowsocks-libev/config.server.json <<-EOF
+	tee /etc/shadowsocks-libev/config.server.json <<-EOF
 {
 	"server": ["[::0]", "${LOCAL_HOST}"],
 	"server_port": $TMP_CURR_SHADOWSOCK_SERVERPORT,
@@ -189,7 +189,7 @@ EOF
     echo "--------------------------------------------------------------------------"
     echo "Shadowsocks: The conf of server '/etc/shadowsocks-libev/config.client.json'"
     echo "--------------------------------------------------------------------------"
-	sudo tee /etc/shadowsocks-libev/config.client.json <<-EOF
+	tee /etc/shadowsocks-libev/config.client.json <<-EOF
 {
 	"server": "$LOCAL_IPV4",
 	"server_port": $TMP_CURR_SHADOWSOCK_SERVERPORT,

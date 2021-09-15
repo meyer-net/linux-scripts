@@ -95,7 +95,7 @@ function setup_composer()
 	ln -sf $TMP_PHP_SETUP_BIN_DIR/composer.phar /usr/bin/composer
 
 	# 依据版本安装依赖，否则composer会报错（可设置循环模式）
-	sudo yum -y install php${PHP_SETUP_COMPOSER_VERS_NO_FLOAT}-php-xml
+	yum -y install php${PHP_SETUP_COMPOSER_VERS_NO_FLOAT}-php-xml
 
 	return $?
 }
@@ -113,7 +113,7 @@ function setup_phpredis()
 	if [ $? -ne 0 ]; then
 		phpize
 		./configure --with-php-config=$TMP_PHP_SETUP_PHPCONFIG_PATH
-		sudo make -j4 && sudo make -j4 install
+		make -j4 && make -j4 install
 		echo "extension=\"redis.so\"" >> $TMP_PHP_SETUP_CONF_PATH
 	fi
 
@@ -136,7 +136,7 @@ function setup_phpzend56()
 
 	local PHP56_ZEND_CURRENT_DIR=`pwd`
 
-	sudo mkdir -pv $PHP56_SETUP_ZEND_DIR
+	mkdir -pv $PHP56_SETUP_ZEND_DIR
 	cp ZendGuardLoader.so $PHP56_SETUP_ZEND_DIR
 	echo "-----------------------------------"
 	echo "Write ZendGuardLoader to php.ini..."
@@ -186,8 +186,8 @@ function setup_php56()
 	#MHASH：https://sourceforge.net/projects/mhash/files/mhash/0.9.9.9/mhash-0.9.9.9.tar.gzSETUP_DIR
 	#参考：http://www.cnblogs.com/huangzhen/archive/2012/09/12/2681861.html
 	#或安装第三方yum源 wget http://www.atomicorp.com/installers/atomic && sh ./atomic
-	sudo ./configure --prefix=$PHP56_SETUP_DIR --with-config-file-path=$PHP56_ATT_CONF_DIR --with-libdir=lib64 --enable-fpm --with-fpm-user=php --with-fpm-group=lnmp --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-iconv-dir --with-freetype-dir=$SETUP_DIR/freetype --with-jpeg-dir --with-png-dir --with-zlib --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --enable-mbregex --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --with-gettext --disable-fileinfo --enable-opcache --enable-intl
-	sudo make -j4 && sudo make -j4 install
+	./configure --prefix=$PHP56_SETUP_DIR --with-config-file-path=$PHP56_ATT_CONF_DIR --with-libdir=lib64 --enable-fpm --with-fpm-user=php --with-fpm-group=lnmp --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-iconv-dir --with-freetype-dir=$SETUP_DIR/freetype --with-jpeg-dir --with-png-dir --with-zlib --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --enable-mbregex --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --with-gettext --disable-fileinfo --enable-opcache --enable-intl
+	make -j4 && make -j4 install
 
 	return $?
 }
@@ -328,9 +328,9 @@ function check_setup_remi_php73()
 
 	php73 -v
 	
-	sudo systemctl enable php73-php-fpm
-	sudo systemctl start php73-php-fpm
-	sudo systemctl status php73-php-fpm
+	systemctl enable php73-php-fpm
+	systemctl start php73-php-fpm
+	systemctl status php73-php-fpm
 
 	return $?
 }

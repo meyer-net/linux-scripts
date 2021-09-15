@@ -36,7 +36,7 @@ function setup_luarocks()
 
 	# 编译模式
 	./configure --prefix=${TMP_LR_SETUP_DIR} --with-lua=${LUAJIT_HOME} --lua-suffix=jit --with-lua-include=${LUAJIT_INC}
-	make -j4 build && sudo make -j4 install
+	make -j4 build && make -j4 install
 
 	cd ${TMP_LR_SETUP_DIR}
 	
