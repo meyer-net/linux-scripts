@@ -14,10 +14,12 @@ function setup_epel()
 	soft_yum_check_setup "git"
 	
 	echo "Checking country code..."
-	local TMP_COUNTRY_CODE="CN"
+	local TMP_COUNTRY_CODE=""
 	get_country_code "TMP_COUNTRY_CODE"
 
-	echo "Current country code is: ${TMP_COUNTRY_CODE}"
+	input_if_empty "TMP_COUNTRY_CODE" "Please sure ${green}your country code${reset}"
+
+	echo 
 	if [ "${TMP_COUNTRY_CODE}" == "CN" ]; then
 		sudo rpm -ivh https://mirrors.ustc.edu.cn/epel/epel-release-latest-${OS_VERS}.noarch.rpm
 		sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-${OS_VERS}
