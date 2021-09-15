@@ -190,7 +190,7 @@ function get_country_code () {
 	# 	eval ${1}=`echo "${TMP_COUNTRY_JSON}" | sed 's/,/\n/g' | grep "country_code" | sed 's/:/\n/g' | sed '1d' | sed 's/}//g'`
 	# fi
 
-	if [ -n "${TMP_COUNTRY_JSON}" ]; then
+	if [ -n "${TMP_COUNTRY_CODE}" ]; then
 		eval ${1}=`echo ${TMP_COUNTRY_CODE}`
 	fi
 

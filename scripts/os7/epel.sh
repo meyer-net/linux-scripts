@@ -8,7 +8,7 @@
 function setup_epel()
 {	
 	soft_yum_check_setup "wget"
-	
+
 	#https://github.com/stedolan/jq
 	soft_yum_check_setup "jq"
 	soft_yum_check_setup "git"
@@ -17,6 +17,7 @@ function setup_epel()
 	local TMP_COUNTRY_CODE="CN"
 	get_country_code "TMP_COUNTRY_CODE"
 
+	echo "Current country code is: ${TMP_COUNTRY_CODE}"
 	if [ "${TMP_COUNTRY_CODE}" == "CN" ]; then
 		sudo rpm -ivh https://mirrors.ustc.edu.cn/epel/epel-release-latest-${OS_VERS}.noarch.rpm
 		sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-${OS_VERS}
