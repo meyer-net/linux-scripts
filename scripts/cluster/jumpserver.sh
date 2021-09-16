@@ -265,8 +265,8 @@ function exec_step_jumpserver()
 function down_jumpserver()
 {
 	local TMP_JMS_SETUP_NEWER="2.13.0"
-	set_github_soft_releases_newer_version "TMP_JMS_SETUP_NEWER" "jumpserver/installer"
-	exec_text_format "TMP_JMS_SETUP_NEWER" "https://github.com/jumpserver/installer/releases/download/v%s/jumpserver-installer-v%s.tar.gz"
+	set_github_soft_releases_newer_version "TMP_JMS_SETUP_NEWER" "jumpserver/jumpserver"
+	exec_text_format "TMP_JMS_SETUP_NEWER" "https://github.com/jumpserver/jumpserver/releases/download/v%s/jumpserver-v%s.tar.gz"    
     setup_soft_wget "jumpserver" "${TMP_JMS_SETUP_NEWER}" "exec_step_jumpserver"
 
 	return $?
