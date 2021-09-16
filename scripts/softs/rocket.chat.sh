@@ -47,7 +47,7 @@ function setup_mongodb()
 function setup_rocket_chat()
 {
 	## 直装模式
-	cd ${TMP_RC_CURRENT_DIR}/programs/server && npm install
+	cd ${TMP_RC_CURRENT_DIR}/programs/server && su - root -c "cd `pwd` && npm install"
 
 	cd `dirname ${TMP_RC_CURRENT_DIR}`
 
@@ -149,6 +149,7 @@ EOF
 
     cat > update_rc.sh <<EOF
 #!/bin/bash
+
 systemctl stop rocketchat.service
 curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
 tar -xzf /tmp/rocket.chat.tgz -C /tmp
@@ -158,7 +159,7 @@ if [ -n "${TMP_RC_UPDATE_DFT_VERS}" ]; then
 	nvm install ${TMP_RC_UPDATE_DFT_VERS} && nvm use ${TMP_RC_UPDATE_DFT_VERS}
 fi
     
-cd /tmp/bundle/programs/server && npm install
+cd /tmp/bundle/programs/server && su - root -c "cd `pwd` && npm install"
 rsync -av /tmp/bundle/ ${TMP_RC_SETUP_DIR}
 chown -R rocketchat:rocketchat ${TMP_RC_SETUP_DIR}
 systemctl start rocketchat.service

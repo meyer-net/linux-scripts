@@ -133,7 +133,8 @@ vm.max_map_count = 262144
 EOF
 
 	#echo "ulimit -SHn 65536" >> /etc/rc.local
-	echo_if_content_not_exists "ulimit -SHn 65536" "/etc/profile"
+	ulimit -SHn 65536
+	echo_if_content_not_exists "ulimit -SHn 65536" "/etc/rc.local"
 
 	#单个用户可用的最大进程数量(软限制)
 	echo_if_content_not_exists "^\* soft nofile 65536" "/etc/security/limits.conf" '* soft nofile 65536'

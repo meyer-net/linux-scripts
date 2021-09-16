@@ -173,9 +173,10 @@ function setup_konga()
     # 开始安装
     #while_exec "su - root -c 'cd ${TMP_KNGA_SETUP_DASHBOARD_DIR} && nvm install 8.11.3 && nvm use 8.11.3 && npm install > $DOWN_DIR/konga_install.log'" "cat $DOWN_DIR/konga_install.log | grep -o \"up to date\" | awk 'END{print NR}' | xargs -I {} [ {} -eq 1 ] && echo 1" "npm uninstall && rm -rf node_modules package-lock.json && rm -rf $NVM_DIR/versions/node/v8.11.3 && rm -rf $NVM_DIR/.cache"
     #国内镜像源无法安装完全，故先切换到官方源，再还原
+    source ${NVM_PATH}
     local TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT=`nrm current`
     nrm use npm
-    npm install
+    su - root -c "cd `pwd` && npm install"
 
     if [ -n "${TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT}" ]; then
         nrm use ${TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT}

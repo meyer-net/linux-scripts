@@ -182,6 +182,10 @@ function get_ipv6 () {
 #获取国码
 #参数1：需要设置的变量名
 function get_country_code () {
+	if [ ! -f "/usr/sbin/jq" ]; then
+		yum -y install jq
+	fi
+
 	local TMP_LOCAL_IPV4=`curl -s ip.sb`
 	# local TMP_COUNTRY_JSON=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4}`
 	local TMP_COUNTRY_CODE=`curl -s https://api.ip.sb/geoip/${TMP_LOCAL_IPV4} | jq '.country_code' | sed 's@\"@@g'`
