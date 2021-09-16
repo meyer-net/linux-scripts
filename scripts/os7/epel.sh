@@ -10,6 +10,7 @@ function setup_epel()
 	soft_yum_check_setup "wget"
 
 	#https://github.com/stedolan/jq
+	#https://gitbook.curiouser.top/origin/linux-jq.html
 	soft_yum_check_setup "jq"
 	soft_yum_check_setup "git"
 	

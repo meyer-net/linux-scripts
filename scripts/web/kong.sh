@@ -71,9 +71,19 @@ function set_env_konga()
     cd ${__DIR} && source scripts/lang/nodejs.sh
 
     # konga 只认可该版本以下
-    nvm install lts/erbium && nvm use lts/erbium
+    nvm install lts/erbium
+    
+    local TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT=`nrm current`
+
+    nvm use lts/erbium
     
     nvm alias default lts/erbium
+        
+	npm install -g nrm
+	echo "-------------------------------------------------"
+    nrm use ${TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT}
+	nrm ls
+	echo "-------------------------------------------------"
 
 	return $?
 }
@@ -949,13 +959,23 @@ function conf_konga_https_by_acme_plugin()
     # 更新证书    
     local TMP_KNGA_SETUP_KNG_HOST_PAIR="${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}"
     local TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID=`curl -s http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/ | jq '.data[] | select(.name == "acme").id'`
-    local TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE=`curl -o /dev/null -s -w %{http_code} -X POST http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID}/  \
-            -d "config.domains[]=${TMP_KNGA_SETUP_DOMAIN}"`
 
-    # 静默请求, 激活生效
-    `curl -s https://${TMP_KNGA_SETUP_DOMAIN}`
+    local TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT=`curl -s http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/plugins/${TMP_DIY_KONG_ACME_PLUGIN_ID}/ | jq ".config.domains[]"`
 
-    echo "KongA.Notice: To support the domain of '${TMP_KNGA_SETUP_DOMAIN}' by kong ${TMP_KNGA_SETUP_KNG_HOST_PAIR}, remote response '${TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE}'."
+    # 不包含该域名的情况下 ??? 不生效的| jq 'select( . == "\"${TMP_KNGA_SETUP_DOMAIN}\"" )'
+    if [ -z `echo ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT} | jq | grep -o "${TMP_KNGA_SETUP_DOMAIN}"` ] && [ -z `echo ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT} | jq | grep -o "\*.${TMP_KNGA_SETUP_DOMAIN#*.}"` ]; then
+        local TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT_FORM=`echo ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT} | jq | sed 's@^@-d config.domains[]=@g'`
+        
+        local TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE=`curl -o /dev/null -s -w %{http_code} -X PATCH http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID}/ ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT_FORM} -d "config.domains[]=${TMP_KNGA_SETUP_DOMAIN}"`
+   
+        # 静默请求, 激活生效
+        `curl -s https://${TMP_KNGA_SETUP_DOMAIN}`
+                    
+        echo "KongA.Notice: To support the domain of '${TMP_KNGA_SETUP_DOMAIN}' by kong ${TMP_KNGA_SETUP_KNG_HOST_PAIR}, remote response '${TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE}'."
+    else
+        echo "KongA.Notice: The domain of '${TMP_KNGA_SETUP_DOMAIN}' by kong ${TMP_KNGA_SETUP_KNG_HOST_PAIR} contains matched already."
+    fi
+
 
 	return $?
 }
