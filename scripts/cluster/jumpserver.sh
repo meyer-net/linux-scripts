@@ -31,20 +31,20 @@ function conf_jumpserver_pre()
     cd ${TMP_JMS_CURRENT_DIR}
 
     # 修改 Jumpserver 配置文件
-    cp config-example.txt config-example.txt.bak
+    cp config_example.yml config_example.yml.bak
 
     ## 手动配置
     # 安装配置
-    sed -i "s@VOLUME_DIR=.*@VOLUME_DIR=${TMP_JMS_DATA_DIR}@g" config-example.txt
-    sed -i "s@DOCKER_DIR=.*@DOCKER_DIR=${SETUP_DIR}/docker_jms@g" config-example.txt
+    sed -i "s@VOLUME_DIR=.*@VOLUME_DIR=${TMP_JMS_DATA_DIR}@g" config_example.yml
+    sed -i "s@DOCKER_DIR=.*@DOCKER_DIR=${SETUP_DIR}/docker_jms@g" config_example.yml
     
     # 密钥配置
     local TMP_JMS_SETUP_SECRET_KEY=""
     local TMP_JMS_SETUP_TOKEN=`cat /proc/sys/kernel/random/uuid`
 
     rand_str "TMP_JMS_SETUP_SECRET_KEY" 32
-    sed -i "s@SECRET_KEY=.*@SECRET_KEY=${TMP_JMS_SETUP_SECRET_KEY}@g" config-example.txt
-    sed -i "s@BOOTSTRAP_TOKEN=.*@BOOTSTRAP_TOKEN=${TMP_JMS_SETUP_TOKEN}@g" config-example.txt
+    sed -i "s@SECRET_KEY=.*@SECRET_KEY=${TMP_JMS_SETUP_SECRET_KEY}@g" config_example.yml
+    sed -i "s@BOOTSTRAP_TOKEN=.*@BOOTSTRAP_TOKEN=${TMP_JMS_SETUP_TOKEN}@g" config_example.yml
 
     # 生成数据库表结构和初始化数据
     local TMP_JMS_SETUP_DB_HOST=""
@@ -78,11 +78,11 @@ function conf_jumpserver_pre()
             echo "${TMP_JMS_SETUP_SCRIPTS}"
         fi
         
-        sed -i "s@USE_EXTERNAL_MYSQL=0@USE_EXTERNAL_MYSQL=1@g" config-example.txt
-        sed -i "s@DB_HOST=.*@DB_HOST=${TMP_JMS_SETUP_DB_HOST}@g" config-example.txt
-        sed -i "s@DB_USER=.*@DB_USER=${TMP_JMS_SETUP_DBUNAME}@g" config-example.txt
-        sed -i "s@DB_PASSWORD=.*@DB_PASSWORD='${TMP_JMS_SETUP_DBPWD}'@g" config-example.txt
-        sed -i "s@DB_NAME=.*@DB_NAME=${TMP_JMS_SETUP_DBNAME}@g" config-example.txt
+        sed -i "s@USE_EXTERNAL_MYSQL=0@USE_EXTERNAL_MYSQL=1@g" config_example.yml
+        sed -i "s@DB_HOST=.*@DB_HOST=${TMP_JMS_SETUP_DB_HOST}@g" config_example.yml
+        sed -i "s@DB_USER=.*@DB_USER=${TMP_JMS_SETUP_DBUNAME}@g" config_example.yml
+        sed -i "s@DB_PASSWORD=.*@DB_PASSWORD='${TMP_JMS_SETUP_DBPWD}'@g" config_example.yml
+        sed -i "s@DB_NAME=.*@DB_NAME=${TMP_JMS_SETUP_DBNAME}@g" config_example.yml
     fi
 
     # 缓存Redis，???使用外置redis时依旧存在问题
@@ -97,18 +97,18 @@ function conf_jumpserver_pre()
             redis-cli config set stop-writes-on-bgsave-error no
         fi
 
-        sed -i "s@USE_EXTERNAL_REDIS=0@USE_EXTERNAL_REDIS=1@g" config-example.txt
-        sed -i "s@REDIS_HOST=.*@REDIS_HOST=${TMP_JMS_SETUP_REDIS_HOST}@g" config-example.txt
+        sed -i "s@USE_EXTERNAL_REDIS=0@USE_EXTERNAL_REDIS=1@g" config_example.yml
+        sed -i "s@REDIS_HOST=.*@REDIS_HOST=${TMP_JMS_SETUP_REDIS_HOST}@g" config_example.yml
             
         local TMP_JMS_SETUP_REDIS_PWD=""
         rand_str "TMP_JMS_SETUP_REDIS_PWD" 32
         input_if_empty "TMP_JMS_SETUP_REDIS_PWD" "JumpServer.Redis.Pre: Please ender ${red}redis auth login password${reset} of host address '${green}${TMP_JMS_SETUP_REDIS_HOST}${reset}'"
-        sed -i "s@REDIS_PASSWORD=.*@REDIS_PASSWORD=${TMP_JMS_SETUP_REDIS_PWD}@g" config-example.txt
+        sed -i "s@REDIS_PASSWORD=.*@REDIS_PASSWORD=${TMP_JMS_SETUP_REDIS_PWD}@g" config_example.yml
     fi
     
     # Nginx配置
-    sed -i "s@SSH_PORT=.*@SSH_PORT=${TMP_JMS_SETUP_SSH_PORT}@g" config-example.txt
-    sed -i "s@RDP_PORT=.*@RDP_PORT=${TMP_JMS_SETUP_RDP_PORT}@g" config-example.txt
+    sed -i "s@SSH_PORT=.*@SSH_PORT=${TMP_JMS_SETUP_SSH_PORT}@g" config_example.yml
+    sed -i "s@RDP_PORT=.*@RDP_PORT=${TMP_JMS_SETUP_RDP_PORT}@g" config_example.yml
     
 	return $?
 }
