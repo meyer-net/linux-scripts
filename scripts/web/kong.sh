@@ -69,11 +69,11 @@ function set_env_konga()
     set_env_check_postgresql "KongA"
 
     cd ${__DIR} && source scripts/lang/nodejs.sh
+    
+    local TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT=`nrm current`
 
     # konga 只认可该版本以下
     nvm install lts/erbium
-    
-    local TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT=`nrm current`
 
     nvm use lts/erbium
     
@@ -966,7 +966,7 @@ function conf_konga_https_by_acme_plugin()
     if [ -z `echo ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT} | jq | grep -o "${TMP_KNGA_SETUP_DOMAIN}"` ] && [ -z `echo ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT} | jq | grep -o "\*.${TMP_KNGA_SETUP_DOMAIN#*.}"` ]; then
         local TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT_FORM=`echo ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT} | jq | sed 's@^@-d config.domains[]=@g'`
         
-        local TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE=`curl -o /dev/null -s -w %{http_code} -X PATCH http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID}/ ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT_FORM} -d "config.domains[]=${TMP_KNGA_SETUP_DOMAIN}"`
+        local TMP_KNGA_SETUP_REQ_ACME_RESPONSE_CODE=`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_KNGA_SETUP_KNG_HOST_PAIR}/plugins/${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_ID}/ ${TMP_KNGA_SETUP_KNG_ACME_PLUGIN_DOMAINS_CURRENT_FORM} -d "config.domains[]=${TMP_KNGA_SETUP_DOMAIN}"`
    
         # 静默请求, 激活生效
         `curl -s https://${TMP_KNGA_SETUP_DOMAIN}`
@@ -1055,7 +1055,8 @@ function boot_konga()
     # bin/konga -v
 
 	# 当前启动命令
-    nohup npm run bower-deps && npm run production > logs/boot.log 2>&1 &
+    nohup npm run bower-deps > logs/boot-bower-deps.log 2>&1 &
+    nohup npm run production > logs/boot.log 2>&1 &
 	
     # 等待启动
     echo "Starting konga，Waiting for a moment"

@@ -50,7 +50,7 @@ function patch_increase_acme_domain()
         if [ -z `echo ${tmp_plugin_acme_domains_current} | jq | grep -o "${tmp_acme_domain}"` ] && [ -z `echo ${tmp_plugin_acme_domains_current} | jq | grep -o "\*.${tmp_acme_domain#*.}"` ]; then
             local tmp_plugin_acme_domains_current_form=`echo ${tmp_plugin_acme_domains_current} | jq | sed 's@^@-d config.domains[]=@g'`
     
-            local request_code=`curl -o /dev/null -s -w %{http_code} -X PATCH http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/plugins/${TMP_DIY_KONG_ACME_PLUGIN_ID}/ ${tmp_plugin_acme_domains_current_form} -d "config.domains[]=${tmp_acme_domain}"`
+            local request_code=`curl -o /dev/null -s -w %{http_code} -X PUT http://${TMP_DIY_KONG_ADMIN_LISTEN_HOST}/plugins/${TMP_DIY_KONG_ACME_PLUGIN_ID}/ ${tmp_plugin_acme_domains_current_form} -d "config.domains[]=${tmp_acme_domain}"`
 
             echo "KongApi.PatchIncreaseAcmeDomain: Remote response '${request_code}'."
 
