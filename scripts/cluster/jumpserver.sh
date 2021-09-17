@@ -6,6 +6,7 @@
 #------------------------------------------------
 # 参考：https://docs.jumpserver.org/zh/master/install/setup_by_fast/
 #------------------------------------------------
+local TMP_JMS_SETUP_HTTP_PORT=10080
 local TMP_JMS_SETUP_SSH_PORT=22222
 local TMP_JMS_SETUP_RDP_PORT=33389
 local TMP_JMS_SETUP_DB_HOST="${LOCAL_HOST}"
@@ -109,6 +110,7 @@ function conf_jumpserver_pre()
     fi
     
     # Nginx配置
+    sed -i "s@HTTP_PORT=.*@HTTP_PORT=${TMP_JMS_SETUP_HTTP_PORT}@g" config-example.txt
     sed -i "s@SSH_PORT=.*@SSH_PORT=${TMP_JMS_SETUP_SSH_PORT}@g" config-example.txt
     sed -i "s@RDP_PORT=.*@RDP_PORT=${TMP_JMS_SETUP_RDP_PORT}@g" config-example.txt
     
@@ -222,12 +224,12 @@ function boot_jumpserver()
     echo_startup_config "jumpserver" "${TMP_JMS_SETUP_DIR}" "bash jmsctl.sh start" "" "100"
 	
 	# 授权iptables端口访问
-	echo_soft_port 80
+	echo_soft_port ${TMP_JMS_SETUP_HTTP_PORT}
 	echo_soft_port ${TMP_JMS_SETUP_SSH_PORT}
 	echo_soft_port ${TMP_JMS_SETUP_RDP_PORT}
 
     # 生成web授权访问脚本
-    echo_web_service_init_scripts "jumpserver${LOCAL_ID}" "jms${LOCAL_ID}-webui.${SYS_DOMAIN}" 80 "${LOCAL_HOST}"
+    echo_web_service_init_scripts "jumpserver${LOCAL_ID}" "jms${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_JMS_SETUP_HTTP_PORT} "${LOCAL_HOST}"
 
 	return $?
 }

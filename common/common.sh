@@ -1923,7 +1923,7 @@ stdout_logfile = ${TMP_STARTUP_SUPERVISOR_LNK_LOGS_DIR}/${TMP_STARTUP_SUPERVISOR
 numprocs = 1                                                                           ;
 EOF
 	else
-		echo "Supervisor：The startup config of '${red}${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}${reset}' exists"
+		echo "Supervisor：The startup config of '${red}${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}${reset}' created"
 		echo
 		cat ${TMP_STARTUP_SUPERVISOR_CONF_CURRENT_OUTPUT_PATH}
 	fi
