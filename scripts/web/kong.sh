@@ -1028,6 +1028,7 @@ function boot_kong()
     echo "--------------------------------------------"
     sleep 10
 
+    cat logs/boot.log
 	kong health
     echo "--------------------------------------------"
 
