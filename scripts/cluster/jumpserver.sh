@@ -8,6 +8,8 @@
 #------------------------------------------------
 local TMP_JMS_SETUP_SSH_PORT=22222
 local TMP_JMS_SETUP_RDP_PORT=33389
+local TMP_JMS_SETUP_DB_HOST="${LOCAL_HOST}"
+local TMP_JMS_SETUP_DB_PORT=13306
 
 ##########################################################################################################
 
@@ -47,8 +49,7 @@ function conf_jumpserver_pre()
     sed -i "s@BOOTSTRAP_TOKEN=.*@BOOTSTRAP_TOKEN=${TMP_JMS_SETUP_TOKEN}@g" config-example.txt
 
     # 生成数据库表结构和初始化数据
-    local TMP_JMS_SETUP_DB_HOST=""
-    input_if_empty "TMP_JMS_SETUP_DB_HOST" "JumpServer.Mysql.Pre: Please ender ${red}mysql host address${reset}，or type enter to setup docker-image"
+    input_if_empty "TMP_JMS_SETUP_DB_HOST" "JumpServer.Mysql.Pre: Please ender ${green}mysql host address${reset}，${red}not mariadb${reset}，or type enter to setup docker-image"
     set_if_equals "TMP_JMS_SETUP_DB_HOST" "LOCAL_HOST" "127.0.0.1"
 
     if [ "${TMP_JMS_SETUP_DB_HOST}" == "" ] ; then
@@ -59,27 +60,28 @@ function conf_jumpserver_pre()
         # 不能用&，否则会被识别成读取前一个值
         local TMP_JMS_SETUP_DBPWD="jms%SVR!m${LOCAL_ID}_"
 
-        input_if_empty "TMP_JMS_SETUP_DBNAME" "JumpServer.Mysql.Pre: Please ender ${red}mysql database name${reset} of '${TMP_JMS_SETUP_DB_HOST}' for jumpserver"
-        input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql.Pre: Please ender ${red}mysql user name${reset} of '${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
-        input_if_empty "TMP_JMS_SETUP_DBPWD" "JumpServer.Mysql.Pre: Please ender ${red}mysql password${reset} of '${TMP_JMS_SETUP_DBUNAME}@${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
+        input_if_empty "TMP_JMS_SETUP_DBNAME" "JumpServer.Mysql.Pre: Please ender ${green}mysql database name${reset} of '${TMP_JMS_SETUP_DB_HOST}' for jumpserver"
+        input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql.Pre: Please ender ${green}mysql user name${reset} of '${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
+        input_if_empty "TMP_JMS_SETUP_DBPWD" "JumpServer.Mysql.Pre: Please ender ${green}mysql password${reset} of '${TMP_JMS_SETUP_DBUNAME}@${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
             
         local TMP_JMS_SETUP_SCRIPTS="CREATE DATABASE ${TMP_JMS_SETUP_DBNAME} DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;  \
         GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'%' identified by '${TMP_JMS_SETUP_DBPWD}';  \
         GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'localhost' identified by '${TMP_JMS_SETUP_DBPWD}';  \
         FLUSH PRIVILEGES;"
 
-        if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "${LOCAL_HOST}" ] ; then
+        if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ]; then
             echo "JumpServer.Mysql.Pre: Start to init jumpserver database by root user of mysql"
-            mysql -h ${TMP_JMS_SETUP_DB_HOST} -uroot -e"
+            mysql -h ${TMP_JMS_SETUP_DB_HOST} -P ${TMP_JMS_SETUP_DB_PORT} -uroot -e"
             ${TMP_JMS_SETUP_SCRIPTS}
-            exit" --connect-expired-password
+            exit" #--connect-expired-password
         else
-            echo "JumpServer.Mysql.Pre: Please execute ${red}mysql scripts${reset} By Follow"
+            echo "JumpServer.Mysql.Pre: Please execute ${green}mysql scripts${reset} By Follow"
             echo "${TMP_JMS_SETUP_SCRIPTS}"
         fi
         
         sed -i "s@USE_EXTERNAL_MYSQL=0@USE_EXTERNAL_MYSQL=1@g" config-example.txt
         sed -i "s@DB_HOST=.*@DB_HOST=${TMP_JMS_SETUP_DB_HOST}@g" config-example.txt
+        sed -i "s@DB_PORT=.*@DB_PORT=${TMP_JMS_SETUP_DB_PORT}@g" config-example.txt
         sed -i "s@DB_USER=.*@DB_USER=${TMP_JMS_SETUP_DBUNAME}@g" config-example.txt
         sed -i "s@DB_PASSWORD=.*@DB_PASSWORD='${TMP_JMS_SETUP_DBPWD}'@g" config-example.txt
         sed -i "s@DB_NAME=.*@DB_NAME=${TMP_JMS_SETUP_DBNAME}@g" config-example.txt
@@ -87,7 +89,7 @@ function conf_jumpserver_pre()
 
     # 缓存Redis，???使用外置redis时依旧存在问题
     local TMP_JMS_SETUP_REDIS_HOST=""
-    input_if_empty "TMP_JMS_SETUP_REDIS_HOST" "JumpServer.Redis.Pre: Please ender ${red}redis host address${reset}，or type enter to setup docker-image"
+    input_if_empty "TMP_JMS_SETUP_REDIS_HOST" "JumpServer.Redis.Pre: Please ender ${green}redis host address${reset}，or type enter to setup docker-image"
     set_if_equals "TMP_JMS_SETUP_REDIS_HOST" "LOCAL_HOST" "127.0.0.1"
     
     if [ "${TMP_JMS_SETUP_REDIS_HOST}" == "" ] ; then
@@ -102,7 +104,7 @@ function conf_jumpserver_pre()
             
         local TMP_JMS_SETUP_REDIS_PWD=""
         rand_str "TMP_JMS_SETUP_REDIS_PWD" 32
-        input_if_empty "TMP_JMS_SETUP_REDIS_PWD" "JumpServer.Redis.Pre: Please ender ${red}redis auth login password${reset} of host address '${green}${TMP_JMS_SETUP_REDIS_HOST}${reset}'"
+        input_if_empty "TMP_JMS_SETUP_REDIS_PWD" "JumpServer.Redis.Pre: Please ender ${green}redis auth login password${reset} of host address '${green}${TMP_JMS_SETUP_REDIS_HOST}${reset}'"
         sed -i "s@REDIS_PASSWORD=.*@REDIS_PASSWORD=${TMP_JMS_SETUP_REDIS_PWD}@g" config-example.txt
     fi
     
@@ -151,12 +153,15 @@ function setup_jumpserver()
 	local TMP_JMS_LNK_LOGS_CORE_DIR=${LOGS_DIR}/jumpserver/core
 	local TMP_JMS_LNK_DATA_DIR=${DATA_DIR}/jumpserver
 
-    mkdir -pv ${TMP_JMS_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_JMS_LNK_LOGS_NGINX_DIR}
-	mkdir -pv ${TMP_JMS_LNK_LOGS_CORE_DIR}
-    mkdir -pv `dirname ${TMP_JMS_LOGS_NGINX_DIR}`
-    mkdir -pv `dirname ${TMP_JMS_LOGS_CORE_DIR}`
+    path_not_exists_create "${TMP_JMS_LNK_LOGS_DIR}"
+	path_not_exists_create "${TMP_JMS_LNK_LOGS_NGINX_DIR}"
+	path_not_exists_create "${TMP_JMS_LNK_LOGS_CORE_DIR}"
+    path_not_exists_create `dirname ${TMP_JMS_LOGS_NGINX_DIR}`
+    path_not_exists_create `dirname ${TMP_JMS_LOGS_CORE_DIR}`
 	mv ${TMP_JMS_DATA_DIR} ${TMP_JMS_LNK_DATA_DIR}
+
+    # 等待创建OK
+    sleep 1
 
     ln -sf ${TMP_JMS_LNK_LOGS_DIR} ${TMP_JMS_LOGS_DIR}
 	ln -sf ${TMP_JMS_LNK_LOGS_NGINX_DIR} ${TMP_JMS_LOGS_NGINX_DIR}
