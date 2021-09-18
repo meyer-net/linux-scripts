@@ -204,6 +204,18 @@ EOF
 
 	systemctl restart sshd.service
 
+	# 创建新用户及分配权限
+	create_user_if_not_exists "oshit" "root"
+	function _change_oshit_passwd()
+	{
+		passwd oshit
+
+		chmod -v u+w /etc/sudoers
+		sed -i "100aoshit   ALL=(ALL)       ALL" /etc/sudoers
+	}
+
+	exec_yn_action "_change_oshit_passwd" "Sys-Optimize: User of ${red}oshit${reset} createed, please sure the password u want to set"
+	
     return $?
 }
 
