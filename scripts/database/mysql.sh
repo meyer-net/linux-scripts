@@ -8,7 +8,7 @@
 #          https://linux.cn/article-5730-1.html
 #------------------------------------------------
 local TMP_MYSQL_SETUP_PORT=13306
-local TMP_MYSQL_SETUP_PWD="mysql%DB!m${LOCAL_ID}_"
+local TMP_MYSQL_SETUP_PWD="mysql%DB^m${LOCAL_ID}~"
 
 ##########################################################################################################
 
@@ -165,7 +165,7 @@ function conf_mysql()
 	input_if_empty "TMP_MYSQL_SETUP_PWD" "MySql: Please ender ${green}mysql password${reset} of ${red}user(Root)${reset} for '%'"
     
     systemctl start mysqld.service 
-    mysql -uroot -p${TMP_MSQL_SETUP_TEMPORARY_PWD} -e"
+    mysql -u root -p ${TMP_MSQL_SETUP_TEMPORARY_PWD} -e "
     SET password FOR 'root'@'localhost'=PASSWORD('${TMP_MSQL_SETUP_TEMPORARY_PWD}');
     GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '${TMP_MYSQL_SETUP_PWD}' WITH GRANT OPTION;
     USE mysql;

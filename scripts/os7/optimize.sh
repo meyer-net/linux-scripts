@@ -162,6 +162,7 @@ EOF
 	#安装软件设定
 	if [ ! -f "${SETUP_DIR}/.sys_domain" ]; then
 		input_if_empty "SYS_DOMAIN" "SYS: Please ender ${green}system domain${reset} like '${red}myvnc.com${reset}' or else"
+		echo "${SYS_DOMAIN}" > ${SETUP_DIR}/.sys_domain
 	fi
 	
 	# 默认端口检测

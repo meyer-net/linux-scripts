@@ -221,7 +221,7 @@ function conf_kong()
 	input_if_empty "TMP_KNG_SETUP_PSQL_USRNAME" "PostgresQL: Please ender the ${green}postgres user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}' '${green}for kong${reset}'"
     
     local TMP_KNG_SETUP_PSQL_SELF_USRNAME="kong"
-    local TMP_KNG_SETUP_PSQL_SELF_USRPWD="kng%DB!m${LOCAL_ID}_"
+    local TMP_KNG_SETUP_PSQL_SELF_USRPWD="kng%DB^m${LOCAL_ID}~"
 	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_DATABASE" "Kong.PostgresQL: Please ender ${green}kong used database${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}'"
 	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_USRNAME" "Kong.PostgresQL: Please ender ${green}kong used user name${reset} of '${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}'"
 	input_if_empty "TMP_KNG_SETUP_PSQL_SELF_USRPWD" "Kong.PostgresQL: Please ender ${green}kong used password${reset} of ${TMP_KNG_SETUP_PSQL_SELF_USRNAME}@${TMP_KNG_SETUP_PSQL_HOST}:${TMP_KNG_SETUP_PSQL_PORT}"
@@ -859,7 +859,7 @@ function conf_konga()
 
     local TMP_KNGA_SETUP_PSQL_SELF_DATABASE="konga"
     local TMP_KNGA_SETUP_PSQL_SELF_USRNAME="${TMP_KNGA_SETUP_PSQL_SELF_DATABASE}"
-    local TMP_KNGA_SETUP_PSQL_SELF_USRPWD="knga%DB!m${LOCAL_ID}_"
+    local TMP_KNGA_SETUP_PSQL_SELF_USRPWD="knga%DB^m${LOCAL_ID}~"
 
     # 不在本机的情况下，需要输入地址
     local TMP_KNGA_SETUP_IS_KONG_LOCAL=`lsof -i:${TMP_KNG_SETUP_API_HTTP_PORT}`

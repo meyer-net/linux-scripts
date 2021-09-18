@@ -13,7 +13,7 @@ local TMP_RC_SETUP_HTTP_PORT=13000
 local TMP_RC_SETUP_MGDB_HOST="${LOCAL_HOST}"
 local TMP_RC_SETUP_MGDB_PORT=27017
 local TMP_RC_SETUP_MGDB_USER="admin"
-local TMP_RC_SETUP_MGDB_PWD="mongo%DB!m${LOCAL_ID}_"
+local TMP_RC_SETUP_MGDB_PWD="mongo%DB^m${LOCAL_ID}~"
 
 ##########################################################################################################
 

@@ -7,11 +7,16 @@
 # 参考：https://docs.jumpserver.org/zh/master/install/setup_by_fast/
 #------------------------------------------------
 local TMP_JMS_SETUP_HTTP_PORT=10080
+local TMP_JMS_SETUP_HTTPS_PORT=10443
 local TMP_JMS_SETUP_SSH_PORT=22222
 local TMP_JMS_SETUP_RDP_PORT=33389
+local TMP_JMS_SETUP_RDS_HOST=
+local TMP_JMS_SETUP_RDS_PORT=16379
+local TMP_JMS_SETUP_RDS_PWD=
 local TMP_JMS_SETUP_DB_HOST="${LOCAL_HOST}"
 local TMP_JMS_SETUP_DB_PORT=13306
 
+    
 ##########################################################################################################
 
 # 1-配置环境
@@ -27,8 +32,6 @@ function set_env_jumpserver()
 # 2-1预配置
 function conf_jumpserver_pre()
 {
-	local TMP_JMS_SETUP_DIR=${1}
-	local TMP_JMS_CURRENT_DIR=${2}
 	local TMP_JMS_DATA_DIR=${TMP_JMS_SETUP_DIR}/volume
     
     cd ${TMP_JMS_CURRENT_DIR}
@@ -50,7 +53,7 @@ function conf_jumpserver_pre()
     sed -i "s@BOOTSTRAP_TOKEN=.*@BOOTSTRAP_TOKEN=${TMP_JMS_SETUP_TOKEN}@g" config-example.txt
 
     # 生成数据库表结构和初始化数据
-    input_if_empty "TMP_JMS_SETUP_DB_HOST" "JumpServer.Mysql.Pre: Please ender ${green}mysql host address${reset}，${red}not mariadb${reset}，or type enter to setup docker-image"
+    input_if_empty "TMP_JMS_SETUP_DB_HOST" "JumpServer.Mysql.Pre: Please ender ${green}mysql host address${reset}，or type enter to setup docker-image"
     set_if_equals "TMP_JMS_SETUP_DB_HOST" "LOCAL_HOST" "127.0.0.1"
 
     if [ "${TMP_JMS_SETUP_DB_HOST}" == "" ] ; then
@@ -59,7 +62,7 @@ function conf_jumpserver_pre()
         local TMP_JMS_SETUP_DBNAME="jumpserver"
         local TMP_JMS_SETUP_DBUNAME="jumpserver"
         # 不能用&，否则会被识别成读取前一个值
-        local TMP_JMS_SETUP_DBPWD="jms%SVR!m${LOCAL_ID}_"
+        local TMP_JMS_SETUP_DBPWD="jms%SVR^m${LOCAL_ID}~"
 
         input_if_empty "TMP_JMS_SETUP_DBNAME" "JumpServer.Mysql.Pre: Please ender ${green}mysql database name${reset} of '${TMP_JMS_SETUP_DB_HOST}' for jumpserver"
         input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql.Pre: Please ender ${green}mysql user name${reset} of '${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
@@ -72,7 +75,7 @@ function conf_jumpserver_pre()
 
         if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ]; then
             echo "JumpServer.Mysql.Pre: Start to init jumpserver database by root user of mysql"
-            mysql -h ${TMP_JMS_SETUP_DB_HOST} -P ${TMP_JMS_SETUP_DB_PORT} -uroot -e"
+            mysql -h ${TMP_JMS_SETUP_DB_HOST} -P ${TMP_JMS_SETUP_DB_PORT} -u root -p -e"
             ${TMP_JMS_SETUP_SCRIPTS}
             exit" #--connect-expired-password
         else
@@ -89,28 +92,30 @@ function conf_jumpserver_pre()
     fi
 
     # 缓存Redis，???使用外置redis时依旧存在问题
-    local TMP_JMS_SETUP_REDIS_HOST=""
-    input_if_empty "TMP_JMS_SETUP_REDIS_HOST" "JumpServer.Redis.Pre: Please ender ${green}redis host address${reset}，or type enter to setup docker-image"
-    set_if_equals "TMP_JMS_SETUP_REDIS_HOST" "LOCAL_HOST" "127.0.0.1"
+    input_if_empty "TMP_JMS_SETUP_RDS_HOST" "JumpServer.Redis.Pre: Please ender ${green}redis host address${reset}，or type enter to setup docker-image"
+    set_if_equals "TMP_JMS_SETUP_RDS_HOST" "LOCAL_HOST" "127.0.0.1"
     
-    if [ "${TMP_JMS_SETUP_REDIS_HOST}" == "" ] ; then
+    rand_str "TMP_JMS_SETUP_RDS_PWD" 32
+    if [ "${TMP_JMS_SETUP_RDS_HOST}" == "" ] ; then
         echo "JumpServer.Redis.Pre: Jumpserver typed local docker-image mode"
     else
-        if [ "${TMP_JMS_SETUP_REDIS_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_REDIS_HOST}" == "localhost" ] || [ "${TMP_JMS_SETUP_REDIS_HOST}" == "${LOCAL_HOST}" ] ; then
+        if [ "${TMP_JMS_SETUP_RDS_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_RDS_HOST}" == "localhost" ]; then
             redis-cli config set stop-writes-on-bgsave-error no
         fi
 
+        input_if_empty "TMP_JMS_SETUP_RDS_PWD" "JumpServer.Redis.Pre: Please ender ${green}redis auth login password${reset} of host address '${green}${TMP_JMS_SETUP_RDS_HOST}${reset}'"
+
         sed -i "s@USE_EXTERNAL_REDIS=0@USE_EXTERNAL_REDIS=1@g" config-example.txt
-        sed -i "s@REDIS_HOST=.*@REDIS_HOST=${TMP_JMS_SETUP_REDIS_HOST}@g" config-example.txt
-            
-        local TMP_JMS_SETUP_REDIS_PWD=""
-        rand_str "TMP_JMS_SETUP_REDIS_PWD" 32
-        input_if_empty "TMP_JMS_SETUP_REDIS_PWD" "JumpServer.Redis.Pre: Please ender ${green}redis auth login password${reset} of host address '${green}${TMP_JMS_SETUP_REDIS_HOST}${reset}'"
-        sed -i "s@REDIS_PASSWORD=.*@REDIS_PASSWORD=${TMP_JMS_SETUP_REDIS_PWD}@g" config-example.txt
+        sed -i "s@REDIS_HOST=.*@REDIS_HOST=${TMP_JMS_SETUP_RDS_HOST}@g" config-example.txt
+        
     fi
+    
+    sed -i "s@REDIS_PORT=.*@REDIS_PORT=${TMP_JMS_SETUP_RDS_PORT}@g" config-example.txt
+    sed -i "s@REDIS_PASSWORD=.*@REDIS_PASSWORD=${TMP_JMS_SETUP_RDS_PWD}@g" config-example.txt
     
     # Nginx配置
     sed -i "s@HTTP_PORT=.*@HTTP_PORT=${TMP_JMS_SETUP_HTTP_PORT}@g" config-example.txt
+    sed -i "s@HTTPS_PORT=.*@HTTPS_PORT=${TMP_JMS_SETUP_HTTPS_PORT}@g" config-example.txt
     sed -i "s@SSH_PORT=.*@SSH_PORT=${TMP_JMS_SETUP_SSH_PORT}@g" config-example.txt
     sed -i "s@RDP_PORT=.*@RDP_PORT=${TMP_JMS_SETUP_RDP_PORT}@g" config-example.txt
     
@@ -122,9 +127,6 @@ function conf_jumpserver_pre()
 # 3-安装软件
 function setup_jumpserver()
 {
-	local TMP_JMS_SETUP_DIR=${1}
-	local TMP_JMS_CURRENT_DIR=${2}
-
 	## 直装模式
 	cd `dirname ${TMP_JMS_CURRENT_DIR}`
 
@@ -150,6 +152,9 @@ function setup_jumpserver()
     # 开始安装
     bash jmsctl.sh install
 
+    # 等待创建OK
+    sleep 5
+
     local TMP_JMS_LNK_LOGS_DIR=${LOGS_DIR}/jumpserver
 	local TMP_JMS_LNK_LOGS_NGINX_DIR=${LOGS_DIR}/jumpserver/nginx
 	local TMP_JMS_LNK_LOGS_CORE_DIR=${LOGS_DIR}/jumpserver/core
@@ -158,12 +163,21 @@ function setup_jumpserver()
     path_not_exists_create "${TMP_JMS_LNK_LOGS_DIR}"
 	path_not_exists_create "${TMP_JMS_LNK_LOGS_NGINX_DIR}"
 	path_not_exists_create "${TMP_JMS_LNK_LOGS_CORE_DIR}"
-    path_not_exists_create `dirname ${TMP_JMS_LOGS_NGINX_DIR}`
-    path_not_exists_create `dirname ${TMP_JMS_LOGS_CORE_DIR}`
+
+    if [ -d ${TMP_JMS_LOGS_NGINX_DIR} ]; then
+        mv ${TMP_JMS_LOGS_NGINX_DIR} ${TMP_JMS_LNK_LOGS_NGINX_DIR}
+    else
+        mkdir -pv `dirname ${TMP_JMS_LOGS_NGINX_DIR}`
+    fi
+    
+    if [ -d ${TMP_JMS_LOGS_CORE_DIR} ]; then
+        mv ${TMP_JMS_LOGS_CORE_DIR} ${TMP_JMS_LNK_LOGS_CORE_DIR}
+    else
+        mkdir -pv `dirname ${TMP_JMS_LOGS_CORE_DIR}`
+    fi
+
 	mv ${TMP_JMS_DATA_DIR} ${TMP_JMS_LNK_DATA_DIR}
 
-    # 等待创建OK
-    sleep 1
 
     ln -sf ${TMP_JMS_LNK_LOGS_DIR} ${TMP_JMS_LOGS_DIR}
 	ln -sf ${TMP_JMS_LNK_LOGS_NGINX_DIR} ${TMP_JMS_LOGS_NGINX_DIR}
@@ -178,7 +192,6 @@ function setup_jumpserver()
 # 3-设置软件
 function conf_jumpserver()
 {
-	local TMP_JMS_SETUP_DIR=${1}
 	local TMP_JMS_LNK_ETC_DIR=${ATT_DIR}/jumpserver
 	local TMP_JMS_DATA_DIR=${TMP_JMS_SETUP_DIR}/volume
 	local TMP_JMS_ETC_DIR=${TMP_JMS_SETUP_DIR}/config
@@ -190,6 +203,19 @@ function conf_jumpserver()
 	ln -sf ${TMP_JMS_LNK_ETC_DIR} ${TMP_JMS_ETC_DIR}
 
 	# 开始配置
+    # docker exec -it jms_redis redis-cli
+
+	return $?
+}
+
+function reconf_jumpserver()
+{
+	local TMP_JMS_ETC_DIR=${TMP_JMS_SETUP_DIR}/config
+
+    # 如果是内置RDS模式    
+    if [ "${TMP_JMS_SETUP_RDS_HOST}" == "" ] ; then
+        echo "config set stop-writes-on-bgsave-error no" | docker exec -i jms_redis redis-cli -a "${TMP_JMS_SETUP_RDS_PWD}"
+    fi
 
 	return $?
 }
@@ -199,8 +225,6 @@ function conf_jumpserver()
 # 4-启动软件
 function boot_jumpserver()
 {
-	local TMP_JMS_SETUP_DIR=${1}
-
 	cd ${TMP_JMS_SETUP_DIR}
 
     # 重启docker
@@ -256,18 +280,20 @@ function exec_step_jumpserver()
 	local TMP_JMS_SETUP_DIR=${1}
 	local TMP_JMS_CURRENT_DIR=`pwd`
     
-	set_env_jumpserver "${TMP_JMS_SETUP_DIR}"
+	set_env_jumpserver
 
     # jumpserver 属于先配置再安装，故此处反转
-	conf_jumpserver_pre "${TMP_JMS_SETUP_DIR}" "${TMP_JMS_CURRENT_DIR}"
+	conf_jumpserver_pre
 
-	setup_jumpserver "${TMP_JMS_SETUP_DIR}" "${TMP_JMS_CURRENT_DIR}"
+	setup_jumpserver
     
-	conf_jumpserver "${TMP_JMS_SETUP_DIR}"
+	conf_jumpserver
 
-    # down_plugin_jumpserver "${TMP_JMS_SETUP_DIR}"
+    # down_plugin_jumpserver
 
-	boot_jumpserver "${TMP_JMS_SETUP_DIR}"
+	boot_jumpserver
+
+    reconf_jumpserver
 
 	return $?
 }

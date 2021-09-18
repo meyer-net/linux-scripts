@@ -148,7 +148,7 @@ function conf_edge()
     input_if_empty "TMP_N2N_SETUP_EDGE_NET_GROUP_AREA" "N2N.Edge: Please sure your ${red}area${reset} of company '${TMP_N2N_SETUP_EDGE_NET_GROUP_COMPONY}' for edge"
 
     local TMP_N2N_SETUP_EDGE_NET_GROUP="${TMP_N2N_SETUP_EDGE_NET_GROUP_COMPONY}_${TMP_N2N_SETUP_EDGE_NET_GROUP_AREA}"
-    local TMP_N2N_SETUP_EDGE_NET_PWD="n2n-${TMP_N2N_SETUP_EDGE_NET_GROUP}%NT!m${LOCAL_ID}_"
+    local TMP_N2N_SETUP_EDGE_NET_PWD="n2n-${TMP_N2N_SETUP_EDGE_NET_GROUP}%NT^m${LOCAL_ID}~"
     # ???复杂的会被转义，待研究
     # local TMP_N2N_SETUP_EDGE_NET_PWD="qaz%${LOCAL_ID}!@#"
     input_if_empty "TMP_N2N_SETUP_EDGE_NET_PWD" "N2N.Edge: Please sure your ${red}network group password${reset} of group '${TMP_N2N_SETUP_EDGE_NET_GROUP}' for edge"

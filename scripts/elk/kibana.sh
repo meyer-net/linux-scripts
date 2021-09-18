@@ -92,7 +92,7 @@ function conf_kibana()
 	local TMP_ELK_KBN_SETUP_ES_USER="root"
     input_if_empty "TMP_ELK_KBN_SETUP_ES_USER" "Kibana: Please ender your ${red}elasticsearch user${reset} of '${TMP_ELK_KBN_SETUP_ES_HOST}'"
 
-	local TMP_ELK_KBN_SETUP_ES_PASSWD="es%DB!m${LOCAL_ID}_"
+	local TMP_ELK_KBN_SETUP_ES_PASSWD="es%DB^m${LOCAL_ID}~"
     input_if_empty "TMP_ELK_KBN_SETUP_ES_PASSWD" "Kibana: Please ender your ${red}elasticsearch password${reset} of '${TMP_ELK_KBN_SETUP_ES_HOST}'"
 
     sed -i "s@[#]*server\.port@.*server.port: ${TMP_ELK_KBN_SETUP_HTTP_PORT}@g" config/kibana.yml

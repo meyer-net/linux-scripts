@@ -106,7 +106,7 @@ function conf_frps()
     sed -i "s@^dashboard_pwd =.*@dashboard_pwd = ${TMP_FRP_SETUP_SVR_DASHBOARD_PWD}@g" etc/frps.ini
 
     rand_str "TMP_FRP_SETUP_SVR_THIS_TOKEN" 32
-    TMP_FRP_SETUP_SVR_THIS_TOKEN="${TMP_FRP_SETUP_SVR_THIS_TOKEN}%NT!m${LOCAL_ID}_"
+    TMP_FRP_SETUP_SVR_THIS_TOKEN="${TMP_FRP_SETUP_SVR_THIS_TOKEN}%NT^m${LOCAL_ID}~"
     input_if_empty "TMP_FRP_SETUP_SVR_THIS_TOKEN" "Frp-Server: Please sure ${red}token for security${reset}"
     sed -i "s@^token =.*@token = ${TMP_FRP_SETUP_SVR_THIS_TOKEN}@g" etc/frps.ini
 
