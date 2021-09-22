@@ -151,7 +151,7 @@ EOF
     # 修改字符集,否则可能报 input/output error的问题,因为日志里打印了中文
     localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8
     export LC_ALL=zh_CN.UTF-8
-    echo 'LANG="zh_CN.UTF-8"' >> /etc/locale.conf
+    echo 'LANG="zh_CN.UTF-8"' > /etc/locale.conf
     echo 'LANG=zh_CN.UTF-8' >> /etc/sysconfig/i18n
 
 	sysctl -p

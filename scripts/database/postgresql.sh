@@ -122,7 +122,7 @@ function conf_postgresql()
 
 function conf_postgresql_master()
 {
-	cd ${SETUP_DIR}/postgresql
+	cd ${TMP_PSQL_SETUP_DIR}
 
     echo "------------------------------"
 	echo "Start Config PostgresQL-Master"
@@ -193,7 +193,7 @@ EOF
 
 function conf_postgresql_slave()
 {
-	cd ${SETUP_DIR}/postgresql
+	cd ${TMP_PSQL_SETUP_DIR}
     
 	local TMP_PSQL_SETUP_LNK_DATA_DIR=${DATA_DIR}/postgresql
     echo "-----------------------------"
@@ -201,7 +201,7 @@ function conf_postgresql_slave()
     echo "-----------------------------"
     
     #获取从库信息
-    local{TMP_PSQL_SET_DB_SLAVE_MASTER=${LOCAL_HOST}
+    local TMP_PSQL_SET_DB_SLAVE_MASTER=${LOCAL_HOST}
     input_if_empty "TMP_PSQL_SET_DB_SLAVE_MASTER" "PostgresQL: Please ender ${red}postgresql master address in internal${reset}"
 
     #复制样例
@@ -227,7 +227,7 @@ function conf_postgresql_slave()
     echo "host    replication     rep_user        ${TMP_PSQL_SET_DB_SLAVE_MASTER}/32       md5" >> etc/pg_hba.conf
 
     #创建备库
-    pg_basebackup -D ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate -Fp -Xs -v -P -h ${TMP_PSQL_SET_DB_SLAVE_MASTER} -p ${TMP_PSQL_SETUP_PORT} -U rep_user
+    pg_basebackup -D ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate -Fp -Xs -v -P -h ${TMP_PSQL_SET_DB_SLAVE_MASTER} -p ${TMP_PSQL_SETUP_PORT} -U rep_user 
     rsync -av ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/* ${TMP_PSQL_SETUP_LNK_DATA_DIR} --exclude '*.conf *.done *.pots'
 
     #重新授权
