@@ -205,7 +205,7 @@ EOF
 	systemctl restart sshd.service
 
 	# 创建新用户及分配权限
-	create_user_if_not_exists "oshit" "root"
+	create_user_if_not_exists "root" "oshit"
 	function _change_oshit_passwd()
 	{
 		passwd oshit

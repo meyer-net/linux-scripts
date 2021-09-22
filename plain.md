@@ -16,4 +16,29 @@ VC-100：{
     SVRS：101+
 }
 
+预留段：~49
+源服务段：50~79
+ESXI-C段：80~99
+ESXI-S段：100~109
+业服务段：110~149
+PC电脑段：150~199
+LNX机段：200~229
+WIFI、DHCP段：230~254
+
+kong-cashier：110    4c4g  50G
+kong-backstage：111  4c4g  50G
+kong-buffer：112     4c8g  50G
+
+rco-cashier 120         4c16g  100G
+micro-security 121      4c16g  100G
+micro-leaf 122          4c8g  50G
+
+erp-robot 123           4c32g  200G
+
+redis 125               8c32g  300G
+
+dbm：130 4c8g  500G
+dbs：131 4c8g  500G
+bak：132 4c8g 500G
+
 https://my.oschina.net/u/3625745/blog/3006581
