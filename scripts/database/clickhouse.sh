@@ -278,9 +278,7 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #     <include_from>/etc/clickhouse-server/metrika.xml</include_from>
 	
 # 2、使用加密密码，分别对应三台分片机：
-# PASSWORD152=`base64 < /dev/urandom | head -c8`
-# PASSWORD155=`base64 < /dev/urandom | head -c8`
-# PASSWORD158=`base64 < /dev/urandom | head -c8`
+# PASSWORD152=`base64 < /dev/urandom | head -c8`; PASSWORD155=`base64 < /dev/urandom | head -c8`; PASSWORD158=`base64 < /dev/urandom | head -c8`
 # 新增/etc/clickhouse-server/metrika.xml内容如下，对应本机的IP修改为127.0.0.1：
 # <yandex>
 #    <!-- 集群配置 -->
@@ -295,13 +293,13 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #                    <host>172.30.10.152</host>
 #                    <port>19000</port>
 #                    <user>default</user>
-#                    <password>${TMP_CH_SETUP_PASSWORD_RW152}</password>
+#                    <password>${PASSWORD152}</password>
 #                </replica>
 #                <replica>
 #                    <host>172.30.10.155</host>
 #                    <port>19000</port>
 #                    <user>default</user>
-#                    <password>${TMP_CH_SETUP_PASSWORD_RW155}</password>
+#                    <password>${PASSWORD155}</password>
 #                </replica>
 #            </shard>
 #            <!-- 数据分片2 -->
@@ -312,13 +310,13 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #                    <host>172.30.10.155</host>
 #                    <port>19000</port>
 #                    <user>default</user>
-#                    <password>${TMP_CH_SETUP_PASSWORD_RW155}</password>
+#                    <password>${PASSWORD155}</password>
 #                </replica>
 #                <replica>
 #                    <host>172.30.10.158</host>
 #                    <port>19000</port>
 #                    <user>default</user>
-#                    <password>${TMP_CH_SETUP_PASSWORD_RW158}</password>
+#                    <password>${PASSWORD158}</password>
 #                </replica>
 #            </shard>
 #            <!-- 数据分片3 -->
@@ -329,13 +327,13 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #                    <host>172.30.10.158</host>
 #                    <port>19000</port>
 #                    <user>default</user>
-#                    <password>${TMP_CH_SETUP_PASSWORD_RW158}</password>
+#                    <password>${PASSWORD158}</password>
 #                </replica>
 #                <replica>
 #                    <host>172.30.10.152</host>
 #                    <port>19000</port>
 #                    <user>default</user>
-#                    <password>${TMP_CH_SETUP_PASSWORD_RW152}</password>
+#                    <password>${PASSWORD152}</password>
 #                </replica>
 #            </shard>
 #        </ost_3s2r_cluster>
@@ -378,7 +376,7 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #    </clickhouse_compression>
 # </yandex>
 
-# 3、/etc/clickhouse-server/user.xml配置如下
+# 3、/etc/clickhouse-server/users.xml配置如下
 # <?xml version="1.0"?>
 # <yandex>
 #     <!-- Profiles of settings. -->
@@ -495,10 +493,11 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 
 # 4、分别在每台对应的机器上修改默认密码，如下为152
 # TMP_CH_SETUP_PASSWORD_RW=`echo -n "$PASSWORD152" | sha256sum | tr -d '-'`
-# sed -i "s@8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92@${TMP_CH_SETUP_PASSWORD_RW}@g" /etc/clickhouse-server/user.xml
+# sed -i "s@8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92@${TMP_CH_SETUP_PASSWORD_RW}@g" /etc/clickhouse-server/users.xml
 
-# 5、查询集群信息
-# echo "select * from system.clusters" | clickhouse-client --host localhost --port 19000 --password=
+# 5、重启并查询集群信息
+# systemctl restart clickhouse-server.service
+# echo "select * from system.clusters" | clickhouse-client --host localhost --port 19000 --password ""
 
 # 6、启动服务，创建表如下：
 # # 三台集群服务器同时执行以下创表DDL
