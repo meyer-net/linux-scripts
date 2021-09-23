@@ -10,7 +10,11 @@
 #         http://www.clickhouse.com.cn/topic/5a366e97828d76d75ab5d5a0
 #------------------------------------------------
 local TMP_CH_SETUP_HTTP_PORT=18123
+local TMP_CH_SETUP_HTTPS_PORT=18443
 local TMP_CH_SETUP_TCP_PORT=19000
+local TMP_CH_SETUP_TCP_PROXY_PORT=19011
+local TMP_CH_SETUP_TCP_SECURE_PORT=19440
+local TMP_CH_SETUP_ZK_PORT=12181
 local TMP_CH_SETUP_MYSQL_PORT=19004
 local TMP_CH_SETUP_PSQL_PORT=19005
 local TMP_CH_SETUP_ITS_HTTP_PORT=19009
@@ -66,6 +70,7 @@ function setup_clickhouse()
 	# 需要运行一次，生成基础文件
     echo "ClickHouse: Setup Successded，Starting init data file..."
     systemctl start clickhouse-server.service 
+    sleep 15
     systemctl stop clickhouse-server.service
     sleep 15
 
@@ -101,6 +106,11 @@ function setup_clickhouse()
 	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_LOGS_DIR}
 	chgrp -R clickhouse ${TMP_CH_SETUP_LNK_DATA_DIR}
 	chown -R clickhouse:clickhouse ${TMP_CH_SETUP_LNK_DATA_DIR}
+
+    # 开始配置
+    cd ${TMP_CH_SETUP_DIR}
+    cat logs/clickhouse-server.log > logs/boot.log
+    rm -rf logs/clickhouse-server.log
 	
 	return $?
 }
@@ -140,9 +150,12 @@ function conf_clickhouse()
 
 	input_if_empty "TMP_CH_SETUP_HTTP_PORT" "Clickhouse-Server: Please ender ${red}http port${reset}"
     sed -i "0,/<http_port>[0-9]*<\/http_port>/{s@<http_port>[0-9]*</http_port>@<http_port>${TMP_CH_SETUP_HTTP_PORT}</http_port>@}" /etc/clickhouse-server/config.xml
+    sed -i "0,/<https_port>[0-9]*<\/https_port>/{s@<https_port>[0-9]*</https_port>@<https_port>${TMP_CH_SETUP_HTTPS_PORT}</https_port>@}" /etc/clickhouse-server/config.xml
 
 	input_if_empty "TMP_CH_SETUP_TCP_PORT" "Clickhouse-Server: Please ender ${red}tcp port${reset}"
     sed -i "0,/<tcp_port>[0-9]*<\/tcp_port>/{s@<tcp_port>[0-9]*</tcp_port>@<tcp_port>${TMP_CH_SETUP_TCP_PORT}</tcp_port>@}" /etc/clickhouse-server/config.xml
+    sed -i "0,/<tcp_port_secure>[0-9]*<\/tcp_port_secure>/{s@<tcp_port_secure>[0-9]*</tcp_port_secure>@<tcp_port_secure>${TMP_CH_SETUP_TCP_SECURE_PORT}</tcp_port_secure>@}" /etc/clickhouse-server/config.xml
+    sed -i "0,/<tcp_with_proxy_port>[0-9]*<\/tcp_with_proxy_port>/{s@<tcp_with_proxy_port>[0-9]*</tcp_with_proxy_port>@<tcp_with_proxy_port>${TMP_CH_SETUP_TCP_PROXY_PORT}</tcp_with_proxy_port>@}" /etc/clickhouse-server/config.xml
 
 	input_if_empty "TMP_CH_SETUP_MYSQL_PORT" "Clickhouse-Server: Please ender ${red}mysql port${reset}"
     sed -i "0,/<mysql_port>[0-9]*<\/mysql_port>/{s@<mysql_port>[0-9]*</mysql_port>@<mysql_port>${TMP_CH_SETUP_MYSQL_PORT}</mysql_port>@}" /etc/clickhouse-server/config.xml
@@ -153,10 +166,15 @@ function conf_clickhouse()
 	input_if_empty "TMP_CH_SETUP_ITS_HTTP_PORT" "Clickhouse-Server: Please ender ${red}interserver http port${reset}"
     sed -i "0,/<interserver_http_port>[0-9]*<\/interserver_http_port>/{s@<interserver_http_port>[0-9]*</interserver_http_port>@<interserver_http_port>${TMP_CH_SETUP_ITS_HTTP_PORT}</interserver_http_port>@}" /etc/clickhouse-server/config.xml
 
+    sed -i "0,/<port>2181<\/port>/{s@<port>[0-9]*</port>@<port>${TMP_CH_SETUP_ZK_PORT}</port>@}" /etc/clickhouse-server/config.xml
+    sed -i "0,/<port>9000<\/port>/{s@<port>[0-9]*</port>@<port>${TMP_CH_SETUP_TCP_PORT}</port>@}" /etc/clickhouse-server/config.xml
+
 	local TMP_CH_SETUP_SERVER_DATA_DIR=${TMP_CH_SETUP_DIR}/data
 	local TMP_CH_SETUP_SERVER_DATA_XML_DIR=${TMP_CH_SETUP_SERVER_DATA_DIR}/xml
     sed -i "0,/<path>.*<\/path>/{s@<path>.*</path>@<path>${TMP_CH_SETUP_SERVER_DATA_XML_DIR}/</path>@}" /etc/clickhouse-server/config.xml
     sed -i "0,/<tmp_path>.*<\/tmp_path>/{s@<tmp_path>.*</tmp_path>@<tmp_path>${TMP_CH_SETUP_SERVER_DATA_XML_DIR}/tmp/</tmp_path>@}" /etc/clickhouse-server/config.xml
+
+    `openssl req -subj "/CN=localhost" -new -newkey rsa:2048 -days 3650 -nodes -x509 -keyout /etc/clickhouse-server/server.key -out /etc/clickhouse-server/server.crt`
     
 	return $?
 }
@@ -191,7 +209,10 @@ function boot_clickhouse()
     
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_CH_SETUP_HTTP_PORT}
+	echo_soft_port ${TMP_CH_SETUP_HTTPS_PORT}
 	echo_soft_port ${TMP_CH_SETUP_TCP_PORT}
+	echo_soft_port ${TMP_CH_SETUP_TCP_PROXY_PORT}
+	echo_soft_port ${TMP_CH_SETUP_TCP_SECURE_PORT}
 	echo_soft_port ${TMP_CH_SETUP_MYSQL_PORT}
 	echo_soft_port ${TMP_CH_SETUP_PSQL_PORT}
 	echo_soft_port ${TMP_CH_SETUP_ITS_HTTP_PORT}
@@ -254,91 +275,110 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 ##########################################################################################################
 # 1、/etc/clickhouse-server/config.xml添加修改如下：
 #     <listen_host>0.0.0.0</listen_host>
-	
 #     <include_from>/etc/clickhouse-server/metrika.xml</include_from>
 	
-# 2、metrika.xml内容如下：
+# 2、使用加密密码，分别对应三台分片机：
+# PASSWORD152=`base64 < /dev/urandom | head -c8`
+# PASSWORD155=`base64 < /dev/urandom | head -c8`
+# PASSWORD158=`base64 < /dev/urandom | head -c8`
+# 新增/etc/clickhouse-server/metrika.xml内容如下，对应本机的IP修改为127.0.0.1：
 # <yandex>
-# <!-- 集群配置 -->
-# <clickhouse_remote_servers>
-#     <!-- 集群名称  -->
-#     <bh_3s1r_cluster>
-#         <!-- 数据分片1  -->
-#         <shard>
-#             <weight>1</weight>
-#             <internal_replication>true</internal_replication>
-#             <replica>
-#                 <host>ip-172-30-10-152</host>
-#                 <port>9876</port>
-#                 <user>default</user>
-#                 <password>123456</password>
-#             </replica>
-#         </shard>
-#         <!-- 数据分片2  -->
-#         <shard>
-#             <weight>1</weight>
-#             <internal_replication>true</internal_replication>
-#             <replica>
-#                 <host>ip-172-30-10-155</host>
-#                 <port>9876</port>
-#                 <user>default</user>
-#                 <password>123456</password>
-#             </replica>
-#         </shard>
-#         <!-- 数据分片3  -->
-#         <shard>
-#             <weight>1</weight>
-#             <internal_replication>true</internal_replication>
-#             <replica>
-#                 <host>ip-172-30-10-158</host>
-#                 <port>9876</port>
-#                 <user>default</user>
-#                 <password>123456</password>
-#             </replica>
-#         </shard>
-#     </bh_3s1r_cluster>
-# </clickhouse_remote_servers>
+#    <!-- 集群配置 -->
+#    <clickhouse_remote_servers>
+#        <!-- 集群名称  -->
+#        <ost_3s2r_cluster>
+#            <!-- 数据分片1 -->
+#            <shard>
+#                <weight>1</weight>
+#                <internal_replication>true</internal_replication>
+#                <replica>
+#                    <host>172.30.10.152</host>
+#                    <port>19000</port>
+#                    <user>default</user>
+#                    <password>${TMP_CH_SETUP_PASSWORD_RW152}</password>
+#                </replica>
+#                <replica>
+#                    <host>172.30.10.155</host>
+#                    <port>19000</port>
+#                    <user>default</user>
+#                    <password>${TMP_CH_SETUP_PASSWORD_RW155}</password>
+#                </replica>
+#            </shard>
+#            <!-- 数据分片2 -->
+#            <shard>
+#                <weight>1</weight>
+#                <internal_replication>true</internal_replication>
+#                <replica>
+#                    <host>172.30.10.155</host>
+#                    <port>19000</port>
+#                    <user>default</user>
+#                    <password>${TMP_CH_SETUP_PASSWORD_RW155}</password>
+#                </replica>
+#                <replica>
+#                    <host>172.30.10.158</host>
+#                    <port>19000</port>
+#                    <user>default</user>
+#                    <password>${TMP_CH_SETUP_PASSWORD_RW158}</password>
+#                </replica>
+#            </shard>
+#            <!-- 数据分片3 -->
+#            <shard>
+#                <weight>1</weight>
+#                <internal_replication>true</internal_replication>
+#                <replica>
+#                    <host>172.30.10.158</host>
+#                    <port>19000</port>
+#                    <user>default</user>
+#                    <password>${TMP_CH_SETUP_PASSWORD_RW158}</password>
+#                </replica>
+#                <replica>
+#                    <host>172.30.10.152</host>
+#                    <port>19000</port>
+#                    <user>default</user>
+#                    <password>${TMP_CH_SETUP_PASSWORD_RW152}</password>
+#                </replica>
+#            </shard>
+#        </ost_3s2r_cluster>
+#    </clickhouse_remote_servers>
 
-# <!-- 本节点副本名称，不同节点配置不同命名 -->
-# <macros>
-#     <shard>s1</shard>
-#     <replica>r1</replica>
-# </macros>
+#    <!-- 本节点副本名称，不同节点配置不同命名 -->
+#    <macros>
+#        <shard>s1</shard>
+#        <replica>r1</replica>
+#    </macros>
 
-# <!-- 监听网络 -->
-# <networks>
-#     <ip>::/0</ip>
-# </networks>
+#    <!-- 监听网络，对应本机的IP修改为127.0.0.1 -->
+#    <networks>
+#        <ip>::/0</ip>
+#    </networks>
 
-# <!-- ZK  -->
-# <zookeeper-servers>
-#     <node index="1">
-#         <host>ip-172-30-10-152</host>
-#         <port>12181</port>
-#     </node>
-#     <node index="2">
-#         <host>ip-172-30-10-155</host>
-#         <port>12181</port>
-#     </node>
-#     <node index="3">
-#         <host>ip-172-30-10-158</host>
-#         <port>12181</port>
-#     </node>
-# </zookeeper-servers>
+#    <!-- ZK -->
+#    <zookeeper-servers>
+#        <node index="1">
+#            <host>172.30.10.152</host>
+#            <port>12181</port>
+#        </node>
+#        <node index="2">
+#            <host>172.30.10.155</host>
+#            <port>12181</port>
+#        </node>
+#        <node index="3">
+#            <host>172.30.10.158</host>
+#            <port>12181</port>
+#        </node>
+#    </zookeeper-servers>
 
-# <!-- 数据压缩算法  -->
-# <clickhouse_compression>
-#     <case>
-#         <min_part_size>10000000000</min_part_size>
-#         <min_part_size_ratio>0.01</min_part_size_ratio>
-#         <method>lz4</method>
-#     </case>
-# </clickhouse_compression>
-
+#    <!-- 数据压缩算法 -->
+#    <clickhouse_compression>
+#        <case>
+#            <min_part_size>10000000000</min_part_size>
+#            <min_part_size_ratio>0.01</min_part_size_ratio>
+#            <method>lz4</method>
+#        </case>
+#    </clickhouse_compression>
 # </yandex>
 
-# 3、user.xml配置如下
-
+# 3、/etc/clickhouse-server/user.xml配置如下
 # <?xml version="1.0"?>
 # <yandex>
 #     <!-- Profiles of settings. -->
@@ -387,7 +427,7 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #                  Execute: PASSWORD=$(base64 < /dev/urandom | head -c8); echo "$PASSWORD"; echo -n "$PASSWORD" | sha256sum | tr -d '-'
 #                  In first line will be password and in second - corresponding SHA256.
 #             -->
-#            <!--  <password>123456</password> -->
+#             <!--  <password>123456</password> -->
 #             <password_sha256_hex>8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92</password_sha256_hex>
 
 #             <!-- List of networks with open access.
@@ -423,26 +463,14 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 
 #         <!-- Example of user with readonly access. -->
 #         <readonly>
-#            <!--  <password>123456</password> -->
-#             <password_sha256_hex>8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92</password_sha256_hex>
-#             <networks incl="networks" replace="replace">
-#                 <ip>::1</ip>
-#                 <ip>127.0.0.1</ip>
-#             </networks>
-#             <profile>readonly</profile>
-#             <quota>default</quota>
-#         </readonly>
-#         <ckh_readonly>
+#             <!-- <password>123456</password> -->
 #             <password_sha256_hex>8545f4dc3fe83224980663ebc2540d6a68288c8afcbaf4da3b22e72212e256e1</password_sha256_hex>
 #             <networks incl="networks" replace="replace">
 #                 <ip>::/0</ip>
 #             </networks>
 #             <profile>readonly</profile>
 #             <quota>default</quota>
-#             <allow_databases>
-#                 <database>default</database>
-#             </allow_databases>
-#         </ckh_readonly>
+#         </readonly>
 #     </users>
 
 #     <!-- Quotas. -->
@@ -465,18 +493,19 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #     </quotas>
 # </yandex>
 
-# 4、修改 /etc/hosts
-# #三台集群服务器同时修改，对应本机的IP修改为127.0.0.1
-# 172.30.10.152 ip-172-30-10-152
-# 172.30.10.155 ip-172-30-10-155
-# 172.30.10.158 ip-172-30-10-158
+# 4、分别在每台对应的机器上修改默认密码，如下为152
+# TMP_CH_SETUP_PASSWORD_RW=`echo -n "$PASSWORD152" | sha256sum | tr -d '-'`
+# sed -i "s@8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92@${TMP_CH_SETUP_PASSWORD_RW}@g" /etc/clickhouse-server/user.xml
 
-# 5、启动服务，创建表如下：
-# #三台集群服务器同时执行以下创表DDL
+# 5、查询集群信息
+# echo "select * from system.clusters" | clickhouse-client --host localhost --port 19000 --password=
+
+# 6、启动服务，创建表如下：
+# # 三台集群服务器同时执行以下创表DDL
 # CREATE TABLE ontime_local (FlightDate Date,Year UInt16) ENGINE = ReplicatedMergeTree('/clickhouse/tables/ontime_replica/{shard}', '{replica}', FlightDate, (Year, FlightDate), 8192);
-# CREATE TABLE ontime_all AS ontime_local ENGINE = Distributed(bh_3s1r_cluster, default, ontime_local, rand());
+# CREATE TABLE ontime_all AS ontime_local ENGINE = Distributed(ost_3s2r_cluster, default, ontime_local, rand());
 
-# 6、往其中一台客户端插入数据，从另外集群的客户端查询没有相应数据。
-# insert into ontime_all (FlightDate,Year)values('2001-01-01',2001);
-# insert into ontime_all (FlightDate,Year)values('2002-01-01',2002);
-# insert into ontime_all (FlightDate,Year)values('2003-01-01',2003);
+# 7、往其中一台客户端插入数据，从另外集群的客户端查询没有相应数据。
+# insert into ontime_all (FlightDate,Year)values('2021-01-01',2021);
+# insert into ontime_all (FlightDate,Year)values('2022-01-01',2022);
+# insert into ontime_all (FlightDate,Year)values('2023-01-01',2023);

@@ -151,7 +151,7 @@ function exec_step_python()
 # x1-下载软件
 function down_python()
 {
-    setup_soft_wget "python" "https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz" "exec_step_python"
+    setup_soft_wget "python" "https://www.python.org/ftp/python/3.8.5/Python-3.8.5.tgz" "exec_step_python"
 
 	return $?
 }

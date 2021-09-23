@@ -296,6 +296,7 @@ function conf_mysql_master()
 	echo "Config Mysql-Master Over。"
 	echo "------------------------------------------"
 	echo "Start Grant Permission Mysql To Slave"
+	local TMP_MYSQL_SETUP_CONF_DB_MASTER_PWD="${TMP_MYSQL_SETUP_PWD}"
     input_if_empty "TMP_MYSQL_SETUP_CONF_DB_MASTER_PWD" "Mysql: Please ender ${red}mysql localhost password of root${reset}"
     input_if_empty "TMP_MYSQL_SETUP_CONF_DB_MASTER_SLAVE" "Mysql: Please ender ${red}mysql slave address in internal${reset}"
 	
@@ -336,6 +337,7 @@ function conf_mysql_slave()
 	echo "Config Mysql-Slave Over。"
 	echo "------------------------------------------"
 	echo "Start Set And Test To Login Mysql-Master"    
+	local TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD="${TMP_MYSQL_SETUP_PWD}"
     input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD" "Mysql: Please ender ${green}mysql localhost password of root${reset}"
 	
 	#在主服务器新建一个用户赋予“REPLICATION SLAVE”的权限。

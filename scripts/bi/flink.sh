@@ -218,6 +218,9 @@ function down_flink()
 	local TMP_FLK_SETUP_OFFICIAL_STABLE_VERS=`curl -s https://flink.apache.org/downloads.html | egrep "Apache Flink® .+ is our latest stable release" | awk -F' ' '{print $3}'`
 	echo "Flink: The newer stable version is ${TMP_FLK_SETUP_OFFICIAL_STABLE_VERS}"
     
+    # 目前robot仅最高支持1.12.5
+    input_if_empty "TMP_FLK_SETUP_OFFICIAL_STABLE_VERS" "Please sure the checked soft version by official newer ${green}${TMP_NEWER_DATE_LINK_FILENAME}${reset}，if u want to change"
+
     local TMP_FLK_SETUP_NEWER="${TMP_FLK_SETUP_OFFICIAL_STABLE_VERS}"
 	exec_text_format "TMP_FLK_SETUP_NEWER" "https://archive.apache.org/dist/flink/flink-%s/flink-%s-bin-scala_2.12.tgz"
     setup_soft_wget "flink" "${TMP_FLK_SETUP_NEWER}" "exec_step_flink"
