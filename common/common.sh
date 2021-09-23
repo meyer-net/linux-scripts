@@ -119,10 +119,12 @@ function echo_if_content_not_exists()
 # 创建用户及组，如果不存在
 # 参数1：组
 # 参数2：用户
+# 参数3：默认目录
 function create_user_if_not_exists() 
 {
 	local TMP_CURRENT_TO_CREATE_GROUP=${1}
 	local TMP_CURRENT_TO_CREATE_USER=${2}
+	local TMP_CURRENT_TO_CREATE_DFT_DIR=${3}
 
 	#create group if not exists
 	egrep "^${TMP_CURRENT_TO_CREATE_GROUP}" /etc/group >& /dev/null
@@ -133,7 +135,11 @@ function create_user_if_not_exists()
 	#create user if not exists
 	egrep "^${TMP_CURRENT_TO_CREATE_USER}" /etc/passwd >& /dev/null
 	if [ $? -ne 0 ]; then
-		useradd -g ${TMP_CURRENT_TO_CREATE_GROUP} ${TMP_CURRENT_TO_CREATE_USER}
+		local TMP_CURRENT_TO_CREATE_COMMAND_EXT=""
+		if [ -n "${TMP_CURRENT_TO_CREATE_DFT_DIR}" ] && [ ! -d "${TMP_CURRENT_TO_CREATE_DFT_DIR}" ]; then
+			TMP_CURRENT_TO_CREATE_COMMAND_EXT="-d ${TMP_CURRENT_TO_CREATE_DFT_DIR}"
+		fi
+		useradd -g ${TMP_CURRENT_TO_CREATE_GROUP} ${TMP_CURRENT_TO_CREATE_USER} ${TMP_CURRENT_TO_CREATE_COMMAND_EXT}
 	fi
 
 	return $?
@@ -1206,14 +1212,23 @@ function set_url_list_newer_date_link_filename()
 	local TMP_VAR_FIND_URL=$2
 	local TMP_VAR_KEY_WORDS=$3
 
+	local TMP_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${TMP_VAR_NAME}`
+
+    echo ${TMP_SPLITER}
+    echo "Checking the soft version by date link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， default val is '${green}${TMP_NEWER_VERS_VAR_YET_VAL}${reset}'"    
 	#  | awk '{if (NR>2) {print}}' ，缺失无效行去除的判断
     local TMP_NEWER_DATE=`curl -s $TMP_VAR_FIND_URL | grep "$TMP_VAR_KEY_WORDS" | awk -F'</a>' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | sed '/^$/d' | awk -F' ' '{print $1}' | awk 'function t_f(t){"date -d \""t"\" +%s" | getline ft; return ft}{print t_f($1)}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} env LC_ALL=en_US.en date -d@{} "+%d-%h-%Y"`
+    local TMP_NEWER_DATE_LINK_FILENAME=`curl -s $TMP_VAR_FIND_URL | grep "$TMP_VAR_KEY_WORDS" | grep "$TMP_NEWER_DATE" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g'`
 
-    local TMP_NEWER_LINK_FILENAME=`curl -s $TMP_VAR_FIND_URL | grep "$TMP_VAR_KEY_WORDS" | grep "$TMP_NEWER_DATE" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g'`
+	if [ -n "${TMP_NEWER_DATE_LINK_FILENAME}" ]; then
+		echo "Upgrade the soft version by date link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， release newer version to '${green}${TMP_NEWER_DATE_LINK_FILENAME}${reset}'"
 
-	if [ -n "$TMP_NEWER_LINK_FILENAME" ]; then
-		eval ${1}='$TMP_NEWER_LINK_FILENAME'
+		input_if_empty "TMP_NEWER_DATE_LINK_FILENAME" "Please sure the checked soft version by date link newer ${green}${TMP_NEWER_DATE_LINK_FILENAME}${reset}，if u want to change"
+
+		eval ${1}=`echo '$TMP_NEWER_DATE_LINK_FILENAME'`
 	fi
+    echo ${TMP_SPLITER}
+
 
 	return $?
 }
@@ -1240,14 +1255,23 @@ function set_url_list_newer_href_link_filename()
 	# local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ")." | sed 's@)@@g' | xargs -I {} echo '[^{}]+')
 	# local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
 
+	local TMP_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${TMP_VAR_NAME}`
+
+    echo ${TMP_SPLITER}
+    echo "Checking the soft version by href link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， default val is '${green}${TMP_NEWER_VERS_VAR_YET_VAL}${reset}'"
 	# 清除字母开头： | tr -d "a-zA-Z-"
     local TMP_NEWER_VERS=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | sort -rV | awk 'NR==1'`
 	local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${TMP_NEWER_VERS}.*@g")
-    local TMP_NEWER_LINK_FILENAME=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
+    local TMP_NEWER_HREF_LINK_FILENAME=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
 
-	if [ -n "${TMP_NEWER_LINK_FILENAME}" ]; then
-		eval ${1}='${TMP_NEWER_LINK_FILENAME}'
+	if [ -n "${TMP_NEWER_HREF_LINK_FILENAME}" ]; then
+		echo "Upgrade the soft version by href link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， release newer version to '${green}${TMP_NEWER_HREF_LINK_FILENAME}${reset}'"
+		
+		input_if_empty "TMP_NEWER_HREF_LINK_FILENAME" "Please sure the checked soft version by href link newer ${green}${TMP_NEWER_HREF_LINK_FILENAME}${reset}，if u want to change"
+
+		eval ${1}=`echo '$TMP_NEWER_HREF_LINK_FILENAME'`
 	fi
+    echo ${TMP_SPLITER}
 
 	return $?
 }
@@ -1272,15 +1296,18 @@ function set_github_soft_releases_newer_version()
 	
 	local TMP_GITHUB_SOFT_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${TMP_GITHUB_SOFT_NEWER_VERS_VAR_NAME}`
 
-    echo $TMP_SPLITER
-    echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}', default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERS_VAR_YET_VAL}${reset}'"
-	local TMP_GITHUB_SOFT_NEWER_VERS=`curl -s $TMP_GITHUB_SOFT_HTTPS_PATH | grep "$TMP_GITHUB_SOFT_TAG_PATH" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.*", "");print}' | awk NR==1`
+    echo ${TMP_SPLITER}
+    echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}'， default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERS_VAR_YET_VAL}${reset}'"
+	local TMP_GITHUB_SOFT_NEWER_VERS=`curl -s ${TMP_GITHUB_SOFT_HTTPS_PATH} | grep "${TMP_GITHUB_SOFT_TAG_PATH}" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.*", "");print}' | awk NR==1`
 
-	if [ -n "$TMP_GITHUB_SOFT_NEWER_VERS" ]; then
-		echo "Upgrade the soft in github repos of '${red}$TMP_GITHUB_SOFT_PATH${reset}' releases newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERS}${reset}'"
+	if [ -n "${TMP_GITHUB_SOFT_NEWER_VERS}" ]; then
+		echo "Upgrade the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}'， release newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERS}${reset}'"
+
+		input_if_empty "TMP_GITHUB_SOFT_NEWER_VERS" "Please sure the checked soft in github repos newer ${green}${TMP_GITHUB_SOFT_NEWER_VERS}${reset}，if u want to change"
+
 		eval ${1}=`echo '$TMP_GITHUB_SOFT_NEWER_VERS'`
 	fi
-    echo $TMP_SPLITER
+    echo ${TMP_SPLITER}
 	
 	return $?
 }
@@ -1358,7 +1385,7 @@ function set_if_choice()
 	#参数4：函数调用
 	#TMP_PREFIX=$4 
 	
-	local TMP_CHOICE_SPLITER=$([ -n "$TMP_SPLITER" ] && echo "$TMP_SPLITER" || echo "-------------------------------------------------")
+	local TMP_CHOICE_SPLITER=$([ -n "${TMP_SPLITER}" ] && echo "${TMP_SPLITER}" || echo "-------------------------------------------------")
 	set_if_empty "TMP_CHOICE_SPLITER" "$4"
 	local TMP_CHOICE_SPLITER_LEN=${#TMP_CHOICE_SPLITER}
 	
@@ -2151,7 +2178,7 @@ function proxy_by_ss()
     echo "---------------------------------------------------------------------"
 
     # 选择启动模式
-    # exec_if_choice "TMP_SHADOWSOCK_MODE" "Please choice your shadowsocks run mode on this computer" "Server,Client,Exit" "$TMP_SPLITER" "boot_shadowsocks_"
+    # exec_if_choice "TMP_SHADOWSOCK_MODE" "Please choice your shadowsocks run mode on this computer" "Server,Client,Exit" "${TMP_SPLITER}" "boot_shadowsocks_"
 	local TMP_SHADOWSOCK_MODE_NECESSARY_CHECK=""
 	if [ "$TMP_IS_WANT_CROSS_FIREWALL" == "000" ]; then
 		TMP_SHADOWSOCK_MODE_NECESSARY_CHECK="client"

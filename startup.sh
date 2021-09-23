@@ -37,7 +37,7 @@ function choice_type()
 {
 	echo_title
 
-	exec_if_choice "CHOICE_CTX" "Please choice your startup type" "Svn.Updater,Svn.Packager,Kong.Api,Auto.Cert,Exit" "$TMP_SPLITER" "special"
+	exec_if_choice "CHOICE_CTX" "Please choice your startup type" "Svn.Updater,Svn.Packager,Kong.Api,Auto.Cert,Exit" "${TMP_SPLITER}" "special"
 
 	return $?
 }

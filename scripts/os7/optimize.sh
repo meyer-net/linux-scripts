@@ -211,7 +211,8 @@ EOF
 		passwd oshit
 
 		chmod -v u+w /etc/sudoers
-		sed -i "100aoshit   ALL=(ALL)       ALL" /etc/sudoers
+		sed -i "100aoshit   ALL=(ALL)       NOPASSWD: ALL" /etc/sudoers
+		chmod -v u-w /etc/sudoers
 	}
 
 	exec_yn_action "_change_oshit_passwd" "Sys-Optimize: User of ${red}oshit${reset} createed, please sure the password u want to set"

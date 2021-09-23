@@ -225,7 +225,7 @@ function gen_sup_conf()
     input_if_empty "TMP_GEN_SUP_CONF_ENV" "GEN_SUP_CONF：Please ender ${green}the dependency of env var${reset}"
 
 	local TMP_GEN_SUP_CONF_PRIORITY=99
-    input_if_empty "" "GEN_SUP_CONF：Please ender ${green}the boot priority${reset} of your program"
+    input_if_empty "TMP_GEN_SUP_CONF_PRIORITY" "GEN_SUP_CONF：Please ender ${green}the boot priority${reset} of your program"
 
 	local TMP_GEN_SUP_CONF_SOURCE="/etc/profile"
     input_if_empty "TMP_GEN_SUP_CONF_SOURCE" "GEN_SUP_CONF：Please ender ${green}the dependency of env source file${reset}"
