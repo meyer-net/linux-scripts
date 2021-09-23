@@ -29,8 +29,6 @@ function set_env_postgresql()
 # 2-安装软件
 function setup_postgresql()
 {
-	local TMP_PSQL_SETUP_DIR=${1}
-
 	## 源模式
     while_wget "--content-disposition https://download.postgresql.org/pub/repos/yum/reporpms/EL-${OS_VERS}-x86_64/pgdg-redhat-repo-latest.noarch.rpm" "rpm -ivh pgdg-redhat-repo-latest.noarch.rpm"
 
@@ -75,8 +73,6 @@ function setup_postgresql()
 # 3-设置软件
 function conf_postgresql()
 {
-	local TMP_PSQL_SETUP_DIR=${1}
-
 	cd ${TMP_PSQL_SETUP_DIR}
 	
     # PSQL 的数据目录与配置目录是一致的
@@ -228,7 +224,13 @@ function conf_postgresql_slave()
 
     #创建备库
     pg_basebackup -D ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate -Fp -Xs -v -P -h ${TMP_PSQL_SET_DB_SLAVE_MASTER} -p ${TMP_PSQL_SETUP_PORT} -U rep_user 
-    rsync -av ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/* ${TMP_PSQL_SETUP_LNK_DATA_DIR} --exclude '*.conf *.done *.pots'
+    
+    echo "*.txt" > ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/rsync-exclude.txt
+    echo "*.conf" >> ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/rsync-exclude.txt
+    echo "*.done" >> ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/rsync-exclude.txt
+    echo "*.pots" >> ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/rsync-exclude.txt
+
+    rsync -av ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/* ${TMP_PSQL_SETUP_LNK_DATA_DIR} --exclude-from ${TMP_PSQL_SETUP_LNK_DATA_DIR}_replicate/rsync-exclude.txt
 
     #重新授权
     chown -R postgres:postgres ${TMP_PSQL_SETUP_LNK_DATA_DIR}
@@ -248,8 +250,6 @@ function conf_postgresql_slave()
 # 4-启动软件
 function boot_postgresql()
 {
-	local TMP_PSQL_SETUP_DIR=${1}
-
 	cd ${TMP_PSQL_SETUP_DIR}
 	
 	# 验证安装
@@ -304,15 +304,15 @@ function exec_step_postgresql()
 {
 	local TMP_PSQL_SETUP_DIR=${SETUP_DIR}/postgresql
     
-	set_env_postgresql "${TMP_PSQL_SETUP_DIR}"
+	set_env_postgresql
 
-	setup_postgresql "${TMP_PSQL_SETUP_DIR}"
+	setup_postgresql
 
-	conf_postgresql "${TMP_PSQL_SETUP_DIR}"
+	conf_postgresql
 
-    # down_plugin_postgresql "${TMP_PSQL_SETUP_DIR}"
+    # down_plugin_postgresql
 
-	boot_postgresql "${TMP_PSQL_SETUP_DIR}"
+	boot_postgresql
 
 	return $?
 }

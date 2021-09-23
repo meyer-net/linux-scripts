@@ -5,6 +5,13 @@
 #      author: meyer.cheng
 #------------------------------------------------
 
+function check_epel()
+{
+	path_not_exists_action "${SETUP_DIR}/.lib_inited" "setup_epel"
+
+	return $?
+}
+
 function setup_epel()
 {	
 	soft_yum_check_setup "wget"
@@ -71,8 +78,10 @@ function setup_epel()
 	yum -y install yum-plugin-fastestmirror
 	
 	soft_yum_check_setup "jsawk"
+
+	echo "don't remove" >> ${SETUP_DIR}/.lib_inited
 	
 	return $?
 }
 
-setup_soft_basic "Centos7_64bit EPEL Repository" "setup_epel"
+setup_soft_basic "Centos${OS_VERS}_64bit EPEL Repository" "check_epel"

@@ -8,7 +8,7 @@ local TMP_SSH_NEW_PORT=10022
 
 function check_sets()
 {
-	path_not_exists_action "${SETUP_DIR}/.sys_seted" "optimize_system"
+	path_not_exists_action "${SETUP_DIR}/.sys_optimize" "optimize_system"
 
 	return $?
 }
@@ -157,7 +157,7 @@ EOF
 	sysctl -p
 
 	#表示已设置优化
-	echo "don't remove" >> ${SETUP_DIR}/.sys_seted
+	echo "don't remove" >> ${SETUP_DIR}/.sys_optimize
 
 	#安装软件设定
 	if [ ! -f "${SETUP_DIR}/.sys_domain" ]; then
