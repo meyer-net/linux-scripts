@@ -74,8 +74,6 @@ function nopwd_login () {
 	if [ -n "${TMP_NOPWD_LOGIN_REMOTE_HOST}" ]; then
 		local TMP_NOPWD_LOGIN_ID_RSA_PATH="~/.ssh/id_rsa"
 
-		convert_path "TMP_NOPWD_LOGIN_ID_RSA_PATH"
-
 		path_not_exists_action "${TMP_NOPWD_LOGIN_ID_RSA_PATH}" "ssh-keygen -t rsa"
 		
 		ssh-copy-id ${TMP_NOPWD_LOGIN_REMOTE_USER}@${TMP_NOPWD_LOGIN_REMOTE_HOST} -p ${TMP_NOPWD_LOGIN_REMOTE_HOST_PORT}
@@ -267,9 +265,9 @@ function rand_str() {
 #转换路径
 #参数1：原始路径
 function convert_path () {
-	local TMP_SOURCE_PATH=`eval echo '$'$1`
-	local TMP_CONVERT_PATH=`echo "$TMP_SOURCE_PATH" | sed "s@^~@/root@g"`
-	eval ${1}=`echo '$TMP_CONVERT_PATH'`
+	local _TMP_SOURCE_PATH=`eval echo '$'$1`
+	local _TMP_CONVERT_PATH=`echo "$_TMP_SOURCE_PATH" | sed "s@^~@/root@g"`
+	eval ${1}=`echo '$_TMP_CONVERT_PATH'`
 
 	return $?
 }
@@ -531,9 +529,7 @@ function path_not_exists_action()
 	local _TMP_NOT_EXITS_PATH_SCRIPT="$2"
 	local _TMP_NOT_EXITS_PATH_ECHO="$3"
 
-	if [ "$_TMP_NOT_EXITS_PATH" == "~" ]; then
-		_TMP_NOT_EXITS_PATH="/$USER"
-	fi
+	convert_path "_TMP_NOT_EXITS_PATH"
 
 	# 缺失了对文件夹的判断，修复20-12.25
 	local _TMP_EXISTS_PATH_VAL=$([ -a "$_TMP_NOT_EXITS_PATH" ] && echo 1 || echo 0)

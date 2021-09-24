@@ -398,6 +398,7 @@ function exec_step_kafka_eagle()
 # x1-下载软件
 function down_kafka()
 {
+	# 2.4.1
 	local TMP_KFK_SETUP_NEWER="2.8.0"
 	local TMP_KFK_DOWN_URL_BASE="https://mirrors.cnnic.cn/apache/kafka/"
 	set_url_list_newer_href_link_filename "TMP_KFK_SETUP_NEWER" "${TMP_KFK_DOWN_URL_BASE}" "()/"

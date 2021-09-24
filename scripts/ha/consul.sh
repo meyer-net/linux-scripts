@@ -147,7 +147,7 @@ function conf_consul()
 	"datacenter": "ost-svrs-ha",
     "node_name": "bootstrap-${LOCAL_ID}",
 	"data_dir": "${TMP_CSL_DATA_DIR}",
-	"advertise_addr": "${LOCAL_HOST}",
+	"bind_addr": "${LOCAL_HOST}",
 	"log_level": "INFO",
 	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
@@ -172,7 +172,7 @@ EOF
 	"datacenter": "ost-svrs-ha",
     "node_name": "server-${LOCAL_ID}",
 	"data_dir": "${TMP_CSL_DATA_DIR}",
-	"advertise_addr": "${LOCAL_HOST}",
+	"bind_addr": "${LOCAL_HOST}",
 	"log_level": "INFO",
 	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
@@ -185,8 +185,9 @@ EOF
 		"http": ${TMP_CSL_SETUP_HTTP_API_PORT},
 		"dns": ${TMP_CSL_SETUP_DNS_PORT}
   	},
-	"enable_syslog": true,
-	"start_join": ["${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST}"]
+	"rejoin_after_leave": true,
+	"retry_join": ["${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST}"],
+	"enable_syslog": true
 }
 EOF
 
@@ -197,7 +198,7 @@ EOF
 	"datacenter": "ost-svrs-ha",
     "node_name": "agent-${LOCAL_ID}",
 	"data_dir": "${TMP_CSL_DATA_DIR}",
-	"advertise_addr": "${LOCAL_HOST}",
+	"bind_addr": "${LOCAL_HOST}",
 	"log_level": "INFO",
 	"encrypt": "${TMP_CSL_SETUP_KEYGEN}",
 	"addresses": {
@@ -210,8 +211,10 @@ EOF
 		"http": ${TMP_CSL_SETUP_HTTP_API_PORT},
 		"dns": ${TMP_CSL_SETUP_DNS_PORT}
   	},
-	"enable_syslog": true,
-	"start_join": ["${TMP_CSL_SETUP_CLUSTER_LEADER_HOST}"]
+    "rejoin_after_leave": true,
+	"start_join": ["${TMP_CSL_SETUP_CLUSTER_LEADER_HOST}"],
+	"retry_join": ["${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST}"],
+	"enable_syslog": true
 }
 EOF
 
@@ -230,12 +233,15 @@ function boot_consul()
 	# 验证安装
     consul -v
 
-    # 当前启动命令,判断如果是主节点
-    if [ "${TMP_CSL_SETUP_CLUSTER_LEADER_HOST}" = "${LOCAL_HOST}" ]; then
+	# Consul 集群搭建时一般提供两种模式:
+
+	# 手动模式: 启动第一个节点后，此时此节点处于 bootstrap 模式，其节点手动执行加入
+	# 自动模式: 启动第一个节点后，在其他节点配置好尝试加入的目标节点，然后等待其自动加入(不需要人为命令加入)
+    # 当前启动命令,判断如果集群都是同一个，则直接定义为手动模式
+    if [ "${TMP_CSL_SETUP_CLUSTER_LEADER_HOST}" == "${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST}" ]; then
         echo "Consul：Exec bootstrap mode"
         start_bootstrap
     else
-        local TMP_CSL_SETUP_BOOT_MODE=1
         exec_if_choice "TMP_CSL_SETUP_BOOT_MODE" "Consul: Please sure this server mode" "server,agent" "" "start_"
     fi
 
