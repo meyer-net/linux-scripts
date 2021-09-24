@@ -125,20 +125,38 @@ function conf_consul()
 
     input_if_empty "TMP_CSL_SETUP_CLUSTER_LEADER_HOST" "Consul.Cluster: Please ender cluster of ${green}leader host${reset}"
 
-    exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST" "Consul.Cluster: Please ender cluster child.\$I host like '${LOCAL_HOST}'" "%s" "
-        echo \"Port of ${TMP_CSL_SETUP_RPC_PORT} allowed for '\${CURRENT}'\"
-        echo_soft_port ${TMP_CSL_SETUP_RPC_PORT} \${CURRENT}
-        echo \"Port of ${TMP_CSL_SETUP_SERF_LAN_PORT} allowed for '\${CURRENT}'\"
-        echo_soft_port ${TMP_CSL_SETUP_SERF_LAN_PORT} \${CURRENT}
-        echo \"Port of ${TMP_CSL_SETUP_SERF_WAN_PORT} allowed for '\${CURRENT}'\"
-        echo_soft_port ${TMP_CSL_SETUP_SERF_WAN_PORT} \${CURRENT}
-        echo \"Port of ${TMP_CSL_SETUP_HTTP_API_PORT} allowed for '\${CURRENT}'\"
-        echo_soft_port ${TMP_CSL_SETUP_HTTP_API_PORT} \${CURRENT}
-        echo \"Port of ${TMP_CSL_SETUP_DNS_PORT} allowed for '\${CURRENT}'\"
-        echo_soft_port ${TMP_CSL_SETUP_DNS_PORT} \${CURRENT}
-		echo_web_service_init_scripts \"consul\${I}\" \"consul\${I}-webui.${SYS_DOMAIN}\" ${TMP_CSL_SETUP_HTTP_API_PORT} '\${CURRENT}\'
-		"
-		
+	function _conf_consul_while_read()
+	{
+		local _I=${1}
+		local _CURRENT="${2}"
+		local _CURRENT_HOST="${_CURRENT}"
+
+		if [ "${_CURRENT}" == "${LOCAL_HOST}" ]; then
+			_CURRENT_HOST="${TMP_CSL_SETUP_CLUSTER_LEADER_HOST}"
+		fi
+
+		echo "Port of ${TMP_CSL_SETUP_RPC_PORT} allowed for '${_CURRENT_HOST}'"
+        echo_soft_port ${TMP_CSL_SETUP_RPC_PORT} ${_CURRENT_HOST}
+        
+		echo "Port of ${TMP_CSL_SETUP_SERF_LAN_PORT} allowed for '${_CURRENT_HOST}'"
+        echo_soft_port ${TMP_CSL_SETUP_SERF_LAN_PORT} ${_CURRENT_HOST}
+        
+		echo "Port of ${TMP_CSL_SETUP_SERF_WAN_PORT} allowed for '${_CURRENT_HOST}'"
+        echo_soft_port ${TMP_CSL_SETUP_SERF_WAN_PORT} ${_CURRENT_HOST}
+        
+		echo "Port of ${TMP_CSL_SETUP_HTTP_API_PORT} allowed for '${_CURRENT_HOST}'"
+        echo_soft_port ${TMP_CSL_SETUP_HTTP_API_PORT} ${_CURRENT_HOST}
+        
+		echo "Port of ${TMP_CSL_SETUP_DNS_PORT} allowed for '${_CURRENT_HOST}'"
+        echo_soft_port ${TMP_CSL_SETUP_DNS_PORT} ${_CURRENT_HOST}
+
+		echo_web_service_init_scripts "consul${_I}" "consul${_I}-webui.${SYS_DOMAIN}" ${TMP_CSL_SETUP_HTTP_API_PORT} "${_CURRENT}"
+
+		return $?
+	}
+
+    exec_while_read "TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST" "Consul.Cluster: Please ender cluster child.\$I host like '${LOCAL_HOST}'" "%s" "_conf_consul_while_read '\${I}' '\${CURRENT}'"
+	
     cat > ${TMP_CSL_ETC_DIR}/bootstrap/config.json <<EOF
 {
 	"ui" : true,
@@ -242,7 +260,7 @@ function boot_consul()
         echo "Consul：Exec bootstrap mode"
         start_bootstrap
     else
-        exec_if_choice_onece "TMP_CSL_SETUP_BOOT_MODE" "Consul: Please sure this server mode" "server,agent" "" "start_"
+        exec_if_choice_onece "TMP_CSL_SETUP_BOOT_MODE" "Consul: Please sure current boot mode" "server,agent" "" "start_"
     fi
 
     # 验证启动

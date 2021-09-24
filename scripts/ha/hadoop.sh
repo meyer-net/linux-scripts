@@ -351,40 +351,40 @@ function conf_hadoop_cluster()
 
 	function _conf_hadoop_cluster_while_read()
 	{
-		local I=${1}
-		local CURRENT=${2}
-		if [ "${CURRENT}" == "${LOCAL_HOST}" ]; then
+		local _I=${1}
+		local _CURRENT="${2}"
+		if [ "${_CURRENT}" == "${LOCAL_HOST}" ]; then
 			return $?
 		fi
 
 		# 添加从属节点配置
-        local TMP_HDOP_CLUSTER_WORKER_NAME=\`echo ${CURRENT} | sed 's@\\.@-@g' | xargs -I {} echo "ip-{}"\`
-        if [ "$I" -eq 1 ]; then
+        local TMP_HDOP_CLUSTER_WORKER_NAME=`echo ${_CURRENT} | sed 's@\\.@-@g' | xargs -I {} echo "ip-{}"`
+        if [ ${_I} -eq 1 ]; then
             echo "${TMP_HDOP_CLUSTER_WORKER_NAME}" > etc/hadoop/workers
         else
             echo "${TMP_HDOP_CLUSTER_WORKER_NAME}" >> etc/hadoop/workers
         fi
 
 		# 授权本地端口开放给Slaves
-        echo_soft_port ${TMP_HDOP_SETUP_HDFS_PORT} "${CURRENT}"
-        echo_soft_port ${TMP_HDOP_SETUP_SCHEDULER_PORT} "${CURRENT}"
-        echo_soft_port ${TMP_HDOP_SETUP_RES_TRACK_PORT} "${CURRENT}"
-        echo_soft_port ${TMP_HDOP_SETUP_RES_MGR_PORT} "${CURRENT}"
-        echo_soft_port ${TMP_HDOP_SETUP_RES_ADMIN_PORT} "${CURRENT}"
-        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_PORT} "${CURRENT}"
-        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT} "${CURRENT}"
-        echo_soft_port 49001 "${CURRENT}"
-        echo_soft_port 50070 "${CURRENT}"
-        echo_soft_port 50075 "${CURRENT}"
+        echo_soft_port ${TMP_HDOP_SETUP_HDFS_PORT} "${_CURRENT}"
+        echo_soft_port ${TMP_HDOP_SETUP_SCHEDULER_PORT} "${_CURRENT}"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_TRACK_PORT} "${_CURRENT}"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_MGR_PORT} "${_CURRENT}"
+        echo_soft_port ${TMP_HDOP_SETUP_RES_ADMIN_PORT} "${_CURRENT}"
+        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_PORT} "${_CURRENT}"
+        echo_soft_port ${TMP_HDOP_SETUP_WEBAPP_HTTPS_PORT} "${_CURRENT}"
+        echo_soft_port 49001 "${_CURRENT}"
+        echo_soft_port 50070 "${_CURRENT}"
+        echo_soft_port 50075 "${_CURRENT}"
 		
 		# 生成web授权访问脚本
-		echo_web_service_init_scripts "hadoop${I}" "hadoop${I}-webui.${SYS_DOMAIN}" ${TMP_HDOP_SETUP_WEBAPP_PORT} "${CURRENT}"
+		echo_web_service_init_scripts "hadoop${_I}" "hadoop${_I}-webui.${SYS_DOMAIN}" ${TMP_HDOP_SETUP_WEBAPP_PORT} "${_CURRENT}"
 
 		# NameNode映射
-        echo "${CURRENT} ${TMP_HDOP_CLUSTER_WORKER_NAME}" >> /etc/hosts
+        echo "${_CURRENT} ${TMP_HDOP_CLUSTER_WORKER_NAME}" >> /etc/hosts
 		
 		# 远程机器免登录授权
-		ssh-copy-id ${TMP_HDOP_CLUSTER_WORKER_USER}@${CURRENT} -p ${TMP_HDOP_CLUSTER_SSH_PORT}
+		ssh-copy-id ${TMP_HDOP_CLUSTER_WORKER_USER}@${_CURRENT} -p ${TMP_HDOP_CLUSTER_SSH_PORT}
 
         sleep 1
 
@@ -408,10 +408,10 @@ function conf_hadoop_cluster()
 		# ssh -tt ${TMP_HDOP_CLUSTER_WORKER_USER}@${TMP_HDOP_CLUSTER_WORKER_NAME} -p ${TMP_HDOP_CLUSTER_SSH_PORT} ''
 
 		# 备份iptables授权IP:端口配置
-        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed "s@${CURRENT}@${TMP_HDOP_MASTER_HOST}@g" > ssh_sed_hadoop_${TMP_HDOP_CLUSTER_WORKER_NAME}_port.tmp
+        cat /etc/sysconfig/iptables | sed -n '12,21p' | sed "s@${_CURRENT}@${TMP_HDOP_MASTER_HOST}@g" > ssh_sed_hadoop_${TMP_HDOP_CLUSTER_WORKER_NAME}_port.tmp
 
         echo
-        echo "Hadoop: File of ssh_sed_hadoop_${TMP_HDOP_CLUSTER_WORKER_NAME}_port.tmp will upload to '${CURRENT}' then append to iptables.service"
+        echo "Hadoop: File of ssh_sed_hadoop_${TMP_HDOP_CLUSTER_WORKER_NAME}_port.tmp will upload to '${_CURRENT}' then append to iptables.service"
         echo
     
         scp -P ${TMP_HDOP_CLUSTER_SSH_PORT} -r ssh_sed_hadoop_${TMP_HDOP_CLUSTER_WORKER_NAME}_port.tmp ${TMP_HDOP_CLUSTER_WORKER_USER}@${TMP_HDOP_CLUSTER_WORKER_NAME}:/tmp
@@ -424,7 +424,7 @@ function conf_hadoop_cluster()
 		return $?
 	}
 
-    exec_while_read "TMP_HDOP_CLUSTER_WORKER_HOSTS" "Hadoop: Please ender cluster-workers-host part \$I of address like '${LOCAL_HOST}', but except '${LOCAL_HOST}'" "" "_conf_hadoop_cluster_while_read \"\$I\" \"\$CURRENT\""
+    exec_while_read "TMP_HDOP_CLUSTER_WORKER_HOSTS" "Hadoop: Please ender cluster-workers-host part \${I} of address like '${LOCAL_HOST}', but except '${LOCAL_HOST}'" "" "_conf_hadoop_cluster_while_read \"\${I}\" \"\$CURRENT\""
 
 	# 因动态设置，所以需要重新修改对应集群数量
 	local TMP_HDOP_CLUSTER_WORKER_HOSTS_LEN=`echo ${TMP_HDOP_CLUSTER_WORKER_HOSTS} | grep -o "," | wc -l`
