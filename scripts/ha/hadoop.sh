@@ -338,6 +338,12 @@ function conf_hadoop_cluster()
 
 	# 启动配置文件
 	local TMP_HDOP_SUP_CONF_PATH=`find / -name hadoop-dfs.conf 2> /dev/null`
+	
+	local TMP_HDOP_CLUSTER_SLAVE_PORT=10022
+	input_if_empty "TMP_HDOP_CLUSTER_SLAVE_PORT" "Hadoop: Please ender the ssh port of cluster-slaves"
+
+	local TMP_HDOP_CLUSTER_SLAVE_USER=`whoami`
+	input_if_empty "TMP_HDOP_CLUSTER_SLAVE_USER" "Hadoop: Please ender the ssh user of cluster-slaves"
 
 	local TMP_EXEC_IF_CHOICE_SCRIPT_PATH_ARR=(${TMP_EXEC_IF_CHOICE_SCRIPT_PATH})
     local TMP_HDOP_CLUSTER_SLAVE_HOSTS="${LOCAL_HOST}"
@@ -347,7 +353,7 @@ function conf_hadoop_cluster()
 		fi
 
 		# 添加从属节点配置
-        local TMP_HDOP_CLUSTER_SLAVE_NAME=\`echo \\\${CURRENT} | sed \'s@\.@-@g\' | xargs -I \{\} echo \"\{\}\"\`
+        local TMP_HDOP_CLUSTER_SLAVE_NAME=\`echo \${CURRENT} | sed 's@\\.@-@g' | xargs -I {} echo \"{}\"\`
         if [ \"\$I\" -eq 1 ]; then
             echo \"\${TMP_HDOP_CLUSTER_SLAVE_NAME}\" > etc/hadoop/slaves
         else
@@ -371,34 +377,30 @@ function conf_hadoop_cluster()
 
 		# NameNode映射
         echo \"\${CURRENT} \${TMP_HDOP_CLUSTER_SLAVE_NAME}\" >> /etc/hosts
-
+		
 		# 远程机器免登录授权
-        ssh-copy-id -i ~/.ssh/id_rsa.pub \${TMP_HDOP_CLUSTER_SLAVE_NAME}
-		# ssh-copy-id root@\${CURRENT}
+		ssh-copy-id \${TMP_HDOP_CLUSTER_SLAVE_USER}@\${CURRENT} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT}
 
         sleep 1
 
 		# 远程机器识别本地HOST映射
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \"${LOCAL_HOST} ${TMP_HDOP_HADOOP_MASTER_NAME}\" >> /etc/hosts\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"echo \"${LOCAL_HOST} ${TMP_HDOP_HADOOP_MASTER_NAME}\" >> /etc/hosts\"
 
 		# 拷贝本地安装目录给定远程
-        scp -r ${TMP_HDOP_SETUP_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_SETUP_DIR}
-        scp -r ${TMP_HDOP_LNK_DATA_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_LNK_DATA_DIR}
-        scp -r ${TMP_HDOP_LNK_LOGS_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_LNK_LOGS_DIR}
-        scp -r ${TMP_HDOP_LNK_ETC_DIR} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_LNK_ETC_DIR}
-        scp -r ${TMP_HDOP_SUP_CONF_PATH} root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_SUP_CONF_PATH}
+        scp -P \${TMP_HDOP_CLUSTER_SLAVE_PORT} -r ${TMP_HDOP_SETUP_DIR} ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_SETUP_DIR}
+        scp -P \${TMP_HDOP_CLUSTER_SLAVE_PORT} -r ${TMP_HDOP_SUP_CONF_PATH} ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:${TMP_HDOP_SUP_CONF_PATH}
 		
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"mv ${TMP_HDOP_LOGS_DIR} ${TMP_HDOP_LNK_LOGS_DIR} && ln -sf ${TMP_HDOP_LNK_LOGS_DIR} ${TMP_HDOP_LOGS_DIR}\"
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"mv ${TMP_HDOP_DATA_DIR} ${TMP_HDOP_LNK_DATA_DIR} && ln -sf ${TMP_HDOP_LNK_DATA_DIR} ${TMP_HDOP_DATA_DIR}\"
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"mv ${TMP_HDOP_ETC_DIR} ${TMP_HDOP_LNK_ETC_DIR} && ln -sf ${TMP_HDOP_LNK_ETC_DIR} ${TMP_HDOP_ETC_DIR}\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"mv ${TMP_HDOP_LOGS_DIR} ${TMP_HDOP_LNK_LOGS_DIR} && ln -sf ${TMP_HDOP_LNK_LOGS_DIR} ${TMP_HDOP_LOGS_DIR}\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"mv ${TMP_HDOP_DATA_DIR} ${TMP_HDOP_LNK_DATA_DIR} && ln -sf ${TMP_HDOP_LNK_DATA_DIR} ${TMP_HDOP_DATA_DIR}\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"mv ${TMP_HDOP_ETC_DIR} ${TMP_HDOP_LNK_ETC_DIR} && ln -sf ${TMP_HDOP_LNK_ETC_DIR} ${TMP_HDOP_ETC_DIR}\"
 
 		# 添加远程环境变量
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \"HADOOP_HOME=${TMP_HDOP_SETUP_DIR}\" >> /etc/profile\"
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \'PATH=\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin:\$PATH\' >> /etc/profile\"
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"echo \'export PATH HADOOP_HOME\' >> /etc/profile\"
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"source /etc/profile\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"echo \"HADOOP_HOME=${TMP_HDOP_SETUP_DIR}\" >> /etc/profile\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"echo 'PATH=\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin:\$PATH' >> /etc/profile\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"echo 'export PATH HADOOP_HOME' >> /etc/profile\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"source /etc/profile\"
 
-		# ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"\"
+		# ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"\"
 
 		# 备份iptables授权IP:端口配置
         cat /etc/sysconfig/iptables | sed -n '12,21p' | sed 's@\${CURRENT}@${TMP_HDOP_MASTER_HOST}@g' > ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp
@@ -407,18 +409,18 @@ function conf_hadoop_cluster()
         echo \"Hadoop: File of ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp will upload to '\${CURRENT}' then append to iptables.service\"
         echo
     
-        scp -r ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp root@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:/tmp
+        scp -P \${TMP_HDOP_CLUSTER_SLAVE_PORT} -r ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME}:/tmp
         
-        ssh -o \"StrictHostKeyChecking no\" \${TMP_HDOP_CLUSTER_SLAVE_NAME} \"sed -i '11 r /tmp/ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp' /etc/sysconfig/iptables && rm -rf /tmp/ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp\"
+        ssh -o \"StrictHostKeyChecking no\" \${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"sed -i '11 r /tmp/ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp' /etc/sysconfig/iptables && rm -rf /tmp/ssh_sed_hadoop_\${TMP_HDOP_CLUSTER_SLAVE_NAME}_port.tmp\"
 		
 		# 远程启动
-		ssh -tt root@\${TMP_HDOP_CLUSTER_SLAVE_NAME} \"cd \${HADOOP_HOME} && bin/hadoop version && jps\"
+		ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@\${TMP_HDOP_CLUSTER_SLAVE_NAME} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"cd \${HADOOP_HOME} && bin/hadoop version && jps\"
     "
 
 	# 因动态设置，所以需要重新修改对应集群数量
 	local TMP_HDOP_CLUSTER_SLAVE_HOSTS_LEN=`echo ${TMP_HDOP_CLUSTER_SLAVE_HOSTS} | grep -o "," | wc -l`
 	
-	echo "127.0.0.1,${TMP_HDOP_CLUSTER_SLAVE_HOSTS}" | sed 's@,@\n@g' | xargs -I {} sh -c "ssh -tt root@{} \"sed -i \'s@<value>1</value>@<value>${TMP_HDOP_CLUSTER_SLAVE_HOSTS_LEN}</value>@g\' ${TMP_HDOP_SETUP_DIR}/etc/hadoop/hdfs-site.xml\""
+	echo "127.0.0.1,${TMP_HDOP_CLUSTER_SLAVE_HOSTS}" | sed 's@,@\n@g' | xargs -I {} sh -c "ssh -tt ${TMP_HDOP_CLUSTER_SLAVE_USER}@{} -p \${TMP_HDOP_CLUSTER_SLAVE_PORT} \"sed -i \'s@<value>1</value>@<value>${TMP_HDOP_CLUSTER_SLAVE_HOSTS_LEN}</value>@g\' ${TMP_HDOP_SETUP_DIR}/etc/hadoop/hdfs-site.xml\""
 	
 	return $?
 }

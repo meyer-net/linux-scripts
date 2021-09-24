@@ -6,6 +6,7 @@
 #------------------------------------------------
 # 相关参考：
 #         https://clickhouse.tech/docs/zh/
+#         https://www.dazhuanlan.com/xiaoshuai201/topics/1043344
 #         https://www.zouyesheng.com/clickhouse.html
 #         http://www.clickhouse.com.cn/topic/5a366e97828d76d75ab5d5a0
 #------------------------------------------------
@@ -147,6 +148,7 @@ function conf_clickhouse()
 
     # 启动完成以后再修改配置文件
     sed -i "/<yandex>/a     \\\    <listen_host>${LOCAL_HOST}</listen_host>" /etc/clickhouse-server/config.xml
+    sed -i "0,/<level>trace<\/level>/{s@<level>[0-9]*</level>@<level>information</level>@}" /etc/clickhouse-server/config.xml
 
 	input_if_empty "TMP_CH_SETUP_HTTP_PORT" "Clickhouse-Server: Please ender ${red}http port${reset}"
     sed -i "0,/<http_port>[0-9]*<\/http_port>/{s@<http_port>[0-9]*</http_port>@<http_port>${TMP_CH_SETUP_HTTP_PORT}</http_port>@}" /etc/clickhouse-server/config.xml
@@ -275,14 +277,17 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 ##########################################################################################################
 # 1、/etc/clickhouse-server/config.xml添加修改如下：
 #     <listen_host>0.0.0.0</listen_host>
-#     <include_from>/etc/clickhouse-server/metrika.xml</include_from>
+#     <include_from>/etc/clickhouse-server/metrika-ost-3s2r.xml</include_from>
+#     <remote_servers incl="remote_servers-ost-3s2r" />
+#     <zookeeper incl="zookeeper-ost-3s2r" optional="true" />
+#     <macros incl="macros-ost-3s2r" optional="true" />
 	
 # 2、使用加密密码，分别对应三台分片机：
 # PASSWORD152=`base64 < /dev/urandom | head -c8`; PASSWORD155=`base64 < /dev/urandom | head -c8`; PASSWORD158=`base64 < /dev/urandom | head -c8`
-# 新增/etc/clickhouse-server/metrika.xml内容如下，对应本机的IP修改为127.0.0.1：
+# 新增/etc/clickhouse-server/metrika-ost-3s2r.xml内容如下，对应本机的IP修改为127.0.0.1：
 # <yandex>
 #    <!-- 集群配置 -->
-#    <clickhouse_remote_servers>
+#    <remote_servers-ost-3s2r>
 #        <!-- 集群名称  -->
 #        <ost_3s2r_cluster>
 #            <!-- 数据分片1 -->
@@ -337,13 +342,19 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #                </replica>
 #            </shard>
 #        </ost_3s2r_cluster>
-#    </clickhouse_remote_servers>
+#    </remote_servers-ost-3s2r>
 
-#    <!-- 本节点副本名称，不同节点配置不同命名 -->
-#    <macros>
+#    <!-- 本节点副本名称，不同节点配置不同命名，cluster{layer}-{shard}-{replica}的表示方式，比如cluster01-02-1表示cluster01集群的02分片下的1号副本 -->
+#    <macros-ost-3s2r>
 #        <shard>s1</shard>
-#        <replica>r1</replica>
-#    </macros>
+#        <replica>cluster-s1-r1</replica>
+#    </macros-ost-3s2r>
+#    <!-- 实例2的编写
+#    <macros-ost-3s2r>
+#        <shard>s2</shard>
+#        <replica>cluster-s2-r2</replica>
+#    </macros-ost-3s2r>
+#    -->
 
 #    <!-- 监听网络，对应本机的IP修改为127.0.0.1 -->
 #    <networks>
@@ -351,29 +362,20 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 #    </networks>
 
 #    <!-- ZK -->
-#    <zookeeper-servers>
-#        <node index="1">
+#    <zookeeper-ost-3s2r>
+#        <node index="152">
 #            <host>172.30.10.152</host>
 #            <port>12181</port>
 #        </node>
-#        <node index="2">
+#        <node index="155">
 #            <host>172.30.10.155</host>
 #            <port>12181</port>
 #        </node>
-#        <node index="3">
+#        <node index="158">
 #            <host>172.30.10.158</host>
 #            <port>12181</port>
 #        </node>
-#    </zookeeper-servers>
-
-#    <!-- 数据压缩算法 -->
-#    <clickhouse_compression>
-#        <case>
-#            <min_part_size>10000000000</min_part_size>
-#            <min_part_size_ratio>0.01</min_part_size_ratio>
-#            <method>lz4</method>
-#        </case>
-#    </clickhouse_compression>
+#    </zookeeper-ost-3s2r>
 # </yandex>
 
 # 3、/etc/clickhouse-server/users.xml配置如下
@@ -500,11 +502,12 @@ setup_soft_basic "ClickHouse" "check_setup_clickhouse"
 # echo "select * from system.clusters" | clickhouse-client --host localhost --port 19000 --password ""
 
 # 6、启动服务，创建表如下：
-# # 三台集群服务器同时执行以下创表DDL
-# CREATE TABLE ontime_local (FlightDate Date,Year UInt16) ENGINE = ReplicatedMergeTree('/clickhouse/tables/ontime_replica/{shard}', '{replica}', FlightDate, (Year, FlightDate), 8192);
+# # 三台集群服务器同时按macros执行以下创表DDL，s1/s2这些命名主要看按顺序是第几个shared，r1/r2这些命名主要看按顺序是shared下的第几个replica
+# CREATE TABLE ontime_local(FlightDate Date,Year UInt16) ENGINE = ReplicatedMergeTree('/clickhouse/tables/cluster-s1/ontime_local_replica', 'cluster-s1-r1', FlightDate, (Year, FlightDate), 8192);
+# #CREATE TABLE ontime_local(FlightDate Date,Year UInt16) ENGINE = ReplicatedMergeTree('/clickhouse/tables/cluster-s2/ontime_local_replica', 'cluster-s2-r2', FlightDate, (Year, FlightDate), 8192);
 # CREATE TABLE ontime_all AS ontime_local ENGINE = Distributed(ost_3s2r_cluster, default, ontime_local, rand());
 
-# 7、往其中一台客户端插入数据，从另外集群的客户端查询没有相应数据。
-# insert into ontime_all (FlightDate,Year)values('2021-01-01',2021);
-# insert into ontime_all (FlightDate,Year)values('2022-01-01',2022);
-# insert into ontime_all (FlightDate,Year)values('2023-01-01',2023);
+# 7、往其中一台客户端插入数据，从另外集群的客户端查询没有相应数据，或直接在每台DB查询ontime_local看看数据分布。
+# INSERT INTO ontime_all(FlightDate,Year) VALUES('2021-01-01',2021);
+# INSERT INTO ontime_all(FlightDate,Year) VALUES('2022-01-01',2022);
+# INSERT INTO ontime_all(FlightDate,Year) VALUES('2023-01-01',2023);
