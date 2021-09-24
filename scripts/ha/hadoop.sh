@@ -424,7 +424,7 @@ function conf_hadoop_cluster()
 		return $?
 	}
 
-    exec_while_read "TMP_HDOP_CLUSTER_WORKER_HOSTS" "Hadoop: Please ender cluster-workers-host part \${I} of address like '${LOCAL_HOST}', but except '${LOCAL_HOST}'" "" "_conf_hadoop_cluster_while_read \"\${I}\" \"\$CURRENT\""
+    exec_while_read "TMP_HDOP_CLUSTER_WORKER_HOSTS" "Hadoop: Please ender cluster-workers-host part \${I} of address like '${LOCAL_HOST}', but except '${LOCAL_HOST}'" "%s" '_conf_hadoop_cluster_while_read "${I}" "${CURRENT}"'
 
 	# 因动态设置，所以需要重新修改对应集群数量
 	local TMP_HDOP_CLUSTER_WORKER_HOSTS_LEN=`echo ${TMP_HDOP_CLUSTER_WORKER_HOSTS} | grep -o "," | wc -l`
