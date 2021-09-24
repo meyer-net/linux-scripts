@@ -231,7 +231,7 @@ function boot_consul()
 	cd ${TMP_CSL_SETUP_DIR}
 	
 	# 验证安装
-    consul -v
+    bin/consul -v
 
 	# Consul 集群搭建时一般提供两种模式:
 
@@ -242,7 +242,7 @@ function boot_consul()
         echo "Consul：Exec bootstrap mode"
         start_bootstrap
     else
-        exec_if_choice "TMP_CSL_SETUP_BOOT_MODE" "Consul: Please sure this server mode" "server,agent" "" "start_"
+        exec_if_choice_onece "TMP_CSL_SETUP_BOOT_MODE" "Consul: Please sure this server mode" "server,agent" "" "start_"
     fi
 
     # 验证启动
@@ -264,7 +264,7 @@ function start_bootstrap()
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
 
     local TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST_COUNT=`echo ${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST} | grep -o "," | wc -l`
-    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST_COUNT} > logs/boot.log 2>&1 &
+    nohup bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST_COUNT} > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
     echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/bootstrap -bootstrap-expect=${TMP_CSL_SETUP_CLUSTER_CHILDREN_HOST_COUNT}" "" "1"
@@ -277,7 +277,7 @@ function start_server()
 	local TMP_CSL_SETUP_DIR=`pwd`
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
     
-    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/server > logs/boot.log 2>&1 &
+    nohup bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/server > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
     echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/server" "" "1"
@@ -290,7 +290,7 @@ function start_agent()
 	local TMP_CSL_SETUP_DIR=`pwd`
 	local TMP_CSL_ETC_DIR=${TMP_CSL_SETUP_DIR}/etc
     
-    nohup consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent > logs/boot.log 2>&1 &
+    nohup bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent > logs/boot.log 2>&1 &
 
 	# 添加系统启动命令
     echo_startup_config "consul" "${TMP_CSL_SETUP_DIR}" "bin/consul agent -config-dir ${TMP_CSL_ETC_DIR}/agent" "" "1"

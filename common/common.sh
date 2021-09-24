@@ -1452,10 +1452,6 @@ function set_if_choice()
 #参数6：执行脚本后的操作
 function exec_if_choice_custom()
 {
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-
 	set_if_choice "$1" "$2" "$3" "$4"
 
 	local NEW_VAL=`eval echo '$'$1`
