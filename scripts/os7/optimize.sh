@@ -202,8 +202,6 @@ EOF
 
 	semanage port -a -t ssh_port_t -p tcp ${TMP_SSH_NEW_PORT}
 
-	systemctl restart sshd.service
-
 	# 创建新用户及分配权限
 	create_user_if_not_exists "root" "oshit"
 	function _change_oshit_passwd()
@@ -216,7 +214,9 @@ EOF
 	}
 
 	exec_yn_action "_change_oshit_passwd" "Sys-Optimize: User of ${red}oshit${reset} createed, please sure the password u want to set"
-	
+
+	systemctl restart sshd.service
+		
     return $?
 }
 

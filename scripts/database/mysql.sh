@@ -9,6 +9,7 @@
 #------------------------------------------------
 local TMP_MYSQL_SETUP_PORT=13306
 local TMP_MYSQL_SETUP_PWD="mysql%DB^m${LOCAL_ID}~"
+local TMP_MYSQL_SETUP_BK_PWD="msql%DB^bk${LOCAL_ID}~"
 
 ##########################################################################################################
 
@@ -277,10 +278,10 @@ function check_setup_conf()
 
 function conf_mysql_master()
 {
-	echo "Start Config Mysql-Master"
+	echo "Start Config MySQL-Master"
 
 	#不加binlog-do-db和binlog_ignore_db，那就表示备份全部数据库。
-	#echo "Mysql: Please Ender Mysql-Master All DB To Bak And Use Character ',' To Split Like 'db_a,db_b' In Network"
+	#echo "MySQL: Please Ender MySQL-Master All DB To Bak And Use Character ',' To Split Like 'db_a,db_b' In Network"
 	#read -e DBS
 
 	sed -i "s@^server-id.*@server-id = ${LOCAL_ID}@g" ${TMP_MYSQL_SETUP_CNF_PATH}
@@ -293,35 +294,64 @@ function conf_mysql_master()
 	sed -i "/\[mysqld\]/a #Defind By Meyer 2016.12.16" ${TMP_MYSQL_SETUP_CNF_PATH}
 
 	service mysql restart
-	echo "Config Mysql-Master Over。"
+	echo "Config MySQL-Master Over。"
 	echo "------------------------------------------"
-	echo "Start Grant Permission Mysql To Slave"
+	echo "Start Grant Permission MySQL To Slave"
 	local TMP_MYSQL_SETUP_CONF_DB_MASTER_PWD="${TMP_MYSQL_SETUP_PWD}"
-    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_MASTER_PWD" "Mysql: Please ender ${red}mysql localhost password of root${reset}"
-    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_MASTER_SLAVE" "Mysql: Please ender ${red}mysql slave address in internal${reset}"
+    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_MASTER_PWD" "MySQL: Please ender ${red}mysql localhost password of root${reset}"
+    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_MASTER_SLAVE" "MySQL: Please ender ${red}mysql slave address in internal${reset}"
 	
 	#在主服务器新建一个用户赋予“REPLICATION SLAVE”的权限。
-	mysql -uroot -p${TMP_MYSQL_SETUP_CONF_DB_MASTER_PWD} -e"
-	GRANT FILE ON *.* TO 'backup'@'${TMP_MYSQL_SETUP_CONF_DB_MASTER_SLAVE}' IDENTIFIED BY 'backup#1475963&m';
-	GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* to 'backup'@'${TMP_MYSQL_SETUP_CONF_DB_MASTER_SLAVE}' identified by 'backup#1475963&m';
+	mysql -uroot -p${TMP_MYSQL_SETUP_CONF_DB_MASTER_PWD} -P${TMP_MYSQL_SETUP_PORT} -e"
+	GRANT FILE ON *.* TO 'backup'@'${TMP_MYSQL_SETUP_CONF_DB_MASTER_SLAVE}' IDENTIFIED BY '${TMP_MYSQL_SETUP_BK_PWD}';
+	GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* to 'backup'@'${TMP_MYSQL_SETUP_CONF_DB_MASTER_SLAVE}' identified by '${TMP_MYSQL_SETUP_BK_PWD}';
 	FLUSH PRIVILEGES;
 	select user,host,password from mysql.user;
 	show master status;
 	exit"
-	echo "Grant Permission Mysql To Slave Over。"
+	echo "Grant Permission MySQL To Slave Over。"
 	echo "------------------------------------------"
 	echo "Set All Done"
 
 	return $?
 }
 
+# option:
+#         MASTER_BIND = 'interface_name'
+#       | MASTER_HOST = 'host_name'
+#       | MASTER_USER = 'user_name'
+#       | MASTER_PASSWORD = 'password'
+#       | MASTER_PORT = port_num
+#       | MASTER_CONNECT_RETRY = interval
+#       | MASTER_RETRY_COUNT = count
+#       | MASTER_DELAY = interval
+#       | MASTER_HEARTBEAT_PERIOD = interval
+#       | MASTER_LOG_FILE = 'master_log_name'
+#       | MASTER_LOG_POS = master_log_pos
+#       | MASTER_AUTO_POSITION = {0|1}
+#       | RELAY_LOG_FILE = 'relay_log_name'
+#       | RELAY_LOG_POS = relay_log_pos
+#       | MASTER_SSL = {0|1}
+#       | MASTER_SSL_CA = 'ca_file_name'
+#       | MASTER_SSL_CAPATH = 'ca_directory_name'
+#       | MASTER_SSL_CERT = 'cert_file_name'
+#       | MASTER_SSL_CRL = 'crl_file_name'
+#       | MASTER_SSL_CRLPATH = 'crl_directory_name'
+#       | MASTER_SSL_KEY = 'key_file_name'
+#       | MASTER_SSL_CIPHER = 'cipher_list'
+#       | MASTER_SSL_VERIFY_SERVER_CERT = {0|1}
+#       | IGNORE_SERVER_IDS = (server_id_list)
 function conf_mysql_slave()
 {
-	echo "Start Config Mysql-Slave"
-    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER" "Mysql: Please ender ${green}mysql master address in internal${reset}"
+	echo "Start Config MySQL-Slave"
+	local TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER=""
+    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER" "MySQL: Please ender ${green}mysql master host${reset} in internal"
+
+	local TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER_PORT="${TMP_MYSQL_SETUP_PORT}"
+    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER_PORT" "MySQL: Please sure ${green}mysql master port${reset} of host(${red}${TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER}${reset})"
 
 	#不加binlog-do-db和binlog_ignore_db，那就表示备份全部数据库。
-	#echo "Mysql: Please Ender Mysql-Slave All DB To Bak And Use Character ',' To Split Like 'db_a,db_b' In Network"
+	#echo "MySQL: Please Ender MySQL-Slave All DB To Bak And Use Character ',' To Split Like 'db_a,db_b' In Network"
 	#read -e DBS
 
 	sed -i "s@^server-id = 1@server-id = ${LOCAL_ID}@g" ${TMP_MYSQL_SETUP_CNF_PATH}
@@ -334,26 +364,30 @@ function conf_mysql_slave()
 	sed -i "/\[mysqld\]/a #Defind By Meyer 2016.12.16" ${TMP_MYSQL_SETUP_CNF_PATH}
 
 	service mysql restart
-	echo "Config Mysql-Slave Over。"
+	echo "Config MySQL-Slave Over。"
 	echo "------------------------------------------"
-	echo "Start Set And Test To Login Mysql-Master"    
+	echo "Start Set And Test To Login MySQL-Master"    
 	local TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD="${TMP_MYSQL_SETUP_PWD}"
-    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD" "Mysql: Please ender ${green}mysql localhost password of root${reset}"
+    input_if_empty "TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD" "MySQL: Please ender ${green}mysql localhost password of root${reset}"
 	
 	#在主服务器新建一个用户赋予“REPLICATION SLAVE”的权限。
-	mysql -uroot -p${TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD} -e"
+	mysql -uroot -p${TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD} -P${TMP_MYSQL_SETUP_PORT} -e"
 	stop slave;
-	change master to master_host='${TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER}', master_user='backup', master_password='backup#1475963&m';
+	reset slave;
+	change master to master_host='${TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER}', master_port=${TMP_MYSQL_SETUP_CONF_DB_SLAVE_MASTER_PORT}, master_user='backup', master_password='${TMP_MYSQL_SETUP_BK_PWD}';
 	start slave;
 	show slave status\G;
 	FLUSH PRIVILEGES;
 	select user,host,password from mysql.user;
 	exit"
-	echo "Set And Test To Login Mysql-Master Over。"
+	echo "Set And Test To Login MySQL-Master Over。"
 	echo "------------------------------------------"
 	echo "If U See Some Problems Please Visit 'https://yq.aliyun.com/articles/27792' To Look Some Questions"
 	echo "------------------------------------------"
 	echo "Set All Done"
+
+	# 添加系统启动命令
+    echo_startup_config "mysql_slave" "${TMP_MSQL_SETUP_DIR}" "echo 'start slave' | mysql -uroot -p${TMP_MYSQL_SETUP_CONF_DB_SLAVE_PWD} -P${TMP_MYSQL_SETUP_PORT}" "" "999"
 
 	return $?
 }
@@ -496,5 +530,5 @@ function print_mariadb()
 ##########################################################################################################
 
 #安装主体
-exec_if_choice "TMP_MSQL_SETUP_CHOICE" "Please choice which mysql type you want to setup" "...,Mysql,MariaDB,Conf,Exit" "${TMP_SPLITER}" "check_setup_"
+exec_if_choice "TMP_MSQL_SETUP_CHOICE" "Please choice which mysql type you want to setup" "...,MySQL,MariaDB,Conf,Exit" "${TMP_SPLITER}" "check_setup_"
 #mysqlcheck -u root -p --auto-repair --check --optimize --all-databases

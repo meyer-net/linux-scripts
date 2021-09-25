@@ -49,9 +49,10 @@ function setup_elasticsearch()
 	ln -sf ${TMP_ELK_ES_SETUP_LNK_LOGS_DIR} ${TMP_ELK_ES_SETUP_LOGS_DIR}
 
 	# 环境变量或软连接
-	echo "ELASTICSEARCH_HOME=${TMP_ELK_ES_SETUP_DIR}" >> /etc/profile
-	echo 'PATH=$ELASTICSEARCH_HOME/bin:$PATH' >> /etc/profile
-	echo 'export PATH ELASTICSEARCH_HOME' >> /etc/profile
+	echo "ES_HOME=${TMP_ELK_ES_SETUP_DIR}" >> /etc/profile
+	echo 'ES_JAVA_HOME=$ES_HOME/jdk' >> /etc/profile
+	echo 'PATH=$ES_HOME/bin:$PATH' >> /etc/profile
+	echo 'export PATH ES_HOME ES_JAVA_HOME' >> /etc/profile
 
     # 重新加载profile文件
 	source /etc/profile
@@ -113,7 +114,6 @@ function reconf_elasticsearch()
 	ln -sf ${TMP_ELK_ES_SETUP_LNK_DATA_DIR} ${TMP_ELK_ES_SETUP_DATA_DIR}
 	
 	# 授权权限，否则无法写入
-	chgrp -R elk ${TMP_ELK_ES_SETUP_LNK_DATA_DIR}
 	chown -R elk:elk ${TMP_ELK_ES_SETUP_LNK_DATA_DIR}
 
 	return $?
