@@ -11,10 +11,11 @@
 # bash bin/kafka-console-producer.sh --broker-list 192.168.1.100:19092,192.168.1.109:19092,192.168.1.110:19092 --topic test
 # bash bin/kafka-console-consumer.sh --bootstrap-server 192.168.1.100:19092,192.168.1.109:19092,192.168.1.110:19092 --topic test --from-beginning
 #------------------------------------------------
-local TMP_KFK_SETUP_ZK_PORT=12181
 local TMP_KFK_SETUP_LISTENERS_PORT=19092
-local TMP_KFK_SETUP_ZK_ADMIN_SERVER_PORT=18080
 local TMP_KFK_SETUP_JMX_PORT=10000
+
+local TMP_KFK_SETUP_ZK_PORT=12181
+local TMP_KFK_SETUP_ZK_ADMIN_SERVER_PORT=18080
 
 local TMP_KFK_EGL_SETUP_WEBUI_PORT=18048
 local TMP_KFK_EGL_SETUP_SERVER_PORT=18065

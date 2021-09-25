@@ -29,13 +29,13 @@ kong-cashier：110    4c4g  50G
 kong-backstage：111  4c4g  50G
 kong-buffer：112     4c8g  50G
 
-rco-cashier 120         4c16g  100G
-micro-security 121      4c16g  100G
-micro-leaf 122          4c8g  50G
+core-domain rco-cashier 120         4c16g  100G
+core-context micro-security 121      4c16g  100G
+core-infrastructure micro-leaf 122          4c16g  50G
 
-erp-robot 123           4c32g  200G
+core-robot erp-robot 123           4c32g  200G
 
-redis 125               8c32g  300G
+cache—mq redis 125               8c32g  300G
 
 dbm：130 4c8g  500G
 dbs：131 4c8g  500G
