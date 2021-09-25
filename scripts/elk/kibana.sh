@@ -89,17 +89,18 @@ function conf_kibana()
     input_if_empty "TMP_ELK_KBN_SETUP_ES_HOST" "Kibana: Please ender your ${red}elasticsearch host address${reset} like '${LOCAL_HOST}'"
 	set_if_equals "TMP_ELK_KBN_SETUP_ES_HOST" "LOCAL_HOST" "127.0.0.1"
 
-	local TMP_ELK_KBN_SETUP_ES_USER="root"
+	local TMP_ELK_KBN_SETUP_ES_USER="kibana"
     input_if_empty "TMP_ELK_KBN_SETUP_ES_USER" "Kibana: Please ender your ${red}elasticsearch user${reset} of '${TMP_ELK_KBN_SETUP_ES_HOST}'"
 
-	local TMP_ELK_KBN_SETUP_ES_PASSWD="es%DB^m${LOCAL_ID}~"
+	local TMP_ELK_KBN_SETUP_ES_PASSWD="kbn%ES^m${LOCAL_ID}~"
     input_if_empty "TMP_ELK_KBN_SETUP_ES_PASSWD" "Kibana: Please ender your ${red}elasticsearch password${reset} of '${TMP_ELK_KBN_SETUP_ES_HOST}'"
 
-    sed -i "s@[#]*server\.port@.*server.port: ${TMP_ELK_KBN_SETUP_HTTP_PORT}@g" config/kibana.yml
-    sed -i "s@[#]*server\.host.*@server.host: \"0.0.0.0\"@g" config/kibana.yml
-    sed -i "s@[#]*elasticsearch\.hosts:.*@elasticsearch.hosts: \"[http://${TMP_ELK_KBN_SETUP_ES_HOST}:${TMP_ELK_KBN_SETUP_ES_PORT}]\"@g" config/kibana.yml
-    sed -i "s@[#]*elasticsearch\.username:.*@elasticsearch.username: \"${TMP_ELK_KBN_SETUP_ES_USER}\"@g" config/kibana.yml
-    sed -i "s@[#]*elasticsearch\.password:.*@elasticsearch.password: \"${TMP_ELK_KBN_SETUP_ES_PASSWD}\"@g" config/kibana.yml
+    sed -i "s@^[#]*server\.port.*@server.port: ${TMP_ELK_KBN_SETUP_HTTP_PORT}@g" config/kibana.yml
+    sed -i "s@^[#]*server\.host.*@server.host: \"${LOCAL_HOST}\"@g" config/kibana.yml
+    sed -i "s@^[#]*kibana\.index@kibana.index@g" config/kibana.yml
+    sed -i "s@^[#]*elasticsearch\.hosts:.*@elasticsearch.hosts: [http://${TMP_ELK_KBN_SETUP_ES_HOST}:${TMP_ELK_KBN_SETUP_ES_PORT}]@g" config/kibana.yml
+    sed -i "s@^[#]*elasticsearch\.username:.*@elasticsearch.username: \"${TMP_ELK_KBN_SETUP_ES_USER}\"@g" config/kibana.yml
+    sed -i "s@^[#]*elasticsearch\.password:.*@elasticsearch.password: \"${TMP_ELK_KBN_SETUP_ES_PASSWD}\"@g" config/kibana.yml
 	
 	chown -R elk:elk ${TMP_ELK_KBN_SETUP_LNK_ETC_DIR}
 

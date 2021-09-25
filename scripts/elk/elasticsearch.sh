@@ -10,6 +10,13 @@
 local TMP_ELK_ES_SETUP_HTTP_PORT=19200
 local TMP_ELK_ES_SETUP_TRANS_PORT=19300
 
+local TMP_ELK_ES_SETUP_PASSWD="es%ES^m${LOCAL_ID}~"
+local TMP_ELK_ES_SETUP_APM_PASSWD="apm%ES^m${LOCAL_ID}~"
+local TMP_ELK_ES_SETUP_KBN_PASSWD="kbn%ES^m${LOCAL_ID}~"
+local TMP_ELK_ES_SETUP_LS_PASSWD="ls%ES^m${LOCAL_ID}~"
+local TMP_ELK_ES_SETUP_BTS_PASSWD="bts%ES^m${LOCAL_ID}~"
+local TMP_ELK_ES_SETUP_RMU_PASSWD="rmu%ES^m${LOCAL_ID}~"
+
 ##########################################################################################################
 
 # 1-配置环境
@@ -92,8 +99,14 @@ function conf_elasticsearch()
     sed -i "/http\.port/a transport.port: ${TMP_ELK_ES_SETUP_TRANS_PORT}" config/elasticsearch.yml
     sed -i "s@^discovery\.seed_hosts:.*@discovery.seed_hosts: [\"[::1]\"]@g" config/elasticsearch.yml
 
+	# 添加密码支持
+	echo "xpack.security.enabled: true" >> config/elasticsearch.yml
+	echo "xpack.license.self_generated.type: basic" >> config/elasticsearch.yml
+	echo "xpack.security.transport.ssl.enabled: true" >> config/elasticsearch.yml
+
 	echo 'http.cors.enabled: true' >> config/elasticsearch.yml
 	echo 'http.cors.allow-origin: "*"' >> config/elasticsearch.yml
+	echo 'http.cors.allow-headers: Authorization' >> config/elasticsearch.yml
 	
 	chown -R elk:elk ${TMP_ELK_ES_SETUP_LNK_ETC_DIR}
 
@@ -115,6 +128,19 @@ function reconf_elasticsearch()
 	
 	# 授权权限，否则无法写入
 	chown -R elk:elk ${TMP_ELK_ES_SETUP_LNK_DATA_DIR}
+
+	# 最后设定密码
+	echo ${TMP_SPLITER}
+	echo "ElasticSearch Password Set Like："
+	echo "                                 Elastic：${TMP_ELK_ES_SETUP_PASSWD}"
+	echo "                                 APM：${TMP_ELK_ES_SETUP_APM_PASSWD}"
+	echo "                                 Kibana：${TMP_ELK_ES_SETUP_KBN_PASSWD}"
+	echo "                                 Logstash：${TMP_ELK_ES_SETUP_LS_PASSWD}"
+	echo "                                 Beats：${TMP_ELK_ES_SETUP_BTS_PASSWD}"
+	echo "                                 Remote：${TMP_ELK_ES_SETUP_RMU_PASSWD}"
+	echo ${TMP_SPLITER}
+
+	bin/elasticsearch-setup-passwords interactive
 
 	return $?
 }
