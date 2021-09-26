@@ -151,8 +151,9 @@ function down_java()
 
 	# setup_soft_wget "java" '--no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u291-b10/d7fc238d0cbf4b0dac67be84580cfb4b/jdk-8u291-linux-x64.tar.gz' "exec_step_java"
 	# setup_soft_wget "java" 'https://d6.injdk.cn/openjdk/liberica/8/full/bellsoft-jdk8u275+1-linux-amd64-full.tar.gz' "exec_step_java"
-	setup_soft_wget "java" 'https://d6.injdk.cn/openjdk/liberica/8/standard/bellsoft-jdk8u275+1-linux-amd64.tar.gz' "exec_step_java"
-
+	# setup_soft_wget "java" 'https://d6.injdk.cn/openjdk/liberica/8/standard/bellsoft-jdk8u275+1-linux-amd64.tar.gz' "exec_step_java"
+	setup_soft_wget "java" 'https://mirrors.huaweicloud.com/java/jdk/8u202-b08/jdk-8u202-linux-x64.tar.gz' "exec_step_java"
+	
 	return $?
 }
 

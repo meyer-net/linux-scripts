@@ -27,7 +27,7 @@ local TMP_KFK_EGL_SETUP_MYSQL_PORT=13306
 # 1-配置环境
 function set_env_kafka()
 {
-    cd ${__DIR}
+    cd ${__DIR} && source scripts/lang/java.sh
 	
     local TMP_IS_KFK_ZK_LOCAL=`lsof -i:${TMP_KFK_SETUP_ZK_PORT}`
     if [ -z "${TMP_IS_KFK_ZK_LOCAL}" ]; then 
@@ -39,10 +39,8 @@ function set_env_kafka()
 
 function set_env_kafka_eagle()
 {
-    cd ${__DIR}
-
-    source scripts/lang/java.sh
-	
+    cd ${__DIR} && source scripts/lang/java.sh
+		
     local TMP_IS_KFK_EGL_MYSQL_LOCAL=`lsof -i:${TMP_KFK_EGL_SETUP_MYSQL_PORT}`
     if [ -z "${TMP_IS_KFK_EGL_MYSQL_LOCAL}" ]; then 
     	exec_yn_action "setup_mysql" "KafkaEagle.MySQL: Can't find dependencies compment of ${red}mysql${reset}，please sure if u want to get ${green}mysql local${reset} or remote got?"

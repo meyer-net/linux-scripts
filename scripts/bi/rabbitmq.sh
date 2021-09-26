@@ -45,19 +45,25 @@ function setup_rabbitmq()
 	# 创建日志软链(启动后才能出现日志及数据目录)
 	local TMP_RBT_MQ_LNK_LOGS_DIR=${LOGS_DIR}/rabbitmq
 	local TMP_RBT_MQ_LNK_DATA_DIR=${DATA_DIR}/rabbitmq
-	local TMP_RBT_MQ_LOGS_DIR=${TMP_RBT_MQ_SETUP_DIR}/logs
-	local TMP_RBT_MQ_DATA_DIR=${TMP_RBT_MQ_SETUP_DIR}/data
+	local TMP_RBT_MQ_LOGS_DIR=${TMP_RBT_MQ_SETUP_DIR}/var/log/rabbitmq
+	local TMP_RBT_MQ_DATA_DIR=${TMP_RBT_MQ_SETUP_DIR}/var/lib/rabbitmq
 
 	# 先清理文件，再创建文件
 	rm -rf ${TMP_RBT_MQ_LOGS_DIR}
 	rm -rf ${TMP_RBT_MQ_DATA_DIR}
 
-	mkdir -pv ${TMP_RBT_MQ_LNK_LOGS_DIR}
-	mkdir -pv ${TMP_RBT_MQ_LNK_DATA_DIR}
+	path_not_exists_create "${TMP_RBT_MQ_LNK_LOGS_DIR}"
+	path_not_exists_create "${TMP_RBT_MQ_LNK_DATA_DIR}"
 	
+	path_not_exists_create `dirname ${TMP_RBT_MQ_LOGS_DIR}`
+	path_not_exists_create `dirname ${TMP_RBT_MQ_DATA_DIR}`
+
 	ln -sf ${TMP_RBT_MQ_LNK_LOGS_DIR} ${TMP_RBT_MQ_LOGS_DIR}
 	ln -sf ${TMP_RBT_MQ_LNK_DATA_DIR} ${TMP_RBT_MQ_DATA_DIR}
+	
 	ln -sf ${TMP_RBT_MQ_LNK_DATA_DIR} /var/lib/rabbitmq
+
+	# 开始配置
 
 	return $?
 }
@@ -91,11 +97,14 @@ function conf_rabbitmq()
 	# 15674，基于WebSocket的STOMP客户端端口（当插件Web STOMP启用的时候打开）
 	# 15675，基于WebSocket的MQTT客户端端口（当插件Web MQTT启用的时候打开）
 
-	sed -i "s@^# listeners.tcp.default =.*@listeners.tcp.default = ${TMP_RBT_SETUP_LISTENERS_TCP_PORT}@g" etc/rabbitmq/rabbitmq.conf
-	sed -i "s@^# listeners.ssl.default =.*@listeners.ssl.default = ${TMP_RBT_SETUP_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
+	local TMP_RBT_SETUP_HOST="${LOCAL_HOST}"
+    input_if_empty "TMP_RBT_SETUP_HOST" "RabbitMQ: Please ender ${green}listener internal host address${reset}(${red}who can visit or '0.0.0.0'${reset})"
 
-    sed -i "/# mqtt.listeners.tcp.2 = ::1:61613/a mqtt.listeners.tcp.default=${TMP_RBT_SETUP_MQTT_LISTENERS_TCP_PORT}" etc/rabbitmq/rabbitmq.conf
-	sed -i "s@^# mqtt.listeners.ssl.default =.*@mqtt.listeners.ssl.default = ${TMP_RBT_SETUP_MQTT_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
+	sed -i "s@^# listeners.tcp.default =.*@listeners.tcp.default = ${TMP_RBT_SETUP_HOST}:${TMP_RBT_SETUP_LISTENERS_TCP_PORT}@g" etc/rabbitmq/rabbitmq.conf
+	sed -i "s@^# listeners.ssl.default =.*@listeners.ssl.default = ${TMP_RBT_SETUP_HOST}:${TMP_RBT_SETUP_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
+
+    sed -i "/# mqtt.listeners.tcp.2 = ::1:61613/a mqtt.listeners.tcp.default = ${TMP_RBT_SETUP_HOST}:${TMP_RBT_SETUP_MQTT_LISTENERS_TCP_PORT}" etc/rabbitmq/rabbitmq.conf
+	sed -i "s@^# mqtt.listeners.ssl.default =.*@mqtt.listeners.ssl.default = ${TMP_RBT_SETUP_HOST}:${TMP_RBT_SETUP_MQTT_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
 
     #(epmd), 25672 (Erlang distribution)
     echo_soft_port 25672
@@ -138,7 +147,7 @@ function boot_rabbitmq()
     sbin/rabbitmq-plugins enable rabbitmq_management
 
 	# 添加系统启动命令
-    echo_startup_config "rabbitmq" "${TMP_RBT_MQ_SETUP_DIR}" "sbin/rabbitmq-server -detached" "" "1"
+    echo_startup_config "rabbitmq" "${TMP_RBT_MQ_SETUP_DIR}" "sbin/rabbitmq-server" "" "1"
 	
 	# # 其他命令
 	# rabbitmqctl add_user <username> <password>

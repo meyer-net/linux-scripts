@@ -237,7 +237,7 @@ EOF
     
     sed -i "s@^#log_level =.*@log_level = info@g" /etc/kong/kong.conf
     sed -i "s@^#proxy_listen =.*@proxy_listen = 0.0.0.0:80, 0.0.0.0:443 ssl@g" /etc/kong/kong.conf
-    sed -i "s@^#admin_listen =.*@admin_listen = 0.0.0.0:${TMP_KNG_SETUP_API_HTTP_PORT}, 0.0.0.0:${TMP_KNG_SETUP_API_HTTPS_PORT} ssl@g" /etc/kong/kong.conf
+    sed -i "s@^#admin_listen =.*@admin_listen = 127.0.0.1:${TMP_KNG_SETUP_API_HTTP_PORT}, 127.0.0.1:${TMP_KNG_SETUP_API_HTTPS_PORT} ssl, ${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}, ${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTPS_PORT} ssl@g" /etc/kong/kong.conf
     sed -i "s@^#real_ip_recursive =.*@real_ip_recursive = on@g" /etc/kong/kong.conf
     sed -i "s@^#client_max_body_size =.*@client_max_body_size = 20m@g" /etc/kong/kong.conf
     sed -i "s@^#client_body_buffer_size =.*@client_body_buffer_size = 64k@g" /etc/kong/kong.conf
