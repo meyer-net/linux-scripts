@@ -57,6 +57,18 @@ function setup_python()
 	# pip3 install setuptools # virtualenv virtualenvwrapper
 	# pip3 install zc.buildout  #buildout init, wget -O bootstrap.py https://bootstrap.pypa.io/bootstrap-buildout.py, wget -O ez_setup.py https://bootstrap.pypa.io/ez_setup.py, python bootstrap.py, buildout install
 	
+	function _setup_python_set_profile() 
+	{
+		echo "PYTHON_HOME=${TMP_PY_SETUP_DIR}" >> /etc/profile
+		echo 'PATH=$PYTHON_HOME/bin:$PATH' >> /etc/profile
+		echo "export PATH PYTHON_HOME" >> /etc/profile
+
+		source /etc/profile
+	}
+
+	# 卸载后可能不存在pip3了，在此创建环境
+    path_not_exists_action "/usr/bin/pip3" "_setup_python_set_profile"
+
 	# 移除源文件
 	rm -rf ${TMP_PY_CURRENT_DIR}
 	
