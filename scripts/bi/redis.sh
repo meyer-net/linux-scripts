@@ -73,7 +73,7 @@ function setup_redis()
 	# ln -sf ${TMP_RDS_SETUP_DIR}/bin/redis /usr/bin/redis
 
 	# 移动编译目录所需文件
-	mv redis.conf ${TMP_RDS_SETUP_DIR}/
+	mv redis.conf /etc/
 
 	# 移除源文件
 	cd `dirname ${TMP_RDS_CURRENT_DIR}`
@@ -113,7 +113,7 @@ function conf_redis()
     # -- 是否打开 AOF 持久化功能
     sed -i "s@^appendonly.*@appendonly yes@g" etc/redis.conf
     sed -i "s@^daemonize no@daemonize yes@g" etc/redis.conf
-    sed -i "s@^bind 127.0.0.1.*@bind * -::*@g" etc/redis.conf
+    sed -i "s@^bind 127.0.0.1.*@bind 127.0.0.1 ${LOCAL_HOST} -::*@g" etc/redis.conf
     sed -i "s@^port.*@port ${TMP_RDS_SETUP_PORT}@g" etc/redis.conf
 
 	local TMP_RDS_SETUP_AUTH_PWD=""
@@ -135,10 +135,10 @@ function boot_redis()
 	cd ${TMP_RDS_SETUP_DIR}
     	
 	# 验证安装
-    redis-cli -v
+    redis-server -v
 
 	# 当前启动命令
-	nohup redis-cli /etc/redis.conf > logs/boot.log 2>&1 &
+	nohup redis-server /etc/redis.conf > logs/boot.log 2>&1 &
 	
     # 等待启动
     echo "Starting redis，Waiting for a moment"
@@ -148,7 +148,7 @@ function boot_redis()
 	lsof -i:${TMP_RDS_SETUP_PORT}
 
 	# 添加系统启动命令
-    echo_startup_config "redis" "${TMP_RDS_SETUP_DIR}" "redis-cli /etc/redis.conf " "" "1"
+    echo_startup_config "redis" "${TMP_RDS_SETUP_DIR}" "redis-server /etc/redis.conf " "" "1"
 		
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_RDS_SETUP_PORT}

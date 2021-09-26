@@ -37,7 +37,7 @@ function set_env_rethinkdb()
 function setup_jemalloc()
 {
 	local TMP_JML_SETUP_NEWER="jemalloc-3.6.0-1.el${OS_VERS}.x86_64.rpm"
-	set_url_list_newer_href_link_filename "TMP_JML_SETUP_NEWER" "https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/" "jemalloc-().el${OS_VERS}.x86_64.rpm"
+	set_newer_by_url_list_link_text "TMP_JML_SETUP_NEWER" "https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/" "jemalloc-().el${OS_VERS}.x86_64.rpm"
 	while_wget "--content-disposition https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/${TMP_JML_SETUP_NEWER}" "rpm -ivh ${TMP_JML_SETUP_NEWER}"
 	
 	# 等待jemalloc生效，有待测试。同脚本，手动尝试反而OK（也有可能网络问题，编译会安装npm相关依赖包）

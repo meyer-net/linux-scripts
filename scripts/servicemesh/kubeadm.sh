@@ -35,17 +35,17 @@ function setup_kubeadm()
     local TMP_MIRRORS_URL="https://mirrors.aliyun.com/kubernetes/yum/pool/"
 
     #安装依赖
-    set_url_list_newer_date_link_filename "TMP_CRI_TOOLS_NEWER_FILE_NAME" "$TMP_MIRRORS_URL" "cri-tools.*.$CPU_ARCHITECTURE"
+    set_newer_by_url_list_link_date "TMP_CRI_TOOLS_NEWER_FILE_NAME" "$TMP_MIRRORS_URL" "cri-tools.*.$CPU_ARCHITECTURE"
     local TMP_CRI_TOOLS_NEWER_RPM_DOWN_URL="${TMP_MIRRORS_URL}${TMP_CRI_TOOLS_NEWER_FILE_NAME}"
     echo "CriTools: Rpm finded \"$TMP_CRI_TOOLS_NEWER_RPM_DOWN_URL\""
     while_wget "--content-disposition ${TMP_CRI_TOOLS_NEWER_RPM_DOWN_URL}" "rpm -ivh $TMP_CRI_TOOLS_NEWER_FILE_NAME"
  
-    set_url_list_newer_date_link_filename "TMP_KUBELET_NEWER_FILE_NAME" "$TMP_MIRRORS_URL" "kubelet.*.$CPU_ARCHITECTURE"
+    set_newer_by_url_list_link_date "TMP_KUBELET_NEWER_FILE_NAME" "$TMP_MIRRORS_URL" "kubelet.*.$CPU_ARCHITECTURE"
     local TMP_KUBELET_NEWER_RPM_DOWN_URL="${TMP_MIRRORS_URL}${TMP_KUBELET_NEWER_FILE_NAME}"
     echo "KubeLet: Rpm finded \"$TMP_KUBELET_NEWER_RPM_DOWN_URL\""
     while_wget "--content-disposition $TMP_KUBELET_NEWER_RPM_DOWN_URL"
     
-    set_url_list_newer_date_link_filename "TMP_KUBERNETES_CNI_NEWER_FILE_NAME" "$TMP_MIRRORS_URL" "kubernetes-cni.*.$CPU_ARCHITECTURE"
+    set_newer_by_url_list_link_date "TMP_KUBERNETES_CNI_NEWER_FILE_NAME" "$TMP_MIRRORS_URL" "kubernetes-cni.*.$CPU_ARCHITECTURE"
     local TMP_KUBERNETES_CNI_NEWER_RPM_DOWN_URL="${TMP_MIRRORS_URL}${TMP_KUBERNETES_CNI_NEWER_FILE_NAME}"
     echo "KubernetesCni: Rpm finded \"$TMP_KUBERNETES_CNI_NEWER_RPM_DOWN_URL\""
     while_wget "--content-disposition $TMP_KUBERNETES_CNI_NEWER_RPM_DOWN_URL"
@@ -53,7 +53,7 @@ function setup_kubeadm()
 
     #原方式，但dl.k8s.io无法访问，故改成中科镜像使用rpm方式安装
     #local TMP_KUBEADM_DOWNLOAD_URL="https://dl.k8s.io/v$TMP_KUBEADM_NEWER_VERS/kubernetes-client-linux-amd64.tar.gz"
-    set_url_list_newer_date_link_filename "TMP_KUBEADM_NEWER_RPM_FILE_NAME" "$TMP_MIRRORS_URL" "kubeadm-${TMP_KUBEADM_NEWER_VERS}\-[0-9]*\.$CPU_ARCHITECTURE"
+    set_newer_by_url_list_link_date "TMP_KUBEADM_NEWER_RPM_FILE_NAME" "$TMP_MIRRORS_URL" "kubeadm-${TMP_KUBEADM_NEWER_VERS}\-[0-9]*\.$CPU_ARCHITECTURE"
     local TMP_KUBEADM_NEWER_RPM_DOWN_URL="${TMP_MIRRORS_URL}${TMP_KUBEADM_NEWER_RPM_FILE_NAME}"
     echo "KubeAdm: Rpm finded \"$TMP_KUBEADM_NEWER_RPM_DOWN_URL\""
     while_wget "--content-disposition $TMP_KUBEADM_NEWER_RPM_DOWN_URL" "rpm -ivh $TMP_KUBEADM_NEWER_RPM_FILE_NAME"

@@ -91,14 +91,14 @@ function conf_rabbitmq()
 	# 15674，基于WebSocket的STOMP客户端端口（当插件Web STOMP启用的时候打开）
 	# 15675，基于WebSocket的MQTT客户端端口（当插件Web MQTT启用的时候打开）
 
-	sed -i "s@^# listeners.ssl.default=.*@listeners.ssl.default = ${TMP_RBT_SETUP_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
-	sed -i "s@^# listeners.tcp.default=.*@listeners.tcp.default = ${TMP_RBT_SETUP_LISTENERS_TCP_PORT}@g" etc/rabbitmq/rabbitmq.conf
+	sed -i "s@^# listeners.tcp.default =.*@listeners.tcp.default = ${TMP_RBT_SETUP_LISTENERS_TCP_PORT}@g" etc/rabbitmq/rabbitmq.conf
+	sed -i "s@^# listeners.ssl.default =.*@listeners.ssl.default = ${TMP_RBT_SETUP_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
 
-	sed -i "s@^# listeners.tcp.default=.*@listeners.tcp.default = ${TMP_RBT_SETUP_LISTENERS_TCP_PORT}@g" etc/rabbitmq/rabbitmq.conf
-	sed -i "s@^# mqtt.listeners.ssl.default=.*@mqtt.listeners.ssl.default = ${TMP_RBT_SETUP_MQTT_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
-    sed -i "/# mqtt.listeners.tcp.2 = ::1:61613/a mqtt.listeners.tcp.default=${TMP_RBT_SETUP_MQTT_LISTENERS_TCP_PORT}" ${TMP_DB_ETC_PATH}
+    sed -i "/# mqtt.listeners.tcp.2 = ::1:61613/a mqtt.listeners.tcp.default=${TMP_RBT_SETUP_MQTT_LISTENERS_TCP_PORT}" etc/rabbitmq/rabbitmq.conf
+	sed -i "s@^# mqtt.listeners.ssl.default =.*@mqtt.listeners.ssl.default = ${TMP_RBT_SETUP_MQTT_LISTENERS_SSL_PORT}@g" etc/rabbitmq/rabbitmq.conf
 
     #(epmd), 25672 (Erlang distribution)
+    echo_soft_port 25672
     echo_soft_port 4369
 
     #(AMQP 0-9-1 without and with TLS)

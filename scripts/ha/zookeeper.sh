@@ -183,9 +183,12 @@ function exec_step_zookeeper()
 function down_zookeeper()
 {
 	local TMP_ZK_SETUP_NEWER="3.7.0"
-	local TMP_ZK_DOWN_URL_BASE="https://archive.apache.org/dist/zookeeper/"
-	set_url_list_newer_href_link_filename "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}" "zookeeper-()"
-	exec_text_format "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}zookeeper-%s/apache-zookeeper-%s-bin.tar.gz"
+	# local TMP_ZK_DOWN_URL_BASE="https://archive.apache.org/dist/zookeeper/"
+	# set_newer_by_url_list_link_text "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}" "zookeeper-()/"
+	# exec_text_format "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}zookeeper-%s/apache-zookeeper-%s-bin.tar.gz"
+	local TMP_ZK_DOWN_URL_BASE="https://archive.apache.org/dist/zookeeper/stable/"
+	set_newer_by_url_list_link_text "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}" "apache-zookeeper-()-bin.tar.gz"
+	exec_text_format "TMP_ZK_SETUP_NEWER" "${TMP_ZK_DOWN_URL_BASE}apache-zookeeper-%s-bin.tar.gz"
     setup_soft_wget "zookeeper" "${TMP_ZK_SETUP_NEWER}" "exec_step_zookeeper"
 
 	return $?

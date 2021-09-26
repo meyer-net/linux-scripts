@@ -36,6 +36,7 @@ function setup_libs()
 	yum-complete-transaction --cleanup-only
 
 	soft_yum_check_setup "lsof"
+	soft_yum_check_setup "unzip"
 	soft_yum_check_setup "gcc*"
 	soft_yum_check_setup "autoconf"
 	soft_yum_check_setup "freetype*"

@@ -361,7 +361,7 @@ function down_consul()
     # https://www.consul.io/downloads
 	local TMP_CSL_SETUP_NEWER="consul_1.10.0"
 	local TMP_CSL_DOWN_URL_BASE="https://releases.hashicorp.com/consul/"
-	set_url_list_newer_href_link_filename "TMP_CSL_SETUP_NEWER" "${TMP_CSL_DOWN_URL_BASE}" "consul_()"
+	set_newer_by_url_list_link_text "TMP_CSL_SETUP_NEWER" "${TMP_CSL_DOWN_URL_BASE}" "consul_()"
     
 	local TMP_CSL_SETUP_NEWER_FOLDER=`echo "${TMP_CSL_SETUP_NEWER}" | sed "s@consul_@@g"`
 	exec_text_format "TMP_CSL_SETUP_NEWER" "${TMP_CSL_DOWN_URL_BASE}${TMP_CSL_SETUP_NEWER_FOLDER}/%s_linux_amd64.zip"

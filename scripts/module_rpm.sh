@@ -38,8 +38,8 @@ function setup_$soft_name()
 	# -- 1：
 	local TMP_$soft_upper_short_name_SETUP_RPM_NEWER="$soft_name.noarch.rpm"
 	local TMP_$soft_upper_short_name_DOWN_URL_BASE="http://www.xxx.net/rpm/stable/x86_64/"
-	# set_url_list_newer_date_link_filename "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-.*.noarch.rpm"
-	set_url_list_newer_href_link_filename "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-().noarch.rpm"
+	# set_newer_by_url_list_link_date "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-.*.noarch.rpm"
+	set_newer_by_url_list_link_text "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}" "$setup_name-().noarch.rpm"
 	exec_text_format "TMP_$soft_upper_short_name_SETUP_RPM_NEWER" "${TMP_$soft_upper_short_name_DOWN_URL_BASE}%s"
     while_wget "--content-disposition http://xxx.xyz.com/get/${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}" "rpm -ivh ${TMP_$soft_upper_short_name_SETUP_RPM_NEWER}"
 	

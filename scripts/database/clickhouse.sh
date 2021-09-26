@@ -44,14 +44,14 @@ function setup_clickhouse()
     echo "ClickHouse: System start find the newer stable version"
     echo "------------------------------------------------------"
     local TMP_CH_SETUP_CH_SERVER_NEWER="clickhouse-server-21.6.6.51-2.noarch.rpm"
-    set_url_list_newer_href_link_filename "TMP_CH_SETUP_CH_SERVER_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-().noarch.rpm"
+    set_newer_by_url_list_link_text "TMP_CH_SETUP_CH_SERVER_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-().noarch.rpm"
     local TMP_CH_SETUP_CLIENT_NEWER=`echo "${TMP_CH_SETUP_CH_SERVER_NEWER}" | sed 's@server@client@g'`
 
     local TMP_CH_SETUP_CH_SERVER_COMMON_NEWER="clickhouse-server-common-19.4.0-2.noarch.rpm"
-    set_url_list_newer_href_link_filename "TMP_CH_SETUP_CH_SERVER_COMMON_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-common-().noarch.rpm"
+    set_newer_by_url_list_link_text "TMP_CH_SETUP_CH_SERVER_COMMON_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-server-common-().noarch.rpm"
 
     local TMP_CH_SETUP_COMMON_STATIC_NEWER="clickhouse-common-static-21.6.6.51-2.x86_64.rpm"
-    set_url_list_newer_href_link_filename "TMP_CH_SETUP_COMMON_STATIC_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-().x86_64.rpm"
+    set_newer_by_url_list_link_text "TMP_CH_SETUP_COMMON_STATIC_NEWER" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-().x86_64.rpm"
 
     #19.13.3.26-1
     #curl -s https://packagecloud.io/install/repositories/Altinity/clickhouse/script.rpm.sh | sudo bash

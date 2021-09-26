@@ -414,7 +414,7 @@ function ssh_transfer()
 # 初始基本参数启动目录
 function bootstrap() {
     # 开启ROOT权限作业
-    # sudo -i
+    # sudo su
 
     cd ${__DIR}
 

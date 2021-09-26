@@ -77,7 +77,7 @@ function exec_step_pkg_config()
 function down_pkg_config()
 {
 	TMP_TL_PKG_CFG_SETUP_NEWER="0.29"
-	set_url_list_newer_href_link_filename "TMP_TL_PKG_CFG_SETUP_NEWER" "https://pkgconfig.freedesktop.org/releases/" "pkg-config-().tar.gz"
+	set_newer_by_url_list_link_text "TMP_TL_PKG_CFG_SETUP_NEWER" "https://pkgconfig.freedesktop.org/releases/" "pkg-config-().tar.gz"
 	exec_text_format "TMP_TL_PKG_CFG_SETUP_NEWER" "http://pkgconfig.freedesktop.org/releases/%s"
     setup_soft_wget "pkg-config" "${TMP_TL_PKG_CFG_SETUP_NEWER}" "exec_step_pkg_config"
 

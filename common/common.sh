@@ -1200,27 +1200,30 @@ function input_if_empty()
 #参数2：需要找寻的URL路径
 #参数3：查找关键字
 #示例：
-# 	set_url_list_newer_date_link_filename "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-.*.x86_64.rpm"
-function set_url_list_newer_date_link_filename()
+# 	set_newer_by_url_list_link_date "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-.*.x86_64.rpm"
+function set_newer_by_url_list_link_date()
 {
-	local TMP_VAR_NAME=$1
-	local TMP_VAR_FIND_URL=$2
-	local TMP_VAR_KEY_WORDS=$3
+	local _TMP_VAR_NAME=$1
+	local _TMP_VAR_FIND_URL=$2
+	local _TMP_VAR_KEY_WORDS=$3
 
-	local TMP_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${TMP_VAR_NAME}`
+	local _TMP_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${_TMP_VAR_NAME}`
 
     echo ${TMP_SPLITER}
-    echo "Checking the soft version by date link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， default val is '${green}${TMP_NEWER_VERS_VAR_YET_VAL}${reset}'"    
+    echo "Checking the soft version by link date in url of '${red}${_TMP_VAR_FIND_URL}${reset}'， default val is '${green}${_TMP_NEWER_VERS_VAR_YET_VAL}${reset}'"    
 	#  | awk '{if (NR>2) {print}}' ，缺失无效行去除的判断
-    local TMP_NEWER_DATE=`curl -s $TMP_VAR_FIND_URL | grep "$TMP_VAR_KEY_WORDS" | awk -F'</a>' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | sed '/^$/d' | awk -F' ' '{print $1}' | awk 'function t_f(t){"date -d \""t"\" +%s" | getline ft; return ft}{print t_f($1)}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} env LC_ALL=en_US.en date -d@{} "+%d-%h-%Y"`
-    local TMP_NEWER_DATE_LINK_FILENAME=`curl -s $TMP_VAR_FIND_URL | grep "$TMP_VAR_KEY_WORDS" | grep "$TMP_NEWER_DATE" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g'`
+    local _TMP_NEWER_LINK_DATE=`curl -s ${_TMP_VAR_FIND_URL} | grep "${_TMP_VAR_KEY_WORDS}" | awk -F'</a>' '{print $2}' | awk '{sub("^ *","");sub(" *$","");print}' | sed '/^$/d' | awk -F' ' '{print $1}' | awk 'function t_f(t){"date -d \""t"\" +%s" | getline ft; return ft}{print t_f($1)}' | awk 'BEGIN {max = 0} {if ($1+0 > max+0) {max=$1 ;content=$0} } END {print content}' | xargs -I {} env LC_ALL=en_US.en date -d@{} "+%d-%h-%Y"`
+    local _TMP_NEWER_LINK_DATE_TEXT=`curl -s ${_TMP_VAR_FIND_URL} | grep "${_TMP_VAR_KEY_WORDS}" | grep "${_TMP_NEWER_LINK_DATE}" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g'`
 
-	if [ -n "${TMP_NEWER_DATE_LINK_FILENAME}" ]; then
-		echo "Upgrade the soft version by date link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， release newer version to '${green}${TMP_NEWER_DATE_LINK_FILENAME}${reset}'"
+	if [ -n "${_TMP_NEWER_LINK_DATE_TEXT}" ]; then
+		echo "Upgrade the soft version by link date in url of '${red}${_TMP_VAR_FIND_URL}${reset}'， release newer version to '${green}${_TMP_NEWER_LINK_DATE_TEXT}${reset}'"
 
-		input_if_empty "TMP_NEWER_DATE_LINK_FILENAME" "Please sure the checked soft version by date link newer ${green}${TMP_NEWER_DATE_LINK_FILENAME}${reset}，if u want to change"
+		input_if_empty "_TMP_NEWER_LINK_DATE_TEXT" "Please sure the checked soft version by link date newer ${green}${_TMP_NEWER_LINK_DATE_TEXT}${reset}，if u want to change"
 
-		eval ${1}=`echo '$TMP_NEWER_DATE_LINK_FILENAME'`
+		eval ${1}=`echo '$_TMP_NEWER_LINK_DATE_TEXT'`
+	else
+		echo "Can't check the soft version by link date in url of '${red}${_TMP_VAR_FIND_URL}${reset}'，Some part info"
+		echo "${_TMP_NEWER_LINK_DATE}"
 	fi
     echo ${TMP_SPLITER}
 
@@ -1229,42 +1232,42 @@ function set_url_list_newer_date_link_filename()
 }
 
 #查找网页文件列表中，最新的文件名
-#描述：本函数先获取href标签行，再提取href内容，最后提取文本关键字中最新的发布日期，该方法合适比较简单的数字关键字版本信息
+#描述：本函数先获取href标签行，再提取href内容，最后提取文本关键字中最新的版本号，该方法合适比较简单的数字关键字版本信息
 #参数1：需要设置的变量名
 #参数2：需要找寻的URL路径
 #参数3：查找关键字（必须在关键字中将版本号括起‘()’，否则无法匹配具体的版本）
 #示例：
-# 	set_url_list_newer_href_link_filename "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-().x86_64.rpm"
-# 	set_url_list_newer_href_link_filename "TMP_NEWER_LINK" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
-function set_url_list_newer_href_link_filename()
+# 	set_newer_by_url_list_link_text "TMP_NEWER_LINK" "http://repo.yandex.ru/clickhouse/rpm/stable/x86_64/" "clickhouse-common-static-dbg-().x86_64.rpm"
+# 	set_newer_by_url_list_link_text "TMP_NEWER_LINK" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
+function set_newer_by_url_list_link_text()
 {
-	local TMP_VAR_NAME=$1
-	local TMP_VAR_FIND_URL=$2
-	local TMP_VAR_KEY_WORDS=$(echo ${3} | sed 's@()@[0-9.-]*@g')  #‘gradle-()-bin.zip’ -> 'gradle-.*-bin.zip'
+	local _TMP_VAR_NAME=$1
+	local _TMP_VAR_FIND_URL=$2
+	local _TMP_VAR_KEY_WORDS=$(echo ${3} | sed 's@()@[0-9.-]*@g')  #‘gradle-()-bin.zip’ -> 'gradle-.*-bin.zip'
 	
 	# 零宽断言，参考两篇即明白：https://segmentfault.com/q/1010000009346369，https://blog.csdn.net/iteye_5616/article/details/81855906
-	local TMP_VAR_KEY_WORDS_ZREG_LEFT=$(echo ${3} | grep -o ".*(" | sed 's@(@@g' | xargs -I {} echo '(?<={})')
-	local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ").*" | sed 's@)@@g' | xargs -I {} echo '(?={})')
-	local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}\d.*${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
+	local _TMP_VAR_KEY_WORDS_LEFT=$(echo ${3} | grep -o ".*(" | sed 's@\(.*\)(@\1@g')
+	local _TMP_VAR_KEY_WORDS_RIGHT=$(echo ${3} | grep -o ").*" | sed 's@)\(.*\)@\1@g')
+	local _TMP_VAR_KEY_WORDS_ZREG="(?<=${_TMP_VAR_KEY_WORDS_LEFT:-^})\d.*(?=${_TMP_VAR_KEY_WORDS_RIGHT:-$})"
 	
-	# local TMP_VAR_KEY_WORDS_ZREG_RIGHT=$(echo ${3} | grep -o ")." | sed 's@)@@g' | xargs -I {} echo '[^{}]+')
-	# local TMP_VAR_KEY_WORDS_ZREG="${TMP_VAR_KEY_WORDS_ZREG_LEFT}${TMP_VAR_KEY_WORDS_ZREG_RIGHT}"
-
-	local TMP_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${TMP_VAR_NAME}`
+	local _TMP_NEWER_VERS_VAR_YET_VAL=`eval echo '$'${_TMP_VAR_NAME}`
 
     echo ${TMP_SPLITER}
-    echo "Checking the soft version by href link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， default val is '${green}${TMP_NEWER_VERS_VAR_YET_VAL}${reset}'"
+    echo "Checking the soft version by link text in url of '${red}${_TMP_VAR_FIND_URL}${reset}'， default val is '${green}${_TMP_NEWER_VERS_VAR_YET_VAL}${reset}'"
 	# 清除字母开头： | tr -d "a-zA-Z-"
-    local TMP_NEWER_VERS=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep -oP "${TMP_VAR_KEY_WORDS_ZREG}" | sort -rV | awk 'NR==1'`
-	local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${TMP_NEWER_VERS}.*@g")
-    local TMP_NEWER_HREF_LINK_FILENAME=`curl -s ${TMP_VAR_FIND_URL} | grep "href=" | sed 's/\(.*\)href="\([^"\n]*\)"\(.*\)/\2/g' | grep "${TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
+    local _TMP_NEWER_VERS=`curl -s ${_TMP_VAR_FIND_URL} | grep "href=" | grep -v "Parent Directory" | sed 's@\(.*\)href="\([^"\n]*\)"\(.*\)@\2@g' | grep "${_TMP_VAR_KEY_WORDS}" | grep -oP "${_TMP_VAR_KEY_WORDS_ZREG}" | sort -rV | awk 'NR==1'`
+	# local TMP_NEWER_FILENAME=$(echo ${3} | sed "s@()@${_TMP_NEWER_VERS}.*@g")
+    # local TMP_NEWER_HREF_LINK_FILENAME=`curl -s ${_TMP_VAR_FIND_URL} | grep "href=" | grep -v "Parent Directory" | sed 's@\(.*\)href="\([^"\n]*\)"\(.*\)@\2@g' | grep "${_TMP_VAR_KEY_WORDS}" | grep "${TMP_NEWER_FILENAME}\$" | awk 'NR==1' | sed 's@.*/@@g'`
 
-	if [ -n "${TMP_NEWER_HREF_LINK_FILENAME}" ]; then
-		echo "Upgrade the soft version by href link in url of '${red}${TMP_VAR_FIND_URL}${reset}'， release newer version to '${green}${TMP_NEWER_HREF_LINK_FILENAME}${reset}'"
+	if [ -n "${_TMP_NEWER_VERS}" ]; then
+		echo "Upgrade the soft version by link text in url of '${red}${_TMP_VAR_FIND_URL}${reset}'， release newer version to '${green}${_TMP_NEWER_VERS}${reset}'"
 		
-		input_if_empty "TMP_NEWER_HREF_LINK_FILENAME" "Please sure the checked soft version by href link newer ${green}${TMP_NEWER_HREF_LINK_FILENAME}${reset}，if u want to change"
+		input_if_empty "_TMP_NEWER_VERS" "Please sure the checked soft version by link text newer ${green}${_TMP_NEWER_VERS}${reset}，if u want to change"
 
-		eval ${1}=`echo '$TMP_NEWER_HREF_LINK_FILENAME'`
+		eval ${1}=`echo '$_TMP_NEWER_VERS'`
+	else
+		echo "Can't check the soft version by link text in url of '${red}${_TMP_VAR_FIND_URL}${reset}'，Some part info"
+		echo "${_TMP_NEWER_VERS}"
 	fi
     echo ${TMP_SPLITER}
 
@@ -1301,6 +1304,9 @@ function set_github_soft_releases_newer_version()
 		input_if_empty "TMP_GITHUB_SOFT_NEWER_VERS" "Please sure the checked soft in github repos newer ${green}${TMP_GITHUB_SOFT_NEWER_VERS}${reset}，if u want to change"
 
 		eval ${1}=`echo '$TMP_GITHUB_SOFT_NEWER_VERS'`
+	else
+		echo "Can't check the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}'，Some part info"
+		echo "${TMP_GITHUB_SOFT_NEWER_VERS}"
 	fi
     echo ${TMP_SPLITER}
 	

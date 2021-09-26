@@ -76,7 +76,7 @@ function exec_step_yasm()
 function down_yasm()
 {
 	TMP_TL_YASM_SETUP_NEWER="1.3.0"
-	set_url_list_newer_date_link_filename "TMP_TL_YASM_SETUP_NEWER" "http://www.tortall.net/projects/yasm/releases/" "yasm-.*.tar.gz"
+	set_newer_by_url_list_link_date "TMP_TL_YASM_SETUP_NEWER" "http://www.tortall.net/projects/yasm/releases/" "yasm-.*.tar.gz"
 	exec_text_format "TMP_TL_YASM_SETUP_NEWER" "http://www.tortall.net/projects/yasm/releases/%s"
     setup_soft_wget "yasm" "${TMP_TL_YASM_SETUP_NEWER}" "exec_step_yasm"
 

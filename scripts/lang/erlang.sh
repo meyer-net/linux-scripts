@@ -92,7 +92,7 @@ function down_erlang()
     #http://erlang.org/download/otp_src_24.0.tar.gz
 	local TMP_ERL_SETUP_NEWER="otp_src_24.0.tar.gz"
     local TMP_ERL_DOWN_URL_BASE="http://erlang.org/download/"
-	set_url_list_newer_href_link_filename "TMP_ERL_SETUP_NEWER" "${TMP_ERL_DOWN_URL_BASE}" "otp_src_().tar.gz"
+	set_newer_by_url_list_link_text "TMP_ERL_SETUP_NEWER" "${TMP_ERL_DOWN_URL_BASE}" "otp_src_().tar.gz"
 	exec_text_format "TMP_ERL_SETUP_NEWER" "${TMP_ERL_DOWN_URL_BASE}%s"
     setup_soft_wget "erlang" "${TMP_ERL_SETUP_NEWER}" "exec_step_erlang"
 

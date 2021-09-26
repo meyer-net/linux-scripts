@@ -517,7 +517,7 @@ function down_hadoop()
 {
 	TMP_HDOP_SETUP_NEWER="hadoop-3.3.1.tar.gz"
 	local TMP_HDOP_DOWN_URL_BASE="https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/stable/"
-	set_url_list_newer_href_link_filename "TMP_HDOP_SETUP_NEWER" "${TMP_HDOP_DOWN_URL_BASE}" "hadoop-().tar.gz"
+	set_newer_by_url_list_link_text "TMP_HDOP_SETUP_NEWER" "${TMP_HDOP_DOWN_URL_BASE}" "hadoop-().tar.gz"
 	exec_text_format "TMP_HDOP_SETUP_NEWER" "${TMP_HDOP_DOWN_URL_BASE}%s"
     setup_soft_wget "hadoop" "${TMP_HDOP_SETUP_NEWER}" "exec_step_hadoop"
 
