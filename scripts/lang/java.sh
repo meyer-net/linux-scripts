@@ -76,9 +76,12 @@ function boot_java()
 # 下载驱动/插件
 function down_tool_gradle()
 {
-	TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER="gradle-7.1.1-bin.zip"
-	set_newer_by_url_list_link_text "TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER" "https://services.gradle.org/distributions/" "gradle-()-bin.zip"
-	setup_soft_wget "gradle" "https://services.gradle.org/distributions/${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER}" "setup_tool_gradle"
+	local TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER="7.2"
+	
+	local TMP_LANG_JAVA_TOOL_GRADLE_SETUP_DOWN_URL_BASE="https://services.gradle.org/distributions/"
+	set_newer_by_url_list_link_text "TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER" "${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_DOWN_URL_BASE}" "gradle-()-bin.zip"
+	exec_text_format "TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER" "${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_DOWN_URL_BASE}gradle-%s-bin.zip"
+	setup_soft_wget "gradle" "${TMP_LANG_JAVA_TOOL_GRADLE_SETUP_NEWER}" "setup_tool_gradle"
 
 	return $?
 }
@@ -153,7 +156,7 @@ function down_java()
 	# setup_soft_wget "java" 'https://d6.injdk.cn/openjdk/liberica/8/full/bellsoft-jdk8u275+1-linux-amd64-full.tar.gz' "exec_step_java"
 	# setup_soft_wget "java" 'https://d6.injdk.cn/openjdk/liberica/8/standard/bellsoft-jdk8u275+1-linux-amd64.tar.gz' "exec_step_java"
 	setup_soft_wget "java" 'https://mirrors.huaweicloud.com/java/jdk/8u202-b08/jdk-8u202-linux-x64.tar.gz' "exec_step_java"
-	
+
 	return $?
 }
 
