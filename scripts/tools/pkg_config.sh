@@ -76,9 +76,11 @@ function exec_step_pkg_config()
 # x1-下载软件
 function down_pkg_config()
 {
-	TMP_TL_PKG_CFG_SETUP_NEWER="0.29"
-	set_newer_by_url_list_link_text "TMP_TL_PKG_CFG_SETUP_NEWER" "https://pkgconfig.freedesktop.org/releases/" "pkg-config-().tar.gz"
-	exec_text_format "TMP_TL_PKG_CFG_SETUP_NEWER" "http://pkgconfig.freedesktop.org/releases/%s"
+	local TMP_TL_PKG_CFG_SETUP_NEWER="0.29"
+	
+	local TMP_TL_PKG_CFG_SETUP_DOWN_URL_BASE="https://pkgconfig.freedesktop.org/releases/"
+	set_newer_by_url_list_link_text "TMP_TL_PKG_CFG_SETUP_NEWER" "${TMP_TL_PKG_CFG_SETUP_DOWN_URL_BASE}" "pkg-config-().tar.gz"
+	exec_text_format "TMP_TL_PKG_CFG_SETUP_NEWER" "${TMP_TL_PKG_CFG_SETUP_DOWN_URL_BASE}pkg-config-%s.tar.gz"
     setup_soft_wget "pkg-config" "${TMP_TL_PKG_CFG_SETUP_NEWER}" "exec_step_pkg_config"
 
 	return $?

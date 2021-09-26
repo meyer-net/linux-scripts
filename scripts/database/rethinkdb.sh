@@ -36,9 +36,12 @@ function set_env_rethinkdb()
 # 1-配置环境
 function setup_jemalloc()
 {
-	local TMP_JML_SETUP_NEWER="jemalloc-3.6.0-1.el${OS_VERS}.x86_64.rpm"
-	set_newer_by_url_list_link_text "TMP_JML_SETUP_NEWER" "https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/" "jemalloc-().el${OS_VERS}.x86_64.rpm"
-	while_wget "--content-disposition https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/${TMP_JML_SETUP_NEWER}" "rpm -ivh ${TMP_JML_SETUP_NEWER}"
+	local TMP_RTDB_SETUP_JML_NEWER="jemalloc-3.6.0-1.el${OS_VERS}.x86_64.rpm"
+	
+	local TMP_RTDB_SETUP_JML_DOWN_URL_BASE="https://download-ib01.fedoraproject.org/pub/epel/${OS_VERS}/x86_64/Packages/j/"
+	set_newer_by_url_list_link_text "TMP_RTDB_SETUP_JML_NEWER" "${TMP_RTDB_SETUP_JML_DOWN_URL_BASE}" "jemalloc-().el${OS_VERS}.x86_64.rpm"
+	exec_text_format "TMP_RTDB_SETUP_JML_NEWER" "${TMP_RTDB_SETUP_JML_DOWN_URL_BASE}jemalloc-%s.el${OS_VERS}.x86_64.rpm"
+	while_wget "--content-disposition ${TMP_RTDB_SETUP_JML_DOWN_URL_BASE}${TMP_RTDB_SETUP_JML_NEWER}" "rpm -ivh ${TMP_RTDB_SETUP_JML_NEWER}"
 	
 	# 等待jemalloc生效，有待测试。同脚本，手动尝试反而OK（也有可能网络问题，编译会安装npm相关依赖包）
 	echo "RethinkDB：Watting for jemalloc active"
