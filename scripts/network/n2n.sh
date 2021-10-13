@@ -134,13 +134,13 @@ function conf_edge()
     set_if_equals "TMP_N2N_SETUP_EDGE_SUPERNODE_HOST" "LOCAL_HOST" "127.0.0.1"
 
     local TMP_N2N_SETUP_EDGE_SUPERNODE_PORT="${TMP_N2N_SETUP_UDP_MAIN_PORT}"
-    input_if_empty "TMP_N2N_SETUP_EDGE_SUPERNODE_HOST" "N2N.Edge: Please sure your ${red}supernode host port${reset} of '${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}' for edge"
+    input_if_empty "TMP_N2N_SETUP_EDGE_SUPERNODE_PORT" "N2N.Edge: Please sure your ${red}supernode host port${reset} of '${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}' for edge"
 
     # edge -u 0 -g 0 -d r2s-lede-n2n18s2 -a static:172.2.10.18 -s 255.255.255.0 -c cuckoo_tl -k 'qaz@321!@#' -l 106.75.144.150:12350 -r &
-	input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_HOST" "N2N.Edge: Please sure your ${red}static internal host${reset} for edge"
+	input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_HOST" "N2N.Edge: Please sure your ${red}static internal vpn host${reset} for edge"
 
     local TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK="255.255.255.0"
-    input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK" "N2N.Edge: Please sure your ${red}internal host netmask${reset} of '${TMP_N2N_SETUP_EDGE_INTERFACE_HOST}' for edge"
+    input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK" "N2N.Edge: Please sure your ${red}internal vpn host netmask${reset} of '${TMP_N2N_SETUP_EDGE_INTERFACE_HOST}' for edge"
     
     local TMP_N2N_SETUP_EDGE_NET_GROUP_COMPONY="vsofo"
     input_if_empty "TMP_N2N_SETUP_EDGE_NET_GROUP_COMPONY" "N2N.Edge: Please sure your ${red}company${reset} for edge"

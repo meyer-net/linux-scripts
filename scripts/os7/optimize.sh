@@ -213,6 +213,7 @@ EOF
 		chmod -v u-w /etc/sudoers
 	}
 
+	# echo "lnxc7@GCPOS!m" | passwd --stdin oshit
 	exec_yn_action "_change_oshit_passwd" "Sys-Optimize: User of ${red}oshit${reset} created, please sure the password u want to set"
 
 	systemctl restart sshd.service
