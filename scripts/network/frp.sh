@@ -118,6 +118,7 @@ function conf_frps()
     sed -i "s@^subdomain_host@# subdomain_host@g" etc/frps.ini
 
     local TMP_FRP_SETUP_SVR_CUSTOM_404_PAGE_PATH="${HTML_DIR}/frps_404.html"
+    path_not_exists_create "${HTML_DIR}"
     echo "Welcome to my internal site!" > ${TMP_FRP_SETUP_SVR_CUSTOM_404_PAGE_PATH}
     sed -i "s@^# custom_404_page =.*@custom_404_page = ${TMP_FRP_SETUP_SVR_CUSTOM_404_PAGE_PATH}@g" etc/frps.ini
 
@@ -326,7 +327,7 @@ function boot_frp()
 {
 	cd ${TMP_FRP_SETUP_DIR}
 	
-	case ${TMP_FRP_SETUP_CHOICE_BOOT_CONF} in
+	case "${TMP_FRP_SETUP_CHOICE_BOOT_CONF}" in
 		"Conf_Frps")
             boot_frps
 		;;
