@@ -81,7 +81,7 @@ function set_env_konga()
         
 	npm install -g nrm
 	echo "-------------------------------------------------"
-    nrm use ${TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT}
+    nrm use ${TMP_KNGA_SETUP_NPM_NRM_REPO_CURRENT:-"npm"}
 	nrm ls
 	echo "-------------------------------------------------"
 

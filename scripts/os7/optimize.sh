@@ -172,7 +172,9 @@ EOF
 		function _change_ssh_port()
 		{
 			sed -i "s@^[#]*Port.*@Port ${TMP_SSH_NEW_PORT}@g" /etc/ssh/sshd_config
-				
+			
+			echo_soft_port ${TMP_SSH_NEW_PORT}
+
 			echo ${TMP_SPLITER}
 			echo 
 			echo 

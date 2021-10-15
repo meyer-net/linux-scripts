@@ -2116,6 +2116,8 @@ EOF
 	else
 		if [ ! -f "/etc/sysconfig/iptables" ]; then
 			soft_yum_check_setup "iptables-services"
+			
+			echo_startup_config "iptables" "/usr/bin" "systemctl restart iptables.service" "" "999"
 		fi
 	fi
 
