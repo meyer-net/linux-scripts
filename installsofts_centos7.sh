@@ -84,6 +84,7 @@ function update_libs()
 {
     #---------- CHANGE ---------- {
     hostnamectl set-hostname ${SYS_NEW_NAME}
+    SYS_NAME=`hostname`
     #---------- CHANGE ---------- }
     source scripts/os${OS_VERS}/epel.sh
     source scripts/os${OS_VERS}/libs.sh
