@@ -1297,7 +1297,8 @@ function set_github_soft_releases_newer_version()
 
     echo ${TMP_SPLITER}
     echo "Checking the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}'， default val is '${green}${TMP_GITHUB_SOFT_NEWER_VERS_VAR_YET_VAL}${reset}'"
-	local TMP_GITHUB_SOFT_NEWER_VERS=`curl -s ${TMP_GITHUB_SOFT_HTTPS_PATH} | grep "${TMP_GITHUB_SOFT_TAG_PATH}" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.*", "");print}' | awk NR==1`
+	# local TMP_GITHUB_SOFT_NEWER_VERS=`curl -s ${TMP_GITHUB_SOFT_HTTPS_PATH} | grep "${TMP_GITHUB_SOFT_TAG_PATH}" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\">.*", "");print}' | awk NR==1`
+	local TMP_GITHUB_SOFT_NEWER_VERS=`curl -s "${TMP_GITHUB_SOFT_HTTPS_PATH}" | grep -o "<a href=\"/${TMP_GITHUB_SOFT_TAG_PATH}/releases/tag/.*<\/a>" | awk '{sub("^ *","");sub(" *$","");sub("<a href=\".*/tag/v", "");sub("<a href=\".*/tag/", "");sub("\".*", "");print}'
 
 	if [ -n "${TMP_GITHUB_SOFT_NEWER_VERS}" ]; then
 		echo "Upgrade the soft in github repos of '${red}${TMP_GITHUB_SOFT_PATH}${reset}'， release newer version to '${green}${TMP_GITHUB_SOFT_NEWER_VERS}${reset}'"
