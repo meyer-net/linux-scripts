@@ -295,7 +295,7 @@ function down_n2n()
 {
 	local TMP_N2N_SETUP_NEWER="3.0"
 	set_github_soft_releases_newer_version "TMP_N2N_SETUP_NEWER" "ntop/n2n"
-	exec_text_format "TMP_N2N_SETUP_NEWER" "https://github.com/ntop/n2n/archive/n2n-%s.zip"
+	exec_text_format "TMP_N2N_SETUP_NEWER" "https://github.com/ntop/n2n/archive/%s.zip"
     setup_soft_wget "n2n" "${TMP_N2N_SETUP_NEWER}" "exec_step_n2n"
 
 	return $?
