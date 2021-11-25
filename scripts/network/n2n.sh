@@ -116,7 +116,24 @@ function conf_supernode()
 	cd ${TMP_N2N_SETUP_DIR}
 
 	# 开始配置
-    local TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS="-l ${TMP_N2N_SETUP_UDP_MAIN_PORT} -t ${TMP_N2N_SETUP_UDP_MGMT_PORT}"
+	# general usage: supernode <config file> (see supernode.conf)
+ 
+    #              	 or supernode [-p <local port>]
+    #                             [-F <federation name>]
+	# options for under-          [-l <supernode host:port>]
+	# lying connection            [-M] [-V <version text>]
+
+	# overlay network             [-c <community list file>]
+	# configuration               [-a <net ip>-<net ip>/<cidr suffix>]
+
+	# local options               [-f] [-t <management port>]
+	# 						      [--management-password <pw>] [-v]
+	# 						      [-u <numerical user id>][-g <numerical group id>]
+
+	# meaning of the              [-M] disable MAC and IP address spoofing protection
+	# flag options                [-f] do not fork but run in foreground
+	# 						      [-v] make more verbose, repeat as required
+    local TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS="-l 0.0.0.0:${TMP_N2N_SETUP_UDP_MAIN_PORT} -t ${TMP_N2N_SETUP_UDP_MGMT_PORT}"
     echo "${TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS}" > etc/supernode-default.conf
     echo
     echo "N2N.Supernode: Your n2n supernode boot command is '${green}supernode ${TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS}${reset}'"
@@ -136,7 +153,7 @@ function conf_edge()
     local TMP_N2N_SETUP_EDGE_SUPERNODE_PORT="${TMP_N2N_SETUP_UDP_MAIN_PORT}"
     input_if_empty "TMP_N2N_SETUP_EDGE_SUPERNODE_PORT" "N2N.Edge: Please sure your ${red}supernode host port${reset} of '${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}' for edge"
 
-    # edge -u 0 -g 0 -d r2s-lede-n2n18s2 -a static:172.2.10.18 -s 255.255.255.0 -c cuckoo_tl -k 'qaz@321!@#' -l 106.75.144.150:12350 -r &
+    # edge -u 0 -g 0 -d r2s-lede-n2n18s2 -a static:172.2.10.18 -s 255.255.255.0 -c cuckoo_tl -k 'qaz@321!@#' -l 1.1.1.1:12350 -r &
 	input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_HOST" "N2N.Edge: Please sure your ${red}static internal vpn host${reset} for edge"
 
     local TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK="255.255.255.0"
@@ -152,13 +169,47 @@ function conf_edge()
     # ???复杂的会被转义，待研究
     # local TMP_N2N_SETUP_EDGE_NET_PWD="qaz%${LOCAL_ID}!@#"
     input_if_empty "TMP_N2N_SETUP_EDGE_NET_PWD" "N2N.Edge: Please sure your ${red}network group password${reset} of group '${TMP_N2N_SETUP_EDGE_NET_GROUP}' for edge"
-    
-	local TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS="-a ${TMP_N2N_SETUP_EDGE_INTERFACE_HOST} -s ${TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK} -c ${TMP_N2N_SETUP_EDGE_NET_GROUP} -k '${TMP_N2N_SETUP_EDGE_NET_PWD}' -f -r -l ${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}:${TMP_N2N_SETUP_EDGE_SUPERNODE_PORT}"
+
+	# 开始配置
+	# general usage: edge <config file> (see edge.conf)
+ 
+    #             or edge                  -c <community name> -l <supernode host:port>
+    #                                      [-p [<local bind ip address>:]<local port>]
+	# 					                   [-T <type of service>] [-D]
+	# options for under-                   [-i <registration interval>] [-L <registration ttl>]
+	# lying connection                     [-k <key>] [-A<cipher>] [-H] [-z<compression>]
+	# 					                   [-e <preferred local IP address>] [-S<level of solitude>]
+	# 					                   [--select-rtt]
+	
+	# tap device and                       [-a [static:|dhcp:]<tap IP address>[/<cidr suffix>]]
+	# overlay network                      [-m <tap MAC address>] [-d <tap device name>]
+	# configuration                        [-M <tap MTU>] [-r] [-E] [-I <edge description>]
+	# 					                   [-J <password>] [-P <public key>] [-R <rule string>]
+	
+	# local options                        [-f] [-t <management port>] [--management-password <pw>]
+	# 					                   [-v] [-n <cidr:gateway>]
+	# 					                   [-u <numerical user id>] [-g <numerical group id>]
+	
+	# environment N2N_KEY instead of 	   [-k <key>]
+	# variables   N2N_COMMUNITY instead of -c <community>
+	# 			  N2N_PASSWORD instead of  [-J <password>]
+	
+	# meaning of the                       [-D] enable PMTU discovery
+	# flag options                         [-H] enable header encryption
+	# 					                   [-r] enable packet forwarding through n2n community
+	# 					                   [-E] accept multicast MAC addresses
+	# 									   [--select-rtt] select supernode by round trip time
+	# 									   [-f] do not fork but run in foreground
+	# 									   [-v] make more verbose, repeat as required
+	
+	# -h shows this quick reference including all available options
+	# --help gives a detailed parameter description
+	# man files for n2n, edge, and superndode contain in-depth information
+	local TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS="-a ${TMP_N2N_SETUP_EDGE_INTERFACE_HOST} -s ${TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK} -c ${TMP_N2N_SETUP_EDGE_NET_GROUP} -k '${TMP_N2N_SETUP_EDGE_NET_PWD}' -f -t ${TMP_N2N_SETUP_UDP_MGMT_PORT} -r -l ${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}:${TMP_N2N_SETUP_EDGE_SUPERNODE_PORT}"
     echo
     echo "N2N.Edge: Your n2n edge boot command is '${green}edge ${TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS}${reset}'"
     echo
 
-	# 开始配置
     echo "${TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS}" > etc/edge-default.conf
 
 	return $?
@@ -201,14 +252,14 @@ function boot_supernode()
 	cd ${TMP_N2N_SETUP_DIR}
 	
 	# 当前启动命令
-	cat etc/supernode-default.conf | xargs -I {} bash -c "nohup bin/supernode {} > logs/boot.log 2>&1 &"
+	cat etc/supernode-default.conf | xargs -I {} bash -c "nohup bin/supernode {} > logs/boot_supernode.log 2>&1 &"
 	
     # 等待启动
     echo "Starting n2n.supernode，Waiting for a moment"
     echo "--------------------------------------------"
     sleep 5
 
-    cat logs/boot.log
+    cat logs/boot_supernode.log
     echo "--------------------------------------------"
 
 	# 启动状态检测
@@ -230,14 +281,14 @@ function boot_edge()
 	cd ${TMP_N2N_SETUP_DIR}
 
 	# 当前启动命令
-	cat etc/edge-default.conf | xargs -I {} bash -c "nohup bin/edge {} > logs/boot.log 2>&1 &"
+	cat etc/edge-default.conf | xargs -I {} bash -c "nohup bin/edge {} > logs/boot_edge.log 2>&1 &"
 	
     # 等待启动
     echo "Starting n2n.edge，Waiting for a moment"
     echo "--------------------------------------------"
     sleep 5
 
-    cat logs/boot.log
+    cat logs/boot_edge.log
     echo "--------------------------------------------"
 
 	# 启动状态检测

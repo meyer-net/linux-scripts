@@ -3,3 +3,6 @@ sftp.json
 test.sh
 packages/jdk-8u291-linux-x64.tar.gz
 plain.md
+test.drawio
+.vscode/launch.json
+.vscode/*.*
