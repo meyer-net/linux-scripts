@@ -133,7 +133,7 @@ function conf_supernode()
 	# meaning of the              [-M] disable MAC and IP address spoofing protection
 	# flag options                [-f] do not fork but run in foreground
 	# 						      [-v] make more verbose, repeat as required
-    local TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS="-l 0.0.0.0:${TMP_N2N_SETUP_UDP_MAIN_PORT} -t ${TMP_N2N_SETUP_UDP_MGMT_PORT}"
+    local TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS="-p ${TMP_N2N_SETUP_UDP_MAIN_PORT} -t ${TMP_N2N_SETUP_UDP_MGMT_PORT}"
     echo "${TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS}" > etc/supernode-default.conf
     echo
     echo "N2N.Supernode: Your n2n supernode boot command is '${green}supernode ${TMP_N2N_SETUP_SUPERNODE_BOOT_COMMAND_PARAMS}${reset}'"
@@ -230,7 +230,7 @@ function conf_all()
 function boot_n2n()
 {
 	cd ${TMP_N2N_SETUP_DIR}
-	
+
 	case ${TMP_N2N_SETUP_CHOICE_CONF} in
 		"Conf_Supernode")
             boot_supernode
@@ -252,8 +252,16 @@ function boot_supernode()
 	cd ${TMP_N2N_SETUP_DIR}
 	
 	# 当前启动命令
-	cat etc/supernode-default.conf | xargs -I {} bash -c "nohup bin/supernode {} > logs/boot_supernode.log 2>&1 &"
-	
+    tee boot_supernode.sh <<-EOF
+#!/bin/sh
+#-------------------------------
+#  Project Boot Script - for n2n
+#-------------------------------
+cat etc/supernode-default.conf | xargs -I {} bash -c "bin/supernode {}"
+EOF
+	chmod +x boot_supernode.sh
+	nohup bash boot_supernode.sh > logs/boot_supernode.log 2>&1 &
+		
     # 等待启动
     echo "Starting n2n.supernode，Waiting for a moment"
     echo "--------------------------------------------"
@@ -267,7 +275,7 @@ function boot_supernode()
     lsof -i:${TMP_N2N_SETUP_UDP_MGMT_PORT}
 
 	# 添加系统启动命令
-    echo_startup_config "supernode_default" "${TMP_N2N_SETUP_DIR}" "cat etc/supernode-default.conf | xargs -I {} bash -c \"bin/supernode {}\"" "" "1"
+    echo_startup_config "n2n_supernode_default" "${TMP_N2N_SETUP_DIR}" "bash boot_supernode.sh" "" "1"
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_N2N_SETUP_UDP_MAIN_PORT}
@@ -281,7 +289,15 @@ function boot_edge()
 	cd ${TMP_N2N_SETUP_DIR}
 
 	# 当前启动命令
-	cat etc/edge-default.conf | xargs -I {} bash -c "nohup bin/edge {} > logs/boot_edge.log 2>&1 &"
+    tee boot_edge.sh <<-EOF
+#!/bin/sh
+#-------------------------------
+#  Project Boot Script - for n2n
+#-------------------------------
+cat etc/edge-default.conf | xargs -I {} bash -c "bin/edge {}"
+EOF
+	chmod +x boot_edge.sh
+	nohup bash boot_edge.sh > logs/boot_edge.log 2>&1 &
 	
     # 等待启动
     echo "Starting n2n.edge，Waiting for a moment"
@@ -295,7 +311,7 @@ function boot_edge()
 	ip addr | grep "${TMP_N2N_SETUP_EDGE_INTERFACE_HOST}"
 
 	# 添加系统启动命令
-    echo_startup_config "edge_default" "${TMP_N2N_SETUP_DIR}" "cat etc/edge-default.conf | xargs -I {} bash -c \"bin/edge {}\"" "" "99"
+    echo_startup_config "n2n_edge_default" "${TMP_N2N_SETUP_DIR}" "bash boot_edge.sh" "" "99"
 
 	return $?
 }
