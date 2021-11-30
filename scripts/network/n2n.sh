@@ -18,6 +18,7 @@ local TMP_N2N_SETUP_EDGE_LOCAL_PART2=`echo ${LOCAL_HOST} | awk -F'.' '{print $2}
 local TMP_N2N_SETUP_EDGE_LOCAL_PART3=`echo ${LOCAL_HOST} | awk -F'.' '{print $3}'`
 local TMP_N2N_SETUP_EDGE_LOCAL_PART4=`echo ${LOCAL_HOST} | awk -F'.' '{print $4}'`
 local TMP_N2N_SETUP_EDGE_INTERFACE_HOST=`echo ${LOCAL_HOST} | sed "s@^${TMP_N2N_SETUP_EDGE_LOCAL_PART1}\.${TMP_N2N_SETUP_EDGE_LOCAL_PART2}@${TMP_N2N_SETUP_EDGE_LOCAL_PART1}.0@g" | sed "s@${TMP_N2N_SETUP_EDGE_LOCAL_PART3}\.${TMP_N2N_SETUP_EDGE_LOCAL_PART4}\\\$@${TMP_N2N_SETUP_EDGE_LOCAL_PART3}.${TMP_N2N_SETUP_EDGE_LOCAL_PART2}@g"`
+local TMP_N2N_SETUP_EDGE_INTERFACE_MTU=1460
 
 ##########################################################################################################
 
@@ -153,11 +154,14 @@ function conf_edge()
     local TMP_N2N_SETUP_EDGE_SUPERNODE_PORT="${TMP_N2N_SETUP_UDP_MAIN_PORT}"
     input_if_empty "TMP_N2N_SETUP_EDGE_SUPERNODE_PORT" "N2N.Edge: Please sure your ${red}supernode host port${reset} of '${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}' for edge"
 
-    # edge -u 0 -g 0 -d r2s-lede-n2n18s2 -a static:172.2.10.18 -s 255.255.255.0 -c cuckoo_tl -k 'qaz@321!@#' -l 1.1.1.1:12350 -r &
+    # lower 3.0：edge -u 0 -g 0 -d n2n-c2 -a static:172.2.8.18 -s 255.255.255.0 -c cuckoo_tl -k 'qaz@321!@#' -l 1.1.1.1:12350 -r &
+	# upper 3.0：edge -u 0 -g 0 -d n2n-c2 -a 172.2.8.100 -c cuckoo_hk -k 'qaz@3321!@#' -f -t 15645 -r -l 1.1.1.1:17654
 	input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_HOST" "N2N.Edge: Please sure your ${red}static internal vpn host${reset} for edge"
+	
+	input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_MTU" "N2N.Edge: Please sure your ${red}MTU value${reset} for edge"
 
-    local TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK="255.255.255.0"
-    input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK" "N2N.Edge: Please sure your ${red}internal vpn host netmask${reset} of '${TMP_N2N_SETUP_EDGE_INTERFACE_HOST}' for edge"
+    # local TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK="255.255.255.0"
+    # input_if_empty "TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK" "N2N.Edge: Please sure your ${red}internal vpn host netmask${reset} of '${TMP_N2N_SETUP_EDGE_INTERFACE_HOST}' for edge"
     
     local TMP_N2N_SETUP_EDGE_NET_GROUP_COMPONY="vsofo"
     input_if_empty "TMP_N2N_SETUP_EDGE_NET_GROUP_COMPONY" "N2N.Edge: Please sure your ${red}company${reset} for edge"
@@ -205,7 +209,8 @@ function conf_edge()
 	# -h shows this quick reference including all available options
 	# --help gives a detailed parameter description
 	# man files for n2n, edge, and superndode contain in-depth information
-	local TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS="-a ${TMP_N2N_SETUP_EDGE_INTERFACE_HOST} -s ${TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK} -c ${TMP_N2N_SETUP_EDGE_NET_GROUP} -k '${TMP_N2N_SETUP_EDGE_NET_PWD}' -f -t ${TMP_N2N_SETUP_UDP_MGMT_PORT} -r -l ${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}:${TMP_N2N_SETUP_EDGE_SUPERNODE_PORT}"
+	# -s ${TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK}
+	local TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS="-a ${TMP_N2N_SETUP_EDGE_INTERFACE_HOST} -M ${TMP_N2N_SETUP_EDGE_INTERFACE_MTU} -c ${TMP_N2N_SETUP_EDGE_NET_GROUP} -k '${TMP_N2N_SETUP_EDGE_NET_PWD}' -f -t ${TMP_N2N_SETUP_UDP_MGMT_PORT} -r -l ${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}:${TMP_N2N_SETUP_EDGE_SUPERNODE_PORT}"
     echo
     echo "N2N.Edge: Your n2n edge boot command is '${green}edge ${TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS}${reset}'"
     echo
@@ -258,6 +263,8 @@ function boot_supernode()
 #  Project Boot Script - for n2n
 #-------------------------------
 cat etc/supernode-default.conf | xargs -I {} bash -c "bin/supernode {}"
+ps -ef | grep supernode
+echo "Boot over"
 EOF
 	chmod +x boot_supernode.sh
 	nohup bash boot_supernode.sh > logs/boot_supernode.log 2>&1 &
