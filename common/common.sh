@@ -325,7 +325,7 @@ function curx_line_insert()
 # 参数1：需要设置的变量名
 function get_mount_root() {
 	local TMP_MOUNT_ROOT=""
-	local TMP_LSBLK_DISKS_STR=`lsblk | grep "disk" | grep -v ":0" | awk 'NR==1{print \$1}' | xargs -I {} echo '/dev/{}'`
+	local TMP_LSBLK_DISKS_STR=`lsblk | grep "0 disk" | grep -v "^${FDISK_L_SYS_DEFAULT}" | awk 'NR==1{print \$1}' | xargs -I {} echo '/dev/{}'`
 	if [ -n "${TMP_LSBLK_DISKS_STR}" ]; then
 		TMP_MOUNT_ROOT=`df -h | grep "${TMP_LSBLK_DISKS_STR}" | awk -F' ' '{print \$NF}'`
 	fi
@@ -345,7 +345,7 @@ function resolve_unmount_disk () {
 	local TMP_ARR_MOUNT_PATH_PREFIX=(${TMP_ARR_MOUNT_PATH_PREFIX_STR//,/ })
 	
 	# 获取当前磁盘的格式，例如sd,vd
-	local TMP_LSBLK_DISKS_STR=`lsblk | grep disk | awk 'NR>=2{print $1}'`
+	local TMP_LSBLK_DISKS_STR=`lsblk | grep "0 disk" | grep -v "^${FDISK_L_SYS_DEFAULT}" | awk '{print \$1}'`
 	
 	local TMP_ARR_DISK_POINT=(${TMP_LSBLK_DISKS_STR// / })
 	
