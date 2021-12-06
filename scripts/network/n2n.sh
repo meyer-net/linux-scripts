@@ -210,7 +210,7 @@ function conf_edge()
 	# --help gives a detailed parameter description
 	# man files for n2n, edge, and superndode contain in-depth information
 	# -s ${TMP_N2N_SETUP_EDGE_INTERFACE_NETMASK}
-	local TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS="-a ${TMP_N2N_SETUP_EDGE_INTERFACE_HOST} -M ${TMP_N2N_SETUP_EDGE_INTERFACE_MTU} -c ${TMP_N2N_SETUP_EDGE_NET_GROUP} -k '${TMP_N2N_SETUP_EDGE_NET_PWD}' -f -t ${TMP_N2N_SETUP_UDP_MGMT_PORT} -r -l ${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}:${TMP_N2N_SETUP_EDGE_SUPERNODE_PORT}"
+	local TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS="-u 0 -g 0 -d n2n_edge_${TMP_N2N_SETUP_EDGE_NET_GROUP_AREA} -a ${TMP_N2N_SETUP_EDGE_INTERFACE_HOST} -M ${TMP_N2N_SETUP_EDGE_INTERFACE_MTU} -c ${TMP_N2N_SETUP_EDGE_NET_GROUP} -k '${TMP_N2N_SETUP_EDGE_NET_PWD}' -f -t ${TMP_N2N_SETUP_UDP_MGMT_PORT} -r -D -E -l ${TMP_N2N_SETUP_EDGE_SUPERNODE_HOST}:${TMP_N2N_SETUP_EDGE_SUPERNODE_PORT}"
     echo
     echo "N2N.Edge: Your n2n edge boot command is '${green}edge ${TMP_N2N_SETUP_EDGE_BOOT_COMMAND_PARAMS}${reset}'"
     echo
@@ -285,8 +285,8 @@ EOF
     echo_startup_config "n2n_supernode_default" "${TMP_N2N_SETUP_DIR}" "bash boot_supernode.sh" "" "1"
 
 	# 授权iptables端口访问
-	echo_soft_port ${TMP_N2N_SETUP_UDP_MAIN_PORT}
-    echo_soft_port ${TMP_N2N_SETUP_UDP_MGMT_PORT}
+	echo_soft_port ${TMP_N2N_SETUP_UDP_MAIN_PORT} "" "udp"
+    echo_soft_port ${TMP_N2N_SETUP_UDP_MGMT_PORT} "" "udp"
 
 	return $?
 }

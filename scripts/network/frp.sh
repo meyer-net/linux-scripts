@@ -89,6 +89,10 @@ function conf_frps()
 {
 	cd ${TMP_FRP_SETUP_DIR}
 
+    # Openwrt情况会冲突，无法绑定端口
+    sed -i "s@^vhost_http_port@#vhost_http_port@g" etc/frps.ini
+    sed -i "s@^vhost_https_port@#vhost_https_port@g" etc/frps.ini
+
     input_if_empty "TMP_FRP_SETUP_SVR_BIND_PORT" "Frp-Server: Please sure ${red}bind port(contains kcp)${reset}"
     sed -i "s@^bind_port =.*@bind_port = ${TMP_FRP_SETUP_SVR_BIND_PORT}@g" etc/frps.ini
     sed -i "s@^bind_udp_port =.*@bind_udp_port = ${TMP_FRP_SETUP_SVR_BIND_UDP_PORT}@g" etc/frps.ini
