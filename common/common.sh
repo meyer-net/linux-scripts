@@ -2093,7 +2093,7 @@ function echo_soft_port()
 	local TMP_ECHO_SOFT_PORT_TYPE=${3}
 
 	# 非VmWare产品的情况下，不安装iptables，给个假iptables文件
-	if [ "${SYSTEMD_DETECT_VIRT}" != "vmware" ]; then	
+	if [ "${DMIDECODE_MANUFACTURER}" != "VMware, Inc." ] || [ "${DMIDECODE_MANUFACTURER}" != "QEMU" ]; then	
 		if [ ! -f "/etc/sysconfig/iptables" ]; then
 			cat >/etc/sysconfig/iptables<<EOF
 # sample configuration for iptables service
@@ -2144,7 +2144,7 @@ EOF
 	sed -i "11a-A INPUT $TMP_ECHO_SOFT_PORT_IP-p tcp -m state --state NEW -m tcp --dport $TMP_ECHO_SOFT_PORT -j ACCEPT" /etc/sysconfig/iptables
 
 	# firewall-cmd --reload  # 重新载入规则
-	if [ "${SYSTEMD_DETECT_VIRT}" == "vmware" ]; then	
+	if [ "${DMIDECODE_MANUFACTURER}" == "VMware, Inc." ] || [ "${DMIDECODE_MANUFACTURER}" != "QEMU" ]; then	
 		service iptables restart
 	fi
 
@@ -2227,6 +2227,7 @@ MEMORY_GB_FREE=${MEMORY_FREE%.*}
 
 # 机器环境信息
 SYSTEMD_DETECT_VIRT=`systemd-detect-virt`
+DMIDECODE_MANUFACTURER=`dmidecode -t system | grep "Manufacturer" | awk -F':' '{print \$NF}' | xargs echo`
 
 # 本机IP
 # NET_HOST=`ping -c 1 -t 1 enginx.net | grep 'PING' | awk '{print $3}' | sed 's/[(,)]//g'`
