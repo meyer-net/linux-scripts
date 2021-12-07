@@ -1042,7 +1042,7 @@ function boot_kong()
 	echo_soft_port ${TMP_KNG_SETUP_API_HTTPS_PORT} "${LOCAL_HOST}"
     
     # 生成web授权访问脚本
-    echo_web_service_init_scripts "kong-api${LOCAL_ID}" "${TMP_KNG_SETUP_API_DOMAIN}" ${TMP_KNG_SETUP_API_HTTP_PORT} "${LOCAL_HOST}" "${LOCAL_HOST}" "${TMP_KNG_SETUP_CDY_API_HOST}"
+    echo_web_service_init_scripts "kong-api${LOCAL_ID}" "${TMP_KNG_SETUP_API_DOMAIN}" ${TMP_KNG_SETUP_API_HTTP_PORT} "${LOCAL_HOST}" "${LOCAL_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}" "${TMP_KNG_SETUP_CDY_API_HOST}"
 
 	return $?
 }
@@ -1079,7 +1079,7 @@ function boot_konga()
 	echo_soft_port ${TMP_KNGA_SETUP_HTTP_PORT}
     
     # 生成web授权访问脚本
-    echo_web_service_init_scripts "konga${LOCAL_ID}" "${TMP_KNGA_SETUP_DOMAIN}" ${TMP_KNGA_SETUP_HTTP_PORT} "${LOCAL_HOST}" "${TMP_KNGA_SETUP_KNG_HOST}" "${TMP_KNGA_SETUP_CDY_API_HOST}"
+    echo_web_service_init_scripts "konga${LOCAL_ID}" "${TMP_KNGA_SETUP_DOMAIN}" ${TMP_KNGA_SETUP_HTTP_PORT} "${LOCAL_HOST}" "${TMP_KNGA_SETUP_KNG_HOST}:${TMP_KNG_SETUP_API_HTTP_PORT}" "${TMP_KNGA_SETUP_CDY_API_HOST}"
 
 	return $?
 }

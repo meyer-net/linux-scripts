@@ -31,7 +31,7 @@ function setup_nodejs()
 
 	## 源模式
     #通过BASH安装
-	local TMP_NVM_SETUP_SH_NEWER="0.38.0"
+	local TMP_NVM_SETUP_SH_NEWER="0.39.0"
 	set_github_soft_releases_newer_version "TMP_NVM_SETUP_SH_NEWER" "nvm-sh/nvm"
 	exec_text_format "TMP_NVM_SETUP_SH_NEWER" "https://raw.githubusercontent.com/creationix/nvm/v%s/install.sh"
 	
