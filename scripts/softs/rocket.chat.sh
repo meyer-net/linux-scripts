@@ -50,10 +50,9 @@ function setup_rocket_chat()
     # 参照 rocket.chat 自己的版本安装使用
 	cd ${TMP_RC_CURRENT_DIR}
 
-    local TMP_RC_SETUP_DFT_VERS=`cat star.json | grep "nodeVersion" | awk -F' ' '{print $2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"`
-    nvm install ${TMP_RC_SETUP_DFT_VERS} && nvm use ${TMP_RC_SETUP_DFT_VERS}
-
-	cd programs/server && su - root -c "cd `pwd` && npm install"
+    local TMP_RC_SETUP_DFT_VERS=`cat star.json | grep "nodeVersion" | awk -F' ' '{print \$2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"`
+    
+	cd programs/server && su - root -c "cd `pwd` && nvm install ${TMP_RC_SETUP_DFT_VERS} && nvm use ${TMP_RC_SETUP_DFT_VERS} && npm install"
 
 	cd `dirname ${TMP_RC_CURRENT_DIR}`
 
@@ -83,8 +82,8 @@ function setup_rocket_chat()
 	chown -R rocketchat:rocketchat ${TMP_RC_SETUP_LNK_DATA_DIR}
 	
     # 安装初始
-    
-    # nvm alias default ${TMP_RC_SETUP_DFT_VERS}
+    nvm use ${TMP_RC_SETUP_DFT_VERS}
+    nvm alias default ${TMP_RC_SETUP_DFT_VERS}
 
 	return $?
 }
