@@ -91,7 +91,7 @@ function setup_nodejs()
 	echo "-------------------------------------------------"
 	nrm ls
 	echo "-------------------------------------------------"
-	npm install -g npm@next
+	npm install -g npm@latest
 	npm install -g cnpm
 	npm install -g es-checker
 	npm --version

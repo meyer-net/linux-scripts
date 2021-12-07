@@ -47,7 +47,13 @@ function setup_mongodb()
 function setup_rocket_chat()
 {
 	## 直装模式
-	cd ${TMP_RC_CURRENT_DIR}/programs/server && su - root -c "cd `pwd` && npm install"
+    # 参照 rocket.chat 自己的版本安装使用
+	cd ${TMP_RC_CURRENT_DIR}
+
+    local TMP_RC_SETUP_DFT_VERS=`cat star.json | grep "nodeVersion" | awk -F' ' '{print $2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"`
+    nvm install ${TMP_RC_SETUP_DFT_VERS} && nvm use ${TMP_RC_SETUP_DFT_VERS}
+
+	cd programs/server && su - root -c "cd `pwd` && npm install"
 
 	cd `dirname ${TMP_RC_CURRENT_DIR}`
 
@@ -77,9 +83,6 @@ function setup_rocket_chat()
 	chown -R rocketchat:rocketchat ${TMP_RC_SETUP_LNK_DATA_DIR}
 	
     # 安装初始
-    # 参照 rocket.chat 自己的版本安装使用
-    local TMP_RC_SETUP_DFT_VERS=`cat star.json | grep "nodeVersion" | awk -F' ' '{print $2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"`
-    nvm install ${TMP_RC_SETUP_DFT_VERS} && nvm use ${TMP_RC_SETUP_DFT_VERS}
     
     # nvm alias default ${TMP_RC_SETUP_DFT_VERS}
 
