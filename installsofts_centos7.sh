@@ -88,9 +88,11 @@ function update_libs()
     #---------- CHANGE ---------- }
     source scripts/os${OS_VERS}/epel.sh
     source scripts/os${OS_VERS}/libs.sh
-    source scripts/os${OS_VERS}/optimize.sh
     
+    # 优先，后续会输出port
     source scripts/softs/supervisor.sh
+
+    source scripts/os${OS_VERS}/optimize.sh
 
 	return $?
 }
