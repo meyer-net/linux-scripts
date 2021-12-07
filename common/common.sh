@@ -2098,7 +2098,7 @@ function echo_soft_port()
 	local TMP_ECHO_SOFT_PORT_TYPE=${3}
 
 	# 非VmWare产品的情况下，不安装iptables，给个假iptables文件
-	if [ "${DMIDECODE_MANUFACTURER}" != "VMware, Inc." ] || [ "${DMIDECODE_MANUFACTURER}" != "QEMU" ]; then	
+	if [ "${DMIDECODE_MANUFACTURER}" != "VMware, Inc." ] && [ "${DMIDECODE_MANUFACTURER}" != "QEMU" ]; then	
 		if [ ! -f "/etc/sysconfig/iptables" ]; then
 			cat >/etc/sysconfig/iptables<<EOF
 # sample configuration for iptables service
@@ -2149,7 +2149,7 @@ EOF
 	sed -i "11a-A INPUT $TMP_ECHO_SOFT_PORT_IP-p tcp -m state --state NEW -m tcp --dport $TMP_ECHO_SOFT_PORT -j ACCEPT" /etc/sysconfig/iptables
 
 	# firewall-cmd --reload  # 重新载入规则
-	if [ "${DMIDECODE_MANUFACTURER}" == "VMware, Inc." ] || [ "${DMIDECODE_MANUFACTURER}" != "QEMU" ]; then	
+	if [ "${DMIDECODE_MANUFACTURER}" == "VMware, Inc." ] && [ "${DMIDECODE_MANUFACTURER}" != "QEMU" ]; then	
 		service iptables restart
 	fi
 
