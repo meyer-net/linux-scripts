@@ -29,6 +29,25 @@
 # 			 1、mongodump/ 目录下放的就是以数据库名命名的文件夹，最好不要再放其他文件夹或文件。
 # 			 2、数据库必须已经存在这个库。
 # 			 3、需要在授权时导入：如果执行失败，可以在服务里先关闭MongoDB服务，暂时用命令行启动MongoDB服务，再执行命令即可。
+# 其它：
+# 连接本地数据库服务器，端口是默认的
+#	mongodb://localhost
+# 使用用户名fred，密码foobar登录localhost的admin数据库。
+#	mongodb://fred:foobar@localhost
+# 使用用户名fred，密码foobar登录localhost的baz数据库。
+#	mongodb://fred:foobar@localhost/baz
+# 连接 replica pair, 服务器1为example1.com服务器2为example2。
+#	mongodb://example1.com:27017,example2.com:27017
+# 连接 replica set 三台服务器 (端口 27017, 27018, 和27019):
+#	mongodb://localhost,localhost:27018,localhost:27019
+# 连接 replica set 三台服务器, 写入操作应用在主服务器 并且分布查询到从服务器。
+#	mongodb://host1,host2,host3/?slaveOk=true
+# 直接连接第一个服务器，无论是replica set一部分或者主服务器或者从服务器。
+#	mongodb://host1,host2,host3/?connect=direct;slaveOk=true
+# 当你的连接服务器有优先级，还需要列出所有服务器，你可以使用上述连接方式。安全模式连接到localhost:
+#	mongodb://localhost/?safe=true
+# 以安全模式连接到replica set，并且等待至少两个复制服务器成功写入，超时时间设置为2秒。
+#	mongodb://host1,host2,host3/?safe=true;w=2;wtimeoutMS=2000
 #------------------------------------------------
 local TMP_MGDB_SETUP_PORT=27017
 local TMP_MGDB_SETUP_PWD="mongo%DB^m${LOCAL_ID}~"
@@ -124,6 +143,8 @@ function conf_mongodb()
     # 开始配置(默认依照rc需求安装配置)
     sed -i "s@^#  engine:@  engine: mmapv1@" etc/mongod.conf
     sed -i "s@^#replication:@replication:\n  replSetName: rs01@" etc/mongod.conf 
+	
+    sed -i "s@^#security:@security:\n  authorization: enabled@" etc/mongod.conf 
 
     sed -i "s@^  port:.*@  port: ${TMP_MGDB_SETUP_PORT}@" etc/mongod.conf
     sed -i "s@^  bindIp:.*@  bindIp: ${LOCAL_HOST}@" etc/mongod.conf

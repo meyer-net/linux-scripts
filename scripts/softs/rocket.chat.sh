@@ -14,6 +14,8 @@ local TMP_RC_SETUP_MGDB_HOST="${LOCAL_HOST}"
 local TMP_RC_SETUP_MGDB_PORT=27017
 local TMP_RC_SETUP_MGDB_USER="admin"
 local TMP_RC_SETUP_MGDB_PWD="mongo%DB^m${LOCAL_ID}~"
+local TMP_RC_SETUP_MGDB_RC_USER="rocketchat"
+local TMP_RC_SETUP_MGDB_RC_PWD="mongoDBm${LOCAL_ID}"
 
 ##########################################################################################################
 
@@ -110,10 +112,10 @@ function conf_rocket_chat()
 	input_if_empty "TMP_RC_SETUP_MGDB_HOST" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb host address${reset} for rocket.chat"
     set_if_equals "TMP_RC_SETUP_MGDB_HOST" "LOCAL_HOST" "127.0.0.1"
 	
-	input_if_empty "TMP_RC_SETUP_MGDB_PORT" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb host address port${reset} of '${TMP_RC_SETUP_MGDB_HOST}' for rocket.chat"
-	input_if_empty "TMP_RC_SETUP_MGDB_USER" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb user${reset} of '${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
-	input_if_empty "TMP_RC_SETUP_MGDB_PWD" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb password${reset} of '${TMP_RC_SETUP_MGDB_USER}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
-    
+	input_if_empty "TMP_RC_SETUP_MGDB_PORT" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb host address port${reset} of '${TMP_RC_SETUP_MGDB_HOST}'"
+	input_if_empty "TMP_RC_SETUP_MGDB_USER" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb user${reset} of '${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}'"
+	input_if_empty "TMP_RC_SETUP_MGDB_PWD" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb password${reset} of '${TMP_RC_SETUP_MGDB_USER}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}'"
+
 	local TMP_RC_SETUP_LOGS_DIR=${TMP_RC_SETUP_DIR}/logs
 	local TMP_RC_SETUP_NODE_PATH=`nvm which current`
 
@@ -125,8 +127,21 @@ function conf_rocket_chat()
 
 	# 判断有密码的情况
 	if [ -n "${TMP_RC_SETUP_MGDB_PWD}" ]; then
-		TMP_RC_SETUP_MGDB_URL="mongodb://${TMP_RC_SETUP_MGDB_USER}:${TMP_RC_SETUP_MGDB_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/rocketchat?replicaSet=rs01"
-		TMP_RC_SETUP_MGDB_OPLOG_URL="mongodb://${TMP_RC_SETUP_MGDB_USER}:${TMP_RC_SETUP_MGDB_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01&authSource=admin"
+		input_if_empty "TMP_RC_SETUP_MGDB_RC_USER" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb user${reset} of '${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
+		input_if_empty "TMP_RC_SETUP_MGDB_RC_PWD" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb password${reset} of '${TMP_RC_SETUP_MGDB_RC_USER}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
+		
+		TMP_RC_SETUP_MGDB_URL="mongodb://${TMP_RC_SETUP_MGDB_RC_USER}:${TMP_RC_SETUP_MGDB_RC_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/rocketchat?replicaSet=rs01&authSource=admin"
+		TMP_RC_SETUP_MGDB_OPLOG_URL="mongodb://${TMP_RC_SETUP_MGDB_RC_USER}:${TMP_RC_SETUP_MGDB_RC_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01&authSource=admin"
+
+   		cat > mongodb_init.js <<EOF
+use admin
+db.auth("${TMP_RC_SETUP_MGDB_USER}", "${TMP_RC_SETUP_MGDB_PWD}")
+db.createUser({user: "${TMP_RC_SETUP_MGDB_RC_USER}", pwd: "${TMP_RC_SETUP_MGDB_RC_PWD}", roles: [{role: "readWrite", db: "local"},{role: "readWrite", db: "reporting"},{role: "dbOwner", db: "rocketchat"}]})
+EOF
+		cat mongodb_init.js | mongo --shell
+
+		rm -rf mongodb_init.js
+		
 	fi
 
 	cat << EOF | tee -a /lib/systemd/system/rocketchat.service
