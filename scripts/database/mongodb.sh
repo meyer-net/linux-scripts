@@ -159,6 +159,9 @@ function reconf_mongodb()
 {
 	cd ${TMP_MGDB_SETUP_DIR}
 	
+    mongo --eval "printjson(rs.initiate())"
+    sleep 5
+	
 	mongod --auth  # 启用认证
 
 	input_if_empty "TMP_MGDB_SETUP_PWD" "MongoDB: Please ender ${green}mongodb password${reset} of ${red}root user(admin)${reset} for auth"
@@ -170,6 +173,8 @@ db.auth("admin", "${TMP_MGDB_SETUP_PWD}")
 EOF
 
 	cat mongodb_init.js | mongo --shell
+	
+    exchange_softlink "`pwd`/etc/mongod.conf" "/etc/mongod.conf" "rm -rf /etc/mongod.conf"
 
 	rm -rf mongodb_init.js
 	
@@ -194,8 +199,6 @@ function boot_mongodb()
     echo "Starting mongodb，Waiting for a moment"
     echo "--------------------------------------------"
     systemctl start mongod.service
-    sleep 5
-    mongo --eval "printjson(rs.initiate())"
     sleep 5
 
 	systemctl status mongod.service

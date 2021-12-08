@@ -141,7 +141,6 @@ EOF
 		cat mongodb_init.js | mongo --shell
 
 		rm -rf mongodb_init.js
-		
 	fi
 
 	cat << EOF | tee -a /lib/systemd/system/rocketchat.service
@@ -171,12 +170,12 @@ systemctl stop rocketchat.service
 curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
 tar -xzf /tmp/rocket.chat.tgz -C /tmp
 
-TMP_RC_UPDATE_DFT_VERS=`cat /tmp/bundle/star.json | grep "nodeVersion" | awk -F' ' '{print $2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"`
-#if [ -n "${TMP_RC_UPDATE_DFT_VERS}" ]; then
-#	nvm install ${TMP_RC_UPDATE_DFT_VERS} && nvm use ${TMP_RC_UPDATE_DFT_VERS}
+TMP_RC_UPDATE_DFT_VERS=\`cat ${TMP_RC_SETUP_DIR}/star.json | grep "nodeVersion" | awk -F' ' '{print \$2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"\`
+#if [ -n "\${TMP_RC_UPDATE_DFT_VERS}" ]; then
+#	nvm install \${TMP_RC_UPDATE_DFT_VERS} && nvm use \${TMP_RC_UPDATE_DFT_VERS}
 #fi
     
-cd /tmp/bundle/programs/server && su - root -c "cd `pwd` && nvm install ${TMP_RC_SETUP_DFT_VERS} && nvm use ${TMP_RC_SETUP_DFT_VERS} && npm install"
+su - root -c "cd /tmp/bundle/programs/server && nvm install \${TMP_RC_SETUP_DFT_VERS} && nvm use \${TMP_RC_SETUP_DFT_VERS} && npm install"
 rsync -av /tmp/bundle/ ${TMP_RC_SETUP_DIR}
 chown -R rocketchat:rocketchat ${TMP_RC_SETUP_DIR}
 systemctl start rocketchat.service
