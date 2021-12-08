@@ -136,9 +136,11 @@ function conf_rocket_chat()
    		cat > mongodb_init.js <<EOF
 use admin
 db.auth("${TMP_RC_SETUP_MGDB_USER}", "${TMP_RC_SETUP_MGDB_PWD}")
-db.createUser({user: "${TMP_RC_SETUP_MGDB_RC_USER}", pwd: "${TMP_RC_SETUP_MGDB_RC_PWD}", roles: [{role: "readWrite", db: "local"},{role: "readWrite", db: "reporting"},{role: "dbOwner", db: "rocketchat"}]})
+db.createUser({user: "${TMP_RC_SETUP_MGDB_RC_USER}", pwd: "${TMP_RC_SETUP_MGDB_RC_PWD}", roles: ["root"]})
 EOF
-		cat mongodb_init.js | mongo --shell
+# db.createUser({user: "${TMP_RC_SETUP_MGDB_RC_USER}", pwd: "${TMP_RC_SETUP_MGDB_RC_PWD}", roles: [{role: "readWrite", db: "local"},{role: "readWrite", db: "reporting"},{role: "dbOwner", db: "rocketchat"}]})
+
+		cat mongodb_init.js | mongo --host ${TMP_RC_SETUP_MGDB_HOST} --shell
 
 		rm -rf mongodb_init.js
 	fi

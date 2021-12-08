@@ -96,10 +96,6 @@ EOF
 	rm -rf ${TMP_MGDB_SETUP_LOGS_DIR}
 	rm -rf ${TMP_MGDB_SETUP_DATA_DIR}
 	path_not_exists_create ${TMP_MGDB_SETUP_LNK_LOGS_DIR}
-
-	# 先启动服务，获取初始文件
-	systemctl start mongod.service
-	systemctl stop mongod.service
 	
 	cp /var/lib/mongo ${TMP_MGDB_SETUP_LNK_DATA_DIR} -Rp
     mv /var/lib/mongo ${TMP_MGDB_SETUP_LNK_DATA_DIR}_empty
@@ -136,21 +132,19 @@ function conf_mongodb()
 	rm -rf ${TMP_MGDB_SETUP_ETC_DIR}
 	path_not_exists_create "${TMP_MGDB_SETUP_LNK_ETC_DIR}"
     
+    # 开始配置(默认依照rc需求安装配置) - 必须先修改
+    sed -i "s@^#  engine:@  engine: mmapv1@" /etc/mongod.conf
+    sed -i "s@^#replication:@replication:\n  replSetName: rs01@" /etc/mongod.conf 
+
+    sed -i "s@^  port:.*@  port: ${TMP_MGDB_SETUP_PORT}@" /etc/mongod.conf
+    sed -i "s@^  bindIp:.*@  bindIp: 127.0.0.1,${LOCAL_HOST}@" /etc/mongod.conf
+
 	# 替换原路径链接
     ln -sf /etc/mongod.conf ${TMP_MGDB_SETUP_LNK_ETC_DIR}/mongod.conf
 	ln -sf ${TMP_MGDB_SETUP_LNK_ETC_DIR} ${TMP_MGDB_SETUP_ETC_DIR}
 	
-    # 开始配置(默认依照rc需求安装配置)
-    sed -i "s@^#  engine:@  engine: mmapv1@" etc/mongod.conf
-    sed -i "s@^#replication:@replication:\n  replSetName: rs01@" etc/mongod.conf 
-	
-    sed -i "s@^#security:@security:\n  authorization: enabled@" etc/mongod.conf 
 
-    sed -i "s@^  port:.*@  port: ${TMP_MGDB_SETUP_PORT}@" etc/mongod.conf
-    sed -i "s@^  bindIp:.*@  bindIp: ${LOCAL_HOST}@" etc/mongod.conf
-
-	# 授权权限，否则无法写入
-	# chown -R mongod:mongod ${TMP_MGDB_SETUP_LNK_ETC_DIR}
+    # exchange_softlink "`pwd`/etc/mongod.conf" "/etc/mongod.conf" "rm -rf /etc/mongod.conf"
 
 	return $?
 }
@@ -159,10 +153,11 @@ function reconf_mongodb()
 {
 	cd ${TMP_MGDB_SETUP_DIR}
 	
-    mongo --eval "printjson(rs.initiate())"
+    mongo --host ${LOCAL_HOST} --eval "printjson(rs.initiate())"
     sleep 5
 	
-	mongod --auth  # 启用认证
+	# local TMP_MGDB_SETUP_DATA_DIR=${TMP_MGDB_SETUP_DIR}/data
+	# mongod --bind_ip ${LOCAL_HOST} --dbpath=${TMP_MGDB_SETUP_DATA_DIR} --auth  # 启用认证
 
 	input_if_empty "TMP_MGDB_SETUP_PWD" "MongoDB: Please ender ${green}mongodb password${reset} of ${red}root user(admin)${reset} for auth"
 
@@ -172,11 +167,15 @@ db.createUser({user:"admin",pwd:"${TMP_MGDB_SETUP_PWD}",roles:["root"]})
 db.auth("admin", "${TMP_MGDB_SETUP_PWD}")
 EOF
 
-	cat mongodb_init.js | mongo --shell
+	cat mongodb_init.js | mongo --host ${LOCAL_HOST} --shell
 	
-    exchange_softlink "`pwd`/etc/mongod.conf" "/etc/mongod.conf" "rm -rf /etc/mongod.conf"
-
 	rm -rf mongodb_init.js
+	
+	# 开启持久验证
+    sed -i "s@^#security:@security:\n  authorization: enabled@" /etc/mongod.conf 
+
+	# 重启
+    systemctl restart mongod.service
 	
 	return $?
 }
