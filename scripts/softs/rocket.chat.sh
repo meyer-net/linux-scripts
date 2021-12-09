@@ -130,15 +130,15 @@ function conf_rocket_chat()
 		input_if_empty "TMP_RC_SETUP_MGDB_RC_USER" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb user${reset} of '${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
 		input_if_empty "TMP_RC_SETUP_MGDB_RC_PWD" "Rocket.Chat.MongoDB: Please ender the ${red}mongodb password${reset} of '${TMP_RC_SETUP_MGDB_RC_USER}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}' for rocket.chat"
 		
-		TMP_RC_SETUP_MGDB_URL="mongodb://${TMP_RC_SETUP_MGDB_RC_USER}:${TMP_RC_SETUP_MGDB_RC_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/rocketchat?replicaSet=rs01&authSource=admin"
-		TMP_RC_SETUP_MGDB_OPLOG_URL="mongodb://${TMP_RC_SETUP_MGDB_RC_USER}:${TMP_RC_SETUP_MGDB_RC_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01&authSource=admin"
+		TMP_RC_SETUP_MGDB_URL="mongodb://${TMP_RC_SETUP_MGDB_RC_USER}:${TMP_RC_SETUP_MGDB_RC_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/rocketchat?replicaSet=rs01&authSource=rocketchat"
+		TMP_RC_SETUP_MGDB_OPLOG_URL="mongodb://${TMP_RC_SETUP_MGDB_RC_USER}:${TMP_RC_SETUP_MGDB_RC_PWD}@${TMP_RC_SETUP_MGDB_HOST}:${TMP_RC_SETUP_MGDB_PORT}/local?replicaSet=rs01&authSource=rocketchat"
 
    		cat > mongodb_init.js <<EOF
 use admin
 db.auth("${TMP_RC_SETUP_MGDB_USER}", "${TMP_RC_SETUP_MGDB_PWD}")
-db.createUser({user: "${TMP_RC_SETUP_MGDB_RC_USER}", pwd: "${TMP_RC_SETUP_MGDB_RC_PWD}", roles: ["root"]})
+use rocketchat
+db.createUser({user: "${TMP_RC_SETUP_MGDB_RC_USER}", pwd: "${TMP_RC_SETUP_MGDB_RC_PWD}", roles: [{role: "readWrite", db: "local"},{role: "readWrite", db: "reporting"},{role: "dbOwner", db: "rocketchat"},{role: "clusterManager",db: "admin"},{role: "clusterMonitor",db: "admin"}]})
 EOF
-# db.createUser({user: "${TMP_RC_SETUP_MGDB_RC_USER}", pwd: "${TMP_RC_SETUP_MGDB_RC_PWD}", roles: [{role: "readWrite", db: "local"},{role: "readWrite", db: "reporting"},{role: "dbOwner", db: "rocketchat"}]})
 
 		cat mongodb_init.js | mongo --host ${TMP_RC_SETUP_MGDB_HOST} --shell
 
@@ -169,19 +169,20 @@ EOF
 #!/bin/bash
 
 systemctl stop rocketchat.service
-curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
-tar -xzf /tmp/rocket.chat.tgz -C /tmp
+curl -L https://releases.rocket.chat/latest/download -o ${DOWN_DIR}/rocket.chat.tgz
+tar -xzf ${DOWN_DIR}/rocket.chat.tgz -C ${DOWN_DIR}
+rm -rf ${DOWN_DIR}/rocket.chat.tgz
 
-TMP_RC_UPDATE_DFT_VERS=\`cat ${TMP_RC_SETUP_DIR}/star.json | grep "nodeVersion" | awk -F' ' '{print \$2}' | sed "s@\"@@g" | sed "s@,\\\$@@g"\`
-#if [ -n "\${TMP_RC_UPDATE_DFT_VERS}" ]; then
-#	nvm install \${TMP_RC_UPDATE_DFT_VERS} && nvm use \${TMP_RC_UPDATE_DFT_VERS}
-#fi
-    
-su - root -c "cd /tmp/bundle/programs/server && nvm install \${TMP_RC_SETUP_DFT_VERS} && nvm use \${TMP_RC_SETUP_DFT_VERS} && npm install"
-rsync -av /tmp/bundle/ ${TMP_RC_SETUP_DIR}
+TMP_RC_UPDATE_DFT_VERS=\`cat ${TMP_RC_SETUP_DIR}/star.json | grep "nodeVersion" | awk -F' ' '{print \$2}' | sed "s@\"@@g" | sed "s@,\\\\\\\$@@g"\`
+su - root -c "cd ${DOWN_DIR}/bundle/programs/server && nvm install \${TMP_RC_UPDATE_DFT_VERS} && nvm use \${TMP_RC_UPDATE_DFT_VERS} && npm install"
+
+TMP_RC_UPDATE_CURRENT_TIME=\`date "+%Y-%m-%d %H:%M:%S"\`
+TMP_RC_UPDATE_CURRENT_TIMESTAMP=\`date -d "\${TMP_RC_UPDATE_CURRENT_TIME}" +%s\` 
+tar -zcvf /tmp/rocket.chat.backup_\${TMP_RC_UPDATE_CURRENT_TIMESTAMP}.tar.gz ${TMP_RC_SETUP_DIR}
+rsync -av ${DOWN_DIR}/bundle/ ${TMP_RC_SETUP_DIR}
 chown -R rocketchat:rocketchat ${TMP_RC_SETUP_DIR}
 systemctl start rocketchat.service
-rm -rf /tmp/bundle
+rm -rf ${DOWN_DIR}/bundle
 EOF
 
 	return $?

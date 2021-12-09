@@ -164,7 +164,9 @@ function reconf_mongodb()
     cat > mongodb_init.js <<EOF
 use admin
 db.createUser({user:"admin",pwd:"${TMP_MGDB_SETUP_PWD}",roles:["root"]})
+db.createUser({user:"super",pwd:"${TMP_MGDB_SETUP_PWD}",roles:[{ role: "userAdminAnyDatabase", db: "admin" }, "readWriteAnyDatabase"]})
 db.auth("admin", "${TMP_MGDB_SETUP_PWD}")
+db.auth("super", "${TMP_MGDB_SETUP_PWD}")
 EOF
 
 	cat mongodb_init.js | mongo --host ${LOCAL_HOST} --shell
