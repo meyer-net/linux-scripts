@@ -6,3 +6,4 @@ plain.md
 test.drawio
 .vscode/launch.json
 .vscode/*.*
+.history/*

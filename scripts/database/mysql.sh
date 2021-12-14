@@ -166,7 +166,7 @@ function conf_mysql()
 	input_if_empty "TMP_MYSQL_SETUP_PWD" "MySql: Please ender ${green}mysql password${reset} of ${red}user(Root)${reset} for '%'"
     
     systemctl start mysqld.service 
-    mysql -u root -p ${TMP_MSQL_SETUP_TEMPORARY_PWD} -e "
+    mysql -u root -p ${TMP_MSQL_SETUP_TEMPORARY_PWD} -P ${TMP_MYSQL_SETUP_PORT} -e "
     SET password FOR 'root'@'localhost'=PASSWORD('${TMP_MSQL_SETUP_TEMPORARY_PWD}');
     GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '${TMP_MYSQL_SETUP_PWD}' WITH GRANT OPTION;
     USE mysql;
@@ -174,6 +174,7 @@ function conf_mysql()
     SET GLOBAL MAX_CONNECT_ERRORS=1024;
     FLUSH HOSTS;
     FLUSH PRIVILEGES;
+	select host,user,authentication_string from user;
     exit" --connect-expired-password
     echo "MySql: Password（'${TMP_MYSQL_SETUP_PWD}'） Set Success！"
     systemctl stop mysqld.service
@@ -214,6 +215,7 @@ function conf_mariadb()
     GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '${TMP_MYSQL_SETUP_PWD}' WITH GRANT OPTION;
     DELETE FROM user WHERE user='' OR user='${SYS_NAME}' OR password='';
     FLUSH PRIVILEGES;
+	select host,user,password from user;
     exit"
     echo "MariaDB: Password（'${TMP_MYSQL_SETUP_PWD}'） Set Success！"
 

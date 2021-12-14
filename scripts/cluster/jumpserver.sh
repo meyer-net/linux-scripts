@@ -74,7 +74,7 @@ function conf_jumpserver_pre()
         FLUSH PRIVILEGES;"
 
         if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ]; then
-            echo "JumpServer.Mysql.Pre: Start to init jumpserver database by root user of mysql"
+            echo "JumpServer.Mysql.Pre: Start to init jumpserver database by ${green}root user${reset} of mysql"
             mysql -h ${TMP_JMS_SETUP_DB_HOST} -P ${TMP_JMS_SETUP_DB_PORT} -u root -p -e"
             ${TMP_JMS_SETUP_SCRIPTS}
             exit" #--connect-expired-password

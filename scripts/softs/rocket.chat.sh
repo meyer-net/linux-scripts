@@ -169,7 +169,7 @@ EOF
 #!/bin/bash
 
 systemctl stop rocketchat.service
-curl -L https://releases.rocket.chat/latest/download -o ${DOWN_DIR}/rocket.chat.tgz
+curl -L https://download.rocket.chat/stable -o ${DOWN_DIR}/rocket.chat.tgz
 tar -xzf ${DOWN_DIR}/rocket.chat.tgz -C ${DOWN_DIR}
 rm -rf ${DOWN_DIR}/rocket.chat.tgz
 
@@ -267,7 +267,8 @@ function exec_step_rocket_chat()
 # x1-下载软件
 function down_rocket_chat()
 {
-    setup_soft_wget "rocket.chat" "https://releases.rocket.chat/latest/download -O rocket.chat.tgz" "exec_step_rocket_chat"
+    # setup_soft_wget "rocket.chat" "https://releases.rocket.chat/latest/download -O rocket.chat.tgz" "exec_step_rocket_chat"
+    setup_soft_wget "rocket.chat" "https://download.rocket.chat/stable -O rocket.chat.tgz" "exec_step_rocket_chat"
 
 	return $?
 }
