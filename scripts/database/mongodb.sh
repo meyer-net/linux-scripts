@@ -70,13 +70,13 @@ function set_env_mongodb()
 function setup_mongodb()
 {
 	## 源模式
-	cat << EOF | tee -a /etc/yum.repos.d/mongodb-org-4.0.repo
-[mongodb-org-4.0]
+	cat << EOF | tee -a /etc/yum.repos.d/mongodb-org-5.0.repo
+[mongodb-org-5.0]
 name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/7/mongodb-org/4.0/x86_64/
+baseurl=https://repo.mongodb.org/yum/redhat/7/mongodb-org/5.0/x86_64/
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
+gpgkey=https://www.mongodb.org/static/pgp/server-5.0.asc
 EOF
 
 	soft_yum_check_setup "mongodb-org"
