@@ -68,9 +68,9 @@ function conf_jumpserver_pre()
         input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql.Pre: Please ender ${green}mysql user name${reset} of '${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
         input_if_empty "TMP_JMS_SETUP_DBPWD" "JumpServer.Mysql.Pre: Please ender ${green}mysql password${reset} of '${TMP_JMS_SETUP_DBUNAME}@${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
             
-        local TMP_JMS_SETUP_SCRIPTS="CREATE USER ${TMP_JMS_SETUP_DBUNAME} WITH PASSWORD '${TMP_JMS_SETUP_DBPWD}'; 
-        CREATE DATABASE ${TMP_JMS_SETUP_DBNAME} OWNER ${TMP_JMS_SETUP_DBUNAME};
-        GRANT ALL PRIVILEGES ON DATABASE ${TMP_JMS_SETUP_DBNAME} TO ${TMP_JMS_SETUP_DBUNAME};
+        local TMP_JMS_SETUP_SCRIPTS="CREATE DATABASE ${TMP_JMS_SETUP_DBNAME} DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;  \
+        GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'%' identified by '${TMP_JMS_SETUP_DBPWD}';  \
+        GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'localhost' identified by '${TMP_JMS_SETUP_DBPWD}';  \
         FLUSH PRIVILEGES;"
 
         if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ]; then

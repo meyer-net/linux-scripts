@@ -169,7 +169,6 @@ function conf_mysql()
     mysql -u root -p ${TMP_MSQL_SETUP_TEMPORARY_PWD} -P ${TMP_MYSQL_SETUP_PORT} -e "
     SET password FOR 'root'@'localhost'=PASSWORD('${TMP_MSQL_SETUP_TEMPORARY_PWD}');
     GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '${TMP_MYSQL_SETUP_PWD}' WITH GRANT OPTION;
-	
     USE mysql;
     DELETE FROM user WHERE user='' OR user='${SYS_NAME}' OR authentication_string='';
     SET GLOBAL MAX_CONNECT_ERRORS=1024;
