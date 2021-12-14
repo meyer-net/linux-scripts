@@ -1,9 +1,6 @@
-packages/jdk-8u192-linux-x64.tar.gz
+packages/*.tar.gz
 sftp.json
-test.sh
-packages/jdk-8u291-linux-x64.tar.gz
+*test*
 plain.md
-test.drawio
-.vscode/launch.json
-.vscode/*.*
+.vscode/*
 .history/*
