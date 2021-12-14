@@ -156,28 +156,23 @@ function setup_jumpserver()
     sleep 5
 
     local TMP_JMS_LNK_LOGS_DIR=${LOGS_DIR}/jumpserver
-	local TMP_JMS_LNK_LOGS_NGINX_DIR=${LOGS_DIR}/jumpserver/nginx
-	local TMP_JMS_LNK_LOGS_CORE_DIR=${LOGS_DIR}/jumpserver/core
+	local TMP_JMS_LNK_LOGS_NGINX_DIR=${TMP_JMS_LNK_LOGS_DIR}/nginx
+	local TMP_JMS_LNK_LOGS_CORE_DIR=${TMP_JMS_LNK_LOGS_DIR}/core
 	local TMP_JMS_LNK_DATA_DIR=${DATA_DIR}/jumpserver
-
-    path_not_exists_create "${TMP_JMS_LNK_LOGS_DIR}"
-	path_not_exists_create "${TMP_JMS_LNK_LOGS_NGINX_DIR}"
-	path_not_exists_create "${TMP_JMS_LNK_LOGS_CORE_DIR}"
 
     if [ -d ${TMP_JMS_LOGS_NGINX_DIR} ]; then
         mv ${TMP_JMS_LOGS_NGINX_DIR} ${TMP_JMS_LNK_LOGS_NGINX_DIR}
     else
-        mkdir -pv `dirname ${TMP_JMS_LOGS_NGINX_DIR}`
+        mkdir -pv `dirname ${TMP_JMS_LNK_LOGS_NGINX_DIR}`
     fi
     
     if [ -d ${TMP_JMS_LOGS_CORE_DIR} ]; then
         mv ${TMP_JMS_LOGS_CORE_DIR} ${TMP_JMS_LNK_LOGS_CORE_DIR}
     else
-        mkdir -pv `dirname ${TMP_JMS_LOGS_CORE_DIR}`
+        mkdir -pv `dirname ${TMP_JMS_LNK_LOGS_CORE_DIR}`
     fi
 
 	mv ${TMP_JMS_DATA_DIR} ${TMP_JMS_LNK_DATA_DIR}
-
 
     ln -sf ${TMP_JMS_LNK_LOGS_DIR} ${TMP_JMS_LOGS_DIR}
 	ln -sf ${TMP_JMS_LNK_LOGS_NGINX_DIR} ${TMP_JMS_LOGS_NGINX_DIR}
