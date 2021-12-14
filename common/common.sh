@@ -187,7 +187,7 @@ function get_ipv6 () {
 #获取国码
 #参数1：需要设置的变量名
 function get_country_code () {
-	if [ ! -f "/usr/sbin/jq" ]; then
+	if [ ! -f "/usr/bin/jq" ]; then
 		yum -y install jq
 	fi
 
