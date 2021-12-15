@@ -235,33 +235,33 @@ function conf_all()
 	local TMP_DB_SETUP_LOGS_DIR=${TMP_DB_SETUP_DIR}/logs
 
     sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a long_query_time = 3" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a slow-query-log-file = ${TMP_DB_SETUP_LOGS_DIR}/mysql-slow.log" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a slow-query-log = 0" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a long_query_time=3" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a slow-query-log-file=${TMP_DB_SETUP_LOGS_DIR}/mysql-slow.log" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a slow-query-log=0" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a max_heap_table_size = 64M" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a tmp_table_size = 64M" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a max_heap_table_size=64M" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a tmp_table_size=64M" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a query_cache_size = 256M" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a query_cache_min_res_unit = 4K" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a query_cache_limit = 512K" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a query_cache_type = 1" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a query_cache_size=256M" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a query_cache_min_res_unit=4K" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a query_cache_limit=512K" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a query_cache_type=1" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a thread_cache_size = 512" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a max_connect_errors = 256" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a max_connections = 1024" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a thread_cache_size=512" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a max_connect_errors=256" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a max_connections=1024" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a skip-character-set-client-handshake" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a skip-name-resolve" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a collation-server=utf8_unicode_ci" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a init_connect='SET collation_connection = utf8_unicode_ci'" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a init_connect='SET collation_connection=utf8_unicode_ci'" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a init_connect='SET NAMES utf8'" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a character-set-server=utf8" ${TMP_DB_ETC_PATH}
     sed -i "/\[mysqld\]/a \ " ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a server-id = ${LOCAL_ID}" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a user = mysql" ${TMP_DB_ETC_PATH}
-    sed -i "/\[mysqld\]/a port = ${TMP_MYSQL_SETUP_PORT}" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a server-id=${LOCAL_ID}" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a user=mysql" ${TMP_DB_ETC_PATH}
+    sed -i "/\[mysqld\]/a port=${TMP_MYSQL_SETUP_PORT}" ${TMP_DB_ETC_PATH}
     
 	return $?
 }

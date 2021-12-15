@@ -211,6 +211,10 @@ function reconf_jumpserver()
     if [ "${TMP_JMS_SETUP_RDS_HOST}" == "" ] ; then
         echo "config set stop-writes-on-bgsave-error no" | docker exec -i jms_redis redis-cli -a "${TMP_JMS_SETUP_RDS_PWD}"
     fi
+	
+	# 验证安装
+    echo "Checking jumpserver，Waiting for a moment"
+    bash jmsctl.sh check_update
 
 	return $?
 }
@@ -224,10 +228,6 @@ function boot_jumpserver()
 
     # 重启docker
     systemctl restart docker.service
-	
-	# 验证安装
-    echo "Checking jumpserver，Waiting for a moment"
-    bash jmsctl.sh check_update
 
 	# 当前启动命令
 	nohup bash jmsctl.sh start > logs/boot.log 2>&1 &
