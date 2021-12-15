@@ -64,18 +64,19 @@ function conf_jumpserver_pre()
         # 不能用&，否则会被识别成读取前一个值
         local TMP_JMS_SETUP_DBPWD="jms%SVR^m${LOCAL_ID}~"
 
+        #???如果设定的DB用户无法访问mysql，则需要修改为root用户（疑似哪里缺失权限）
         input_if_empty "TMP_JMS_SETUP_DBNAME" "JumpServer.Mysql.Pre: Please ender ${green}mysql database name${reset} of '${TMP_JMS_SETUP_DB_HOST}' for jumpserver"
         input_if_empty "TMP_JMS_SETUP_DBUNAME" "JumpServer.Mysql.Pre: Please ender ${green}mysql user name${reset} of '${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
         input_if_empty "TMP_JMS_SETUP_DBPWD" "JumpServer.Mysql.Pre: Please ender ${green}mysql password${reset} of '${TMP_JMS_SETUP_DBUNAME}@${TMP_JMS_SETUP_DB_HOST}:${TMP_JMS_SETUP_DBNAME}' for jumpserver"
             
         local TMP_JMS_SETUP_SCRIPTS="CREATE DATABASE ${TMP_JMS_SETUP_DBNAME} DEFAULT CHARACTER SET UTF8 COLLATE UTF8_GENERAL_CI;  \
-        GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'%' identified by '${TMP_JMS_SETUP_DBPWD}';  \
-        GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'localhost' identified by '${TMP_JMS_SETUP_DBPWD}';  \
+        GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'%' identified by '${TMP_JMS_SETUP_DBPWD}' WITH GRANT OPTION;  \
+        GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'localhost' identified by '${TMP_JMS_SETUP_DBPWD}' WITH GRANT OPTION;  \
         FLUSH PRIVILEGES;"
 
         if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ]; then
             echo "JumpServer.Mysql.Pre: Start to init jumpserver database by ${green}root user${reset} of mysql"
-            mysql -h ${TMP_JMS_SETUP_DB_HOST} -P ${TMP_JMS_SETUP_DB_PORT} -u root -p -e"
+            mysql -h${TMP_JMS_SETUP_DB_HOST} -P${TMP_JMS_SETUP_DB_PORT} -uroot -p -e"
             ${TMP_JMS_SETUP_SCRIPTS}
             exit" #--connect-expired-password
         else
@@ -144,6 +145,9 @@ function setup_jumpserver()
 	rm -rf ${TMP_JMS_LOGS_NGINX_DIR}
 	rm -rf ${TMP_JMS_LOGS_CORE_DIR}
 	rm -rf ${TMP_JMS_DATA_DIR}
+
+	path_not_exists_create `dirname ${TMP_JMS_LOGS_NGINX_DIR}`
+	path_not_exists_create `dirname ${TMP_JMS_LOGS_CORE_DIR}`
 
     if [ "${COUNTRY_CODE}" == "CN" ]; then
         export DOCKER_IMAGE_PREFIX="swr.cn-south-1.myhuaweicloud.com"

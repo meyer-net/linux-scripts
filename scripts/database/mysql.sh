@@ -166,7 +166,7 @@ function conf_mysql()
 	input_if_empty "TMP_MYSQL_SETUP_PWD" "MySql: Please ender ${green}mysql password${reset} of ${red}user(Root)${reset} for '%'"
     
     systemctl start mysqld.service 
-    mysql -u root -p ${TMP_MSQL_SETUP_TEMPORARY_PWD} -P ${TMP_MYSQL_SETUP_PORT} -e "
+    mysql -uroot -p${TMP_MSQL_SETUP_TEMPORARY_PWD} -P${TMP_MYSQL_SETUP_PORT} -e"
     SET password FOR 'root'@'localhost'=PASSWORD('${TMP_MSQL_SETUP_TEMPORARY_PWD}');
     GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '${TMP_MYSQL_SETUP_PWD}' WITH GRANT OPTION;
     USE mysql;

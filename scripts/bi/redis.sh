@@ -93,34 +93,34 @@ function conf_redis()
 	local TMP_RDS_SETUP_LNK_ETC_PATH=${TMP_RDS_SETUP_LNK_ETC_DIR}/redis.conf
 	local TMP_RDS_SETUP_ETC_DIR=${TMP_RDS_SETUP_DIR}/etc
 
+	# 开始配置
+    # Set Init Script.
+    echo "vm.overcommit_memory=1" >> /etc/sysctl.conf
+
+	local TMP_RDS_SETUP_LOGS_DIR=${TMP_RDS_SETUP_DIR}/logs
+    sed -i "s@^logfile.*@logfile \"${TMP_RDS_SETUP_LOGS_DIR}/redis.log\"@g" /etc/redis.conf
+    
+	local TMP_RDS_SETUP_DATA_DIR=${TMP_RDS_SETUP_DIR}/data
+    sed -i "s@^dir.*@dir ${TMP_RDS_SETUP_DATA_DIR}@g" /etc/redis.conf
+
+    # -- 是否打开 AOF 持久化功能
+    sed -i "s@^appendonly.*@appendonly yes@g" /etc/redis.conf
+    sed -i "s@^daemonize no@daemonize yes@g" /etc/redis.conf
+    sed -i "s@^bind 127.0.0.1.*@bind 127.0.0.1 ${LOCAL_HOST} -::*@g" /etc/redis.conf
+    sed -i "s@^port.*@port ${TMP_RDS_SETUP_PORT}@g" /etc/redis.conf
+
+	local TMP_RDS_SETUP_AUTH_PWD=""
+    rand_str "TMP_RDS_SETUP_AUTH_PWD" 32
+    input_if_empty "TMP_RDS_SETUP_AUTH_PWD" "Redis: Please sure ${red}login auth password${reset}"
+    # echo "config set requirepass " | redis-cli
+    sed -i "s@^# requirepass.*@requirepass ${TMP_RDS_SETUP_AUTH_PWD}@g" /etc/redis.conf
+
 	# ①-Y：存在配置文件：原路径文件放给真实路径
 	mkdir -pv ${TMP_RDS_SETUP_LNK_ETC_DIR}
 
 	# 替换原路径链接
 	ln -sf ${TMP_RDS_SETUP_LNK_ETC_DIR} ${TMP_RDS_SETUP_ETC_DIR}
     ln -sf /etc/redis.conf ${TMP_RDS_SETUP_LNK_ETC_PATH} 
-
-	# 开始配置
-    # Set Init Script.
-    echo "vm.overcommit_memory=1" >> /etc/sysctl.conf
-
-	local TMP_RDS_SETUP_LOGS_DIR=${TMP_RDS_SETUP_DIR}/logs
-    sed -i "s@^logfile.*@logfile \"${TMP_RDS_SETUP_LOGS_DIR}/redis.log\"@g" etc/redis.conf
-    
-	local TMP_RDS_SETUP_DATA_DIR=${TMP_RDS_SETUP_DIR}/data
-    sed -i "s@^dir.*@dir ${TMP_RDS_SETUP_DATA_DIR}@g" etc/redis.conf
-
-    # -- 是否打开 AOF 持久化功能
-    sed -i "s@^appendonly.*@appendonly yes@g" etc/redis.conf
-    sed -i "s@^daemonize no@daemonize yes@g" etc/redis.conf
-    sed -i "s@^bind 127.0.0.1.*@bind 127.0.0.1 ${LOCAL_HOST} -::*@g" etc/redis.conf
-    sed -i "s@^port.*@port ${TMP_RDS_SETUP_PORT}@g" etc/redis.conf
-
-	local TMP_RDS_SETUP_AUTH_PWD=""
-    rand_str "TMP_RDS_SETUP_AUTH_PWD" 32
-    input_if_empty "TMP_RDS_SETUP_AUTH_PWD" "Redis: Please sure ${red}login auth password${reset}"
-    # echo "config set requirepass " | redis-cli
-    sed -i "s@^# requirepass.*@requirepass ${TMP_RDS_SETUP_AUTH_PWD}@g" etc/redis.conf
     
     sysctl vm.overcommit_memory=1
 
