@@ -39,7 +39,7 @@ function conf_jumpserver_pre()
     # 修改 Jumpserver 配置文件
     cp config-example.txt config-example.txt.bak
 
-    ## 手动配置
+    ## 手动配置(PS：v2.16.x 必须使用 内网IP才能连接OK外置 DB/RDS)
     # 安装配置
     sed -i "s@VOLUME_DIR=.*@VOLUME_DIR=${TMP_JMS_DATA_DIR}@g" config-example.txt
     sed -i "s@DOCKER_DIR=.*@DOCKER_DIR=${SETUP_DIR}/docker_jms@g" config-example.txt
@@ -54,7 +54,8 @@ function conf_jumpserver_pre()
 
     # 生成数据库表结构和初始化数据
     input_if_empty "TMP_JMS_SETUP_DB_HOST" "JumpServer.Mysql.Pre: Please ender ${green}mysql host address${reset}，or type enter to setup docker-image"
-    set_if_equals "TMP_JMS_SETUP_DB_HOST" "LOCAL_HOST" "127.0.0.1"
+    set_if_equals "TMP_JMS_SETUP_DB_HOST" "127.0.0.1" "LOCAL_HOST"
+    set_if_equals "TMP_JMS_SETUP_DB_HOST" "localhost" "LOCAL_HOST"
 
     if [ "${TMP_JMS_SETUP_DB_HOST}" == "" ] ; then
         echo "JumpServer.Mysql.Pre: Jumpserver typed local docker-image mode"
@@ -74,7 +75,7 @@ function conf_jumpserver_pre()
         GRANT ALL PRIVILEGES ON ${TMP_JMS_SETUP_DBNAME}.* to '${TMP_JMS_SETUP_DBUNAME}'@'localhost' identified by '${TMP_JMS_SETUP_DBPWD}' WITH GRANT OPTION;  \
         FLUSH PRIVILEGES;"
 
-        if [ "${TMP_JMS_SETUP_DB_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_DB_HOST}" == "localhost" ]; then
+        if [ "${TMP_JMS_SETUP_DB_HOST}" == "${LOCAL_HOST}" ]; then
             echo "JumpServer.Mysql.Pre: Start to init jumpserver database by ${green}root user${reset} of mysql"
             mysql -h${TMP_JMS_SETUP_DB_HOST} -P${TMP_JMS_SETUP_DB_PORT} -uroot -p -e"
             ${TMP_JMS_SETUP_SCRIPTS}
@@ -92,15 +93,16 @@ function conf_jumpserver_pre()
         sed -i "s@DB_NAME=.*@DB_NAME=${TMP_JMS_SETUP_DBNAME}@g" config-example.txt
     fi
 
-    # 缓存Redis，???使用外置redis时依旧存在问题
+    # 缓存Redis
     input_if_empty "TMP_JMS_SETUP_RDS_HOST" "JumpServer.Redis.Pre: Please ender ${green}redis host address${reset}，or type enter to setup docker-image"
-    set_if_equals "TMP_JMS_SETUP_RDS_HOST" "LOCAL_HOST" "127.0.0.1"
+    set_if_equals "TMP_JMS_SETUP_RDS_HOST" "127.0.0.1" "LOCAL_HOST"
+    set_if_equals "TMP_JMS_SETUP_RDS_HOST" "localhost" "LOCAL_HOST"
     
     rand_str "TMP_JMS_SETUP_RDS_PWD" 32
     if [ "${TMP_JMS_SETUP_RDS_HOST}" == "" ] ; then
         echo "JumpServer.Redis.Pre: Jumpserver typed local docker-image mode"
     else
-        if [ "${TMP_JMS_SETUP_RDS_HOST}" == "127.0.0.1" ] || [ "${TMP_JMS_SETUP_RDS_HOST}" == "localhost" ]; then
+        if [ "${TMP_JMS_SETUP_RDS_HOST}" == "${LOCAL_HOST}" ]; then
             redis-cli config set stop-writes-on-bgsave-error no
         fi
 
@@ -303,7 +305,7 @@ function exec_step_jumpserver()
 function down_jumpserver()
 {
 	local TMP_JMS_SETUP_NEWER="2.16.0"
-	set_github_soft_releases_newer_version "TMP_JMS_SETUP_NEWER" "jumpserver/installer"
+	set_github_soft_releases_newer_version "TMP_JMS_SETUP_NEWER" "jumpserver/jumpserver"
 	exec_text_format "TMP_JMS_SETUP_NEWER" "https://github.com/jumpserver/installer/releases/download/v%s/jumpserver-installer-v%s.tar.gz"    
     setup_soft_wget "jumpserver" "${TMP_JMS_SETUP_NEWER}" "exec_step_jumpserver"
 
