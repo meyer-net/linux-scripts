@@ -94,6 +94,8 @@ function conf_$soft_name()
 	local TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR=${ATT_DIR}/$setup_name
 	local TMP_$soft_upper_short_name_SETUP_ETC_DIR=${TMP_$soft_upper_short_name_SETUP_DIR}/etc
 
+	# 开始配置
+
 	# ①-Y：存在配置文件：原路径文件放给真实路径
 	mv ${TMP_$soft_upper_short_name_SETUP_ETC_DIR} ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR}
 
@@ -108,8 +110,6 @@ function conf_$soft_name()
     # ln -sf /etc/$soft_name ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} 
     # ln -sf /etc/$soft_name ${TMP_$soft_upper_short_name_SETUP_ETC_DIR} 
 	ln -sf ${TMP_$soft_upper_short_name_SETUP_LNK_ETC_DIR} ${TMP_$soft_upper_short_name_SETUP_ETC_DIR}
-
-	# 开始配置
 
 # 	# -- 服务配置加载
 # 	tee /usr/lib/systemd/system/$setup_name.service <<-EOF

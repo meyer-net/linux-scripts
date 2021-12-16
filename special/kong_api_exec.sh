@@ -88,7 +88,7 @@ function post_routes()
             -d \"name=$tmp_route_name\"  \
             ${tmp_router_hosts}  \
             -d \"strip_path=false\"  \
-            -d \"preserve_host=true\"  \
+            -d \"preserve_host=false\"  \
             -d \"paths[]=/\"  \
             -d \"protocols[]=http\"  \
             -d \"protocols[]=https\""

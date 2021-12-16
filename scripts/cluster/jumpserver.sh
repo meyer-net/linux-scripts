@@ -249,6 +249,8 @@ function boot_jumpserver()
 
 	# 添加系统启动命令
     echo_startup_config "jumpserver" "${TMP_JMS_SETUP_DIR}" "bash jmsctl.sh start" "" "100"
+
+    # 默认账密 admin/admin
 	
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_JMS_SETUP_HTTP_PORT}
