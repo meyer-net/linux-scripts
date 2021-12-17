@@ -97,6 +97,7 @@ EOF
 
 	# ①-Y：存在配置文件：原路径文件放给真实路径
 	mv ${TMP_GIT_SETUP_ETC_DIR} ${TMP_GIT_SETUP_LNK_ETC_DIR}
+    cp /etc/gitlab/gitlab.rb ${TMP_GIT_SETUP_LNK_ETC_DIR}/gitlab_initbak.rb
     mv /etc/gitlab/gitlab.rb ${TMP_GIT_SETUP_LNK_ETC_DIR}/
     rm -rf /etc/gitlab
 
@@ -134,8 +135,8 @@ function boot_gitlab()
 	lsof -i:${TMP_GIT_SETUP_PORT}
 	gitlab-ctl status
 	
-	# 添加系统启动命令
-    echo_startup_config "gitlab" "${TMP_GIT_SETUP_DIR}" "gitlab-ctl start" "" "99"
+	# 添加系统启动命令(自带启动，此处略)
+    # echo_startup_config "gitlab" "${TMP_GIT_SETUP_DIR}" "gitlab-ctl start" "" "99"
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_GIT_SETUP_PORT}

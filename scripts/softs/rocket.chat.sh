@@ -217,7 +217,7 @@ function boot_rocket_chat()
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_RC_SETUP_HTTP_PORT}
 	
-    # 生成web授权访问脚本(PS：多域名入口/内外网混合的场景下，kong需要禁用Preserve Host，否则会无限报秘密错误。另外需禁用RC自身的域名绑定)
+    # 生成web授权访问脚本(PS：多域名入口/内外网混合的场景下，kong需要禁用Preserve Host，否则会无限报秘密错误。另外需禁用RC自身的限制<通用-网站地址-限制任何 iframe 内的访问>)
     echo_web_service_init_scripts "rocket-chat${LOCAL_ID}" "rocket-chat${LOCAL_ID}-webui.${SYS_DOMAIN}" ${TMP_RC_SETUP_HTTP_PORT} "${LOCAL_HOST}"
 
 	return $?

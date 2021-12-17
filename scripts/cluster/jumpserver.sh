@@ -6,8 +6,8 @@
 #------------------------------------------------
 # 参考：https://docs.jumpserver.org/zh/master/install/setup_by_fast/
 #------------------------------------------------
-local TMP_JMS_SETUP_HTTP_PORT=10080
-local TMP_JMS_SETUP_HTTPS_PORT=10443
+local TMP_JMS_SETUP_HTTP_PORT=11180
+local TMP_JMS_SETUP_HTTPS_PORT=11443
 local TMP_JMS_SETUP_SSH_PORT=22222
 local TMP_JMS_SETUP_RDP_PORT=33389
 local TMP_JMS_SETUP_RDS_HOST=
