@@ -153,6 +153,7 @@ EOF
     export LC_ALL=zh_CN.UTF-8
     echo 'LANG="zh_CN.UTF-8"' > /etc/locale.conf
     echo 'LANG=zh_CN.UTF-8' >> /etc/sysconfig/i18n
+	echo "export LANG=zh_CN.utf-8" > /etc/profile
 
 	sysctl -p
 

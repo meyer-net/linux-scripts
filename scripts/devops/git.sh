@@ -16,9 +16,15 @@
 # redis：             缓存数据库
 # sidekiq：           用于在后台执行队列任务(异步执行),(Ruby)
 # unicorn：           An HTTP server for Rack applications，GitLab Rails应用是托管在这个服务器上面的。（RubyWeb Server,主要使用Ruby编写）
+# 
+# 修改root密码：
+# gitlab-rails console -e production
+# user.password = '12345678'
+# user.password_confirmation = '12345678'
+# user.save!
 #------------------------------------------------
 
-local TMP_GIT_SETUP_PORT=18080
+local TMP_GIT_SETUP_PORT=10180
 
 ##########################################################################################################
 
@@ -27,7 +33,7 @@ function set_env_gitlab()
 {
     cd ${__DIR}
 
-    # soft_yum_check_setup ""
+    soft_yum_check_setup "patch"
 
 	return $?
 }
@@ -81,7 +87,6 @@ function conf_gitlab()
     sed -i "s@^external_url.*@external_url http://${LOCAL_HOST}:${TMP_GIT_SETUP_PORT}@g" /etc/gitlab/gitlab.rb
     
     ## 以下设置 解决gitlab占用大量内存问题
-    sed -i "s@^# puma\['port'\].*@puma['port'] = ${TMP_GIT_SETUP_PORT}@g" /etc/gitlab/gitlab.rb
     sed -i "s@^# puma\['worker_processes'\].*@puma['worker_processes'] = 4@g" /etc/gitlab/gitlab.rb
     sed -i "s@^# postgresql\['max_worker_processes'\].*@postgresql['max_worker_processes'] = 4@g" /etc/gitlab/gitlab.rb
     sed -i "s@^# nginx\['worker_processes'\].*@nginx['worker_processes'] = 4@g" /etc/gitlab/gitlab.rb
@@ -116,6 +121,8 @@ function boot_gitlab()
 	cd ${TMP_GIT_SETUP_DIR}
 	
 	# 验证安装
+	cat embedded/service/gitlab-rails/VERSION
+	gitlab gitlab-rake gitlab:check SANITIZE=true --trace
     gitlab-ctl check-config
     gitlab-ctl upgrade-check
 
@@ -136,7 +143,7 @@ function boot_gitlab()
 	gitlab-ctl status
 	
 	# 添加系统启动命令(自带启动，此处略)
-    # echo_startup_config "gitlab" "${TMP_GIT_SETUP_DIR}" "gitlab-ctl start" "" "99"
+    echo_startup_config "gitlab" "${TMP_GIT_SETUP_DIR}" "gitlab-ctl tail" "" "99"
 
 	# 授权iptables端口访问
 	echo_soft_port ${TMP_GIT_SETUP_PORT}

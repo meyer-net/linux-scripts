@@ -273,7 +273,7 @@ function convert_path () {
 	return $?
 }
 
-#查询文件所在行
+#查询内容所在行
 #参数1：需要设置的变量名
 #参数2：文件位置
 #参数3：关键字
@@ -1730,6 +1730,34 @@ function exec_text_format()
 	eval ${1}='${TMP_EXEC_TEXT_FORMAT_FORMATED_VAL:-${TMP_EXEC_TEXT_FORMAT_VAR_VAL}}'
 
 	return $?
+}
+
+# 在yaml-list中执行
+# 参数1：加载的URL
+# 参数2：key的特征
+# 参数3：执行的脚本 
+# 示例：
+# exec_in_yaml_list "http://${TMP_GITLAB_ADDRESS}/network-security/office/-/raw/main/dns_rewrite/dns_rewrite_all.list" "^- domain:" "_compare_ag_increase_ddns_rewrite"
+function exec_in_yaml_list()
+{
+    local _TMP_LOAD_URL=$1
+    local _TMP_KEY_FEATURE=$2
+    local _TMP_EXEC_ACTION=$3
+
+    local _TMP_KEY=""
+    local _TMP_VAL=""
+    
+    local _TMP_YAML_CONTENT=`curl -s ${_TMP_LOAD_URL}`
+    echo "${_TMP_YAML_CONTENT}" | grep -E "${_TMP_KEY_FEATURE}" | while read line;
+    do
+        local _TMP_YAML_KEY_MATCH_LINE=`echo "${_TMP_YAML_CONTENT}" | grep "^${line}$" -n | awk -F':' '{print $1}' | awk 'NR==1'`
+        local _TMP_KEY=`echo "${_TMP_YAML_CONTENT}" | sed -n "${_TMP_YAML_KEY_MATCH_LINE}p" | awk -F':' '{print $NF}' | awk '{sub("^ *","");sub(" *$","");print}'`
+        local _TMP_VAL=`echo "${_TMP_YAML_CONTENT}" | sed -n "$((_TMP_YAML_KEY_MATCH_LINE+1))p" | awk -F':' '{print $NF}' | awk '{sub("^ *","");sub(" *$","");print}'`
+        
+        exec_check_action "${_TMP_EXEC_ACTION}"
+    done
+
+    return $?
 }
 
 #循环读取值
