@@ -1737,25 +1737,27 @@ function exec_text_format()
 # 参数2：key的特征
 # 参数3：执行的脚本 
 # 示例：
-# exec_in_yaml_list "http://${TMP_GITLAB_ADDRESS}/network-security/office/-/raw/main/dns_rewrite/dns_rewrite_all.list" "^- domain:" "_compare_ag_increase_ddns_rewrite"
-function exec_in_yaml_list()
+# exec_in_yml_list "http://${_TMP_GITLAB_ADDRESS}/network-security/office/-/raw/main/cust_filter/cust_filter_internal.list" "^- '" "_compare_ag_increase_cust_filter" "${_TMP_AG_API_PIPELINE_REGEX}" "_submit_ag_increase_cust_filter"
+function exec_in_yml_list()
 {
-    local _TMP_LOAD_URL=$1
-    local _TMP_KEY_FEATURE=$2
-    local _TMP_EXEC_ACTION=$3
-
-    local _TMP_KEY=""
-    local _TMP_VAL=""
+    local _TMP_EXEC_IN_YML_LIST_LOAD_URL=$1
+    local _TMP_EXEC_IN_YML_LIST_ITEM_FEATURE=$2
+    local _TMP_EXEC_IN_YML_LIST_ACTION=$3
+    local _TMP_EXEC_IN_YML_LIST_ITEM_PIPILINE=${4:-"awk -F':' '{print \$NF}'"}
+    local _TMP_EXEC_IN_YML_LIST_AFTER_ACTION=$5
     
-    local _TMP_YAML_CONTENT=`curl -s ${_TMP_LOAD_URL}`
-    echo "${_TMP_YAML_CONTENT}" | grep -E "${_TMP_KEY_FEATURE}" | while read line;
+    local _TMP_EXEC_IN_YML_LIST_YML_CONTENT=`curl -s ${_TMP_EXEC_IN_YML_LIST_LOAD_URL}`
+    while read line
     do
-        local _TMP_YAML_KEY_MATCH_LINE=`echo "${_TMP_YAML_CONTENT}" | grep "^${line}$" -n | awk -F':' '{print $1}' | awk 'NR==1'`
-        local _TMP_KEY=`echo "${_TMP_YAML_CONTENT}" | sed -n "${_TMP_YAML_KEY_MATCH_LINE}p" | awk -F':' '{print $NF}' | awk '{sub("^ *","");sub(" *$","");print}'`
-        local _TMP_VAL=`echo "${_TMP_YAML_CONTENT}" | sed -n "$((_TMP_YAML_KEY_MATCH_LINE+1))p" | awk -F':' '{print $NF}' | awk '{sub("^ *","");sub(" *$","");print}'`
+        local _TMP_EXEC_IN_YML_LIST_ITEM_MATCH_LINE=`echo "${_TMP_EXEC_IN_YML_LIST_YML_CONTENT}" | grep "^${line}$" -n | awk -F':' '{print $1}' | awk 'NR==1'`
+        local _TMP_EXEC_IN_YML_LIST_ITEM=`eval "echo \"${_TMP_EXEC_IN_YML_LIST_YML_CONTENT}\" | sed -n \"${_TMP_EXEC_IN_YML_LIST_ITEM_MATCH_LINE}p\" | ${_TMP_EXEC_IN_YML_LIST_ITEM_PIPILINE} | awk '{sub(\"^ *\",\"\");sub(\" *$\",\"\");print}'"`
         
-        exec_check_action "${_TMP_EXEC_ACTION}"
-    done
+        exec_check_action "${_TMP_EXEC_IN_YML_LIST_ACTION}"
+    done < <(echo "${_TMP_EXEC_IN_YML_LIST_YML_CONTENT}" | grep -E "${_TMP_EXEC_IN_YML_LIST_ITEM_FEATURE}")
+
+    if [ -n "${_TMP_EXEC_IN_YML_LIST_AFTER_ACTION}" ]; then
+        exec_check_action "${_TMP_EXEC_IN_YML_LIST_AFTER_ACTION}"
+    fi
 
     return $?
 }
